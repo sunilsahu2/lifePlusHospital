@@ -1,0 +1,49 @@
+{
+  "name": "Hospital Management System",
+  "short_name": "Hospital Mgt",
+  "description": "Comprehensive Hospital Management System for managing doctors, patients, cases, appointments, billing and more",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Doctors",
+      "short_name": "Doctors",
+      "description": "Manage doctors",
+      "url": "/?module=doctors",
+      "icons": [{ "src": "/static/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Patients",
+      "short_name": "Patients",
+      "description": "Manage patients",
+      "url": "/?module=patients",
+      "icons": [{ "src": "/static/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cases",
+      "short_name": "Cases",
+      "description": "View cases",
+      "url": "/?module=cases",
+      "icons": [{ "src": "/static/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
