@@ -1,0 +1,37 @@
+# Log files
+*.log
+app.log
+*.log.*
+
+# Database files
+*.db
+hospital.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (optional - uncomment if you don't want to track uploaded files)
+# static/uploads/
+
+# Output files
+*_output.log
+cases_data.json
