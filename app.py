@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
@@ -8,6 +8,15 @@ import logging
 import os
 import uuid
 from werkzeug.utils import secure_filename
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+import io
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
 # Configure logging
 logging.basicConfig(
@@ -284,10 +293,16 @@ def get_cases():
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 10))
         search = request.args.get('search', '').strip()
+        patient_id = request.args.get('patient_id')
         skip = (page - 1) * limit
         
-        # Build query for search
+        # Build query
         query = {}
+        
+        # Filter by patient_id if provided (for faster queries - applied first)
+        if patient_id:
+            query['patient_id'] = parse_object_id(patient_id)
+        
         if search:
             # Search by case_number (exact match preferred)
             cases_by_number = list(db.cases.find({'case_number': {'$regex': search, '$options': 'i'}}))
@@ -310,7 +325,11 @@ def get_cases():
             if patient_ids:
                 search_conditions.append({'patient_id': {'$in': patient_ids}})
             if search_conditions:
-                query = {'$or': search_conditions}
+                # If patient_id filter exists, combine with search
+                if 'patient_id' in query:
+                    query = {'$and': [{'patient_id': query['patient_id']}, {'$or': search_conditions}]}
+                else:
+                    query = {'$or': search_conditions}
         
         # Get total count for pagination
         total = db.cases.count_documents(query)
@@ -321,6 +340,10 @@ def get_cases():
         # Populate patient names and convert patient_id to string
         # Also get charge counts and totals for each case
         for case in cases:
+            # Ensure status field exists (default to 'open' if not set)
+            if 'status' not in case:
+                case['status'] = 'open'
+            
             if 'patient_id' in case:
                 patient_id_obj = case['patient_id']
                 # Convert patient_id to ObjectId if it's a string
@@ -416,6 +439,20 @@ def get_case(id):
                 if patient:
                     case['patient'] = serialize_doc(patient)
         
+        # Populate referred_by name
+        if 'referred_by_id' in case and 'referred_by_type' in case and case['referred_by_id']:
+            referred_by_id_obj = case['referred_by_id']
+            # Convert to ObjectId if it's a string
+            if isinstance(referred_by_id_obj, str):
+                referred_by_id_obj = parse_object_id(referred_by_id_obj)
+            if referred_by_id_obj:
+                if case['referred_by_type'] == 'patient':
+                    referred_by = db.patients.find_one({'_id': referred_by_id_obj})
+                else:  # doctor
+                    referred_by = db.doctors.find_one({'_id': referred_by_id_obj})
+                if referred_by:
+                    case['referred_by_name'] = referred_by.get('name', '')
+        
         # Get case charges (patient charges)
         case_charges = list(db.case_charges.find({'case_id': parse_object_id(id)}))
         # Populate charge master names and doctor names
@@ -484,6 +521,10 @@ def create_case():
         if 'patient_id' in data and data['patient_id']:
             data['patient_id'] = parse_object_id(data['patient_id'])
         
+        # Convert referred_by_id to ObjectId if present
+        if 'referred_by_id' in data and data['referred_by_id']:
+            data['referred_by_id'] = parse_object_id(data['referred_by_id'])
+        
         # Generate case number
         if 'case_number' not in data or not data['case_number']:
             year = datetime.now().year
@@ -509,6 +550,10 @@ def update_case(id):
         # Convert patient_id to ObjectId if present
         if 'patient_id' in data and data['patient_id']:
             data['patient_id'] = parse_object_id(data['patient_id'])
+        
+        # Convert referred_by_id to ObjectId if present
+        if 'referred_by_id' in data and data['referred_by_id']:
+            data['referred_by_id'] = parse_object_id(data['referred_by_id'])
         
         data['updated_at'] = datetime.now()
         result = db.cases.update_one({'_id': parse_object_id(id)}, {'$set': data})
@@ -575,7 +620,13 @@ def create_appointment():
         if 'patient_id' in data and data['patient_id']:
             data['patient_id'] = parse_object_id(data['patient_id'])
         if 'case_id' in data and data['case_id']:
-            data['case_id'] = parse_object_id(data['case_id'])
+            case_id_obj = parse_object_id(data['case_id'])
+            data['case_id'] = case_id_obj
+            
+            # Check if case is closed
+            case = db.cases.find_one({'_id': case_id_obj})
+            if case and case.get('status') == 'closed':
+                return jsonify({'error': 'Cannot add appointments to a closed case'}), 400
         if 'doctor_id' in data and data['doctor_id']:
             data['doctor_id'] = parse_object_id(data['doctor_id'])
         
@@ -673,6 +724,12 @@ def create_prescription():
             prescription_date = request.form.get('prescription_date')
             notes = request.form.get('notes', '')
             
+            # Check if case is closed
+            if case_id:
+                case = db.cases.find_one({'_id': parse_object_id(case_id)})
+                if case and case.get('status') == 'closed':
+                    return jsonify({'error': 'Cannot add prescriptions to a closed case'}), 400
+            
             if file and file.filename:
                 # Generate unique filename
                 filename = secure_filename(file.filename)
@@ -708,7 +765,13 @@ def create_prescription():
             data = request.get_json()
             # Convert IDs to ObjectId if present
             if 'case_id' in data and data['case_id']:
-                data['case_id'] = parse_object_id(data['case_id'])
+                case_id_obj = parse_object_id(data['case_id'])
+                data['case_id'] = case_id_obj
+                
+                # Check if case is closed
+                case = db.cases.find_one({'_id': case_id_obj})
+                if case and case.get('status') == 'closed':
+                    return jsonify({'error': 'Cannot add prescriptions to a closed case'}), 400
             if 'patient_id' in data and data['patient_id']:
                 data['patient_id'] = parse_object_id(data['patient_id'])
             if 'doctor_id' in data and data['doctor_id']:
@@ -838,7 +901,13 @@ def create_case_charge():
         
         # Convert case_id and charge_master_id to ObjectId
         if 'case_id' in data and data['case_id']:
-            data['case_id'] = parse_object_id(data['case_id'])
+            case_id_obj = parse_object_id(data['case_id'])
+            data['case_id'] = case_id_obj
+            
+            # Check if case is closed
+            case = db.cases.find_one({'_id': case_id_obj})
+            if case and case.get('status') == 'closed':
+                return jsonify({'error': 'Cannot add charges to a closed case'}), 400
         if 'charge_master_id' in data and data['charge_master_id']:
             data['charge_master_id'] = parse_object_id(data['charge_master_id'])
         if 'doctor_id' in data and data['doctor_id']:
@@ -913,6 +982,18 @@ def create_case_charge():
 def update_case_charge(id):
     try:
         data = request.get_json()
+        
+        # Get the existing charge to find case_id
+        existing_charge = db.case_charges.find_one({'_id': parse_object_id(id)})
+        if not existing_charge:
+            return jsonify({'error': 'Charge not found'}), 404
+        
+        case_id_obj = existing_charge.get('case_id')
+        if case_id_obj:
+            # Check if case is closed
+            case = db.cases.find_one({'_id': case_id_obj})
+            if case and case.get('status') == 'closed':
+                return jsonify({'error': 'Cannot modify charges for a closed case'}), 400
         
         # Convert IDs to ObjectId if present
         if 'case_id' in data and data['case_id']:
@@ -1048,6 +1129,13 @@ def get_doctor_charge(id):
 def create_doctor_charge():
     try:
         data = request.get_json()
+        
+        # Convert doctor_id and charge_master_id to ObjectId if present
+        if 'doctor_id' in data and data['doctor_id']:
+            data['doctor_id'] = parse_object_id(data['doctor_id'])
+        if 'charge_master_id' in data and data['charge_master_id']:
+            data['charge_master_id'] = parse_object_id(data['charge_master_id'])
+        
         data['created_at'] = datetime.now()
         result = db.doctor_charges.insert_one(data)
         return jsonify({'id': str(result.inserted_id), 'message': 'Doctor charge created successfully'}), 201
@@ -1059,6 +1147,13 @@ def create_doctor_charge():
 def update_doctor_charge(id):
     try:
         data = request.get_json()
+        
+        # Convert doctor_id and charge_master_id to ObjectId if present
+        if 'doctor_id' in data and data['doctor_id']:
+            data['doctor_id'] = parse_object_id(data['doctor_id'])
+        if 'charge_master_id' in data and data['charge_master_id']:
+            data['charge_master_id'] = parse_object_id(data['charge_master_id'])
+        
         data['updated_at'] = datetime.now()
         result = db.doctor_charges.update_one({'_id': parse_object_id(id)}, {'$set': data})
         if result.modified_count:
@@ -1319,11 +1414,25 @@ def get_payments():
 def create_payment():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
         data['created_at'] = datetime.now()
         
-        # Update bill paid amount
+        # Ensure case_id and patient_id are ObjectIds
         case_id = parse_object_id(data.get('case_id'))
         if case_id:
+            data['case_id'] = case_id
+            
+            # Get patient_id from case if not provided
+            if 'patient_id' not in data or not data.get('patient_id'):
+                case = db.cases.find_one({'_id': case_id})
+                if case and 'patient_id' in case:
+                    data['patient_id'] = parse_object_id(case['patient_id'])
+            else:
+                data['patient_id'] = parse_object_id(data['patient_id'])
+            
+            # Update bill paid amount if bill exists (optional - don't fail if bill doesn't exist)
             bill = db.bills.find_one({'case_id': case_id})
             if bill:
                 new_paid = bill.get('paid_amount', 0) + data.get('amount', 0)
@@ -1337,12 +1446,46 @@ def create_payment():
                         }
                     }
                 )
+        elif 'patient_id' in data:
+            data['patient_id'] = parse_object_id(data['patient_id'])
         
+        # Ensure amount is a float
+        if 'amount' in data:
+            data['amount'] = float(data['amount']) if data['amount'] else 0.0
+        
+        # Ensure payment_date is a datetime if provided
+        if 'payment_date' in data and data['payment_date']:
+            if isinstance(data['payment_date'], str):
+                try:
+                    # Try ISO format first
+                    data['payment_date'] = datetime.fromisoformat(data['payment_date'].replace('Z', '+00:00'))
+                except:
+                    try:
+                        # Try YYYY-MM-DD format
+                        data['payment_date'] = datetime.strptime(data['payment_date'], '%Y-%m-%d')
+                    except:
+                        try:
+                            # Try parsing as ISO string
+                            data['payment_date'] = datetime.fromisoformat(data['payment_date'])
+                        except:
+                            # If all fail, use current date
+                            data['payment_date'] = datetime.now()
+                            logging.warning(f"Could not parse payment_date: {data.get('payment_date')}, using current date")
+        else:
+            # If no payment_date provided, use current date
+            data['payment_date'] = datetime.now()
+        
+        # Log the data being saved
+        logging.info(f"Creating payment with data: case_id={case_id}, amount={data.get('amount')}, payment_mode={data.get('payment_mode')}")
+        
+        # Save payment to payments collection (NO payout updates - payments are independent)
         result = db.payments.insert_one(data)
-        return jsonify({'id': str(result.inserted_id), 'message': 'Payment created successfully'}), 201
+        payment_id = str(result.inserted_id)
+        logging.info(f"Payment created successfully: {payment_id} for case: {case_id}, amount: {data.get('amount')}")
+        return jsonify({'id': payment_id, 'message': 'Payment created successfully'}), 201
     except Exception as e:
-        logging.error(f"Error creating payment: {e}")
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"Error creating payment: {e}", exc_info=True)
+        return jsonify({'error': f'Failed to create payment: {str(e)}'}), 500
 
 @app.route('/api/payments/<id>', methods=['PUT'])
 def update_payment(id):
@@ -1610,6 +1753,553 @@ def get_summary():
         return jsonify(summary)
     except Exception as e:
         logging.error(f"Error getting summary: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/payouts/export-excel', methods=['GET'])
+def export_payouts_excel():
+    try:
+        # Get filter parameters
+        case_id = request.args.get('case_id')
+        doctor_id = request.args.get('doctor_id')
+        payment_status = request.args.get('payment_status')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Build query (same as get_payouts)
+        query = {}
+        if case_id:
+            query['case_id'] = parse_object_id(case_id)
+        if doctor_id:
+            query['doctor_id'] = parse_object_id(doctor_id)
+        if payment_status:
+            query['payment_status'] = payment_status
+        
+        # Date range filtering
+        if start_date and end_date:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+            query['date_time'] = {
+                '$gte': datetime.combine(start_date_obj.date(), datetime.min.time()),
+                '$lte': datetime.combine(end_date_obj.date(), datetime.max.time())
+            }
+        
+        # Get all payouts matching the query (no pagination for export)
+        payouts = list(db.payouts.find(query).sort('date_time', -1))
+        
+        # Populate doctor names
+        for payout in payouts:
+            if 'doctor_id' in payout and payout['doctor_id']:
+                doctor = db.doctors.find_one({'_id': payout['doctor_id']})
+                if doctor:
+                    payout['doctor_name'] = doctor.get('name', '')
+        
+        # Create Excel workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Payouts Report"
+        
+        # Define header style
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Define column headers
+        headers = [
+            'Date & Time',
+            'Case Number',
+            'Patient Name',
+            'Doctor Name',
+            'OPD/IPD',
+            'Total Charge Amount',
+            'Doctor Charge Amount',
+            'Payment Status',
+            'Payment Date',
+            'Payment Mode',
+            'Payment Reference',
+            'Partial Payment Amount',
+            'Payment Comment'
+        ]
+        
+        # Write headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+        
+        # Write data rows
+        for row_num, payout in enumerate(payouts, 2):
+            date_time = payout.get('date_time', '')
+            if date_time:
+                if isinstance(date_time, datetime):
+                    date_time = date_time.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    date_time = str(date_time)
+            
+            payment_date = payout.get('payment_date', '')
+            if payment_date:
+                if isinstance(payment_date, datetime):
+                    payment_date = payment_date.strftime('%Y-%m-%d')
+                else:
+                    payment_date = str(payment_date)
+            
+            # Set row color based on payment status
+            row_fill = None
+            if payout.get('payment_status') == 'paid':
+                row_fill = PatternFill(start_color="d4edda", end_color="d4edda", fill_type="solid")
+            elif payout.get('payment_status') == 'partial_paid':
+                row_fill = PatternFill(start_color="cfe2ff", end_color="cfe2ff", fill_type="solid")
+            elif payout.get('payment_status') in ['pending', 'cancelled']:
+                row_fill = PatternFill(start_color="fff3cd", end_color="fff3cd", fill_type="solid")
+            
+            row_data = [
+                date_time,
+                payout.get('case_number', ''),
+                payout.get('patient_name', ''),
+                payout.get('doctor_name', ''),
+                payout.get('case_type', ''),
+                payout.get('total_charge_amount', 0),
+                payout.get('doctor_charge_amount', 0),
+                payout.get('payment_status', ''),
+                payment_date,
+                payout.get('payment_mode', ''),
+                payout.get('payment_reference_number', ''),
+                payout.get('partial_payment_amount', 0),
+                payout.get('payment_comment', '')
+            ]
+            
+            for col_num, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col_num, value=value)
+                if row_fill:
+                    cell.fill = row_fill
+                # Format numeric columns
+                if col_num in [6, 7, 12]:  # Amount columns
+                    if isinstance(value, (int, float)):
+                        cell.number_format = '#,##0.00'
+        
+        # Auto-adjust column widths
+        for col_num, header in enumerate(headers, 1):
+            column_letter = get_column_letter(col_num)
+            max_length = len(str(header))
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=col_num, max_col=col_num):
+                for cell in row:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[column_letter].width = min(max_length + 2, 50)
+        
+        # Add summary row
+        summary_row = ws.max_row + 2
+        ws.cell(row=summary_row, column=1, value="TOTAL").font = Font(bold=True)
+        ws.cell(row=summary_row, column=6, value=sum(p.get('total_charge_amount', 0) for p in payouts)).font = Font(bold=True)
+        ws.cell(row=summary_row, column=6).number_format = '#,##0.00'
+        ws.cell(row=summary_row, column=7, value=sum(p.get('doctor_charge_amount', 0) for p in payouts)).font = Font(bold=True)
+        ws.cell(row=summary_row, column=7).number_format = '#,##0.00'
+        
+        # Save to BytesIO
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Generate filename
+        filename = f"payouts_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        logging.error(f"Error exporting payouts to Excel: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BILLING API ====================
+
+@app.route('/api/billing/case/<case_id>', methods=['GET'])
+def get_case_billing_details(case_id):
+    """Get case details with charges for billing"""
+    try:
+        case = db.cases.find_one({'_id': parse_object_id(case_id)})
+        if not case:
+            return jsonify({'error': 'Case not found'}), 404
+        
+        # Populate patient
+        if 'patient_id' in case:
+            patient_id_obj = case['patient_id']
+            if isinstance(patient_id_obj, str):
+                patient_id_obj = parse_object_id(patient_id_obj)
+            if patient_id_obj:
+                patient = db.patients.find_one({'_id': patient_id_obj})
+                if patient:
+                    case['patient'] = serialize_doc(patient)
+        
+        # Get case charges (patient charges)
+        case_charges = list(db.case_charges.find({'case_id': parse_object_id(case_id)}))
+        for charge in case_charges:
+            if 'charge_master_id' in charge:
+                charge_master = db.charge_master.find_one({'_id': charge['charge_master_id']})
+                if charge_master:
+                    charge['charge_name'] = charge_master.get('name', '')
+            if 'doctor_id' in charge:
+                doctor = db.doctors.find_one({'_id': charge['doctor_id']})
+                if doctor:
+                    charge['doctor_name'] = doctor.get('name', '')
+        
+        # Get payments
+        payments = list(db.payments.find({'case_id': parse_object_id(case_id)}).sort('payment_date', -1))
+        
+        # Calculate totals
+        total_charges = sum(c.get('total_amount', 0) for c in case_charges)
+        discount = case.get('discount', 0) or 0
+        total_after_discount = max(0, total_charges - discount)  # Ensure non-negative
+        total_paid = sum(p.get('amount', 0) for p in payments)
+        balance = total_after_discount - total_paid
+        
+        return jsonify({
+            'case': serialize_doc(case),
+            'charges': serialize_doc(case_charges),
+            'payments': serialize_doc(payments),
+            'total_charges': total_charges,
+            'discount': discount,
+            'total_after_discount': total_after_discount,
+            'total_paid': total_paid,
+            'balance': balance
+        })
+    except Exception as e:
+        logging.error(f"Error getting case billing details: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/billing/case-charge/<charge_id>', methods=['PUT'])
+def update_case_charge_for_billing(charge_id):
+    """Update case charge amount for billing corrections"""
+    try:
+        data = request.get_json()
+        
+        # Get the existing charge to find case_id
+        existing_charge = db.case_charges.find_one({'_id': parse_object_id(charge_id)})
+        if not existing_charge:
+            return jsonify({'error': 'Charge not found'}), 404
+        
+        case_id_obj = existing_charge.get('case_id')
+        if case_id_obj:
+            # Check if case is closed
+            case = db.cases.find_one({'_id': case_id_obj})
+            if case and case.get('status') == 'closed':
+                return jsonify({'error': 'Cannot modify charges for a closed case'}), 400
+        
+        # Convert amounts to proper types
+        if 'unit_amount' in data:
+            data['unit_amount'] = float(data['unit_amount']) if data['unit_amount'] else 0.0
+        if 'quantity' in data:
+            data['quantity'] = int(data['quantity']) if data['quantity'] else 1
+        if 'total_amount' in data:
+            data['total_amount'] = float(data['total_amount']) if data['total_amount'] else 0.0
+        elif 'unit_amount' in data and 'quantity' in data:
+            # Calculate total_amount if not provided
+            data['total_amount'] = float(data['unit_amount']) * int(data['quantity'])
+        
+        data['updated_at'] = datetime.now()
+        result = db.case_charges.update_one({'_id': parse_object_id(charge_id)}, {'$set': data})
+        if result.modified_count:
+            return jsonify({'message': 'Charge updated successfully'})
+        return jsonify({'error': 'Charge not found'}), 404
+    except Exception as e:
+        logging.error(f"Error updating case charge: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/billing/generate-pdf/<case_id>', methods=['GET'])
+def generate_bill_pdf(case_id):
+    """Generate PDF invoice for a case"""
+    try:
+        case = db.cases.find_one({'_id': parse_object_id(case_id)})
+        if not case:
+            return jsonify({'error': 'Case not found'}), 404
+        
+        # Get patient
+        patient = None
+        if 'patient_id' in case:
+            patient_id_obj = case['patient_id']
+            if isinstance(patient_id_obj, str):
+                patient_id_obj = parse_object_id(patient_id_obj)
+            if patient_id_obj:
+                patient = db.patients.find_one({'_id': patient_id_obj})
+        
+        # Get charges
+        case_charges = list(db.case_charges.find({'case_id': parse_object_id(case_id)}))
+        for charge in case_charges:
+            if 'charge_master_id' in charge:
+                charge_master = db.charge_master.find_one({'_id': charge['charge_master_id']})
+                if charge_master:
+                    charge['charge_name'] = charge_master.get('name', '')
+            if 'doctor_id' in charge:
+                doctor = db.doctors.find_one({'_id': charge['doctor_id']})
+                if doctor:
+                    charge['doctor_name'] = doctor.get('name', '')
+        
+        # Get payments
+        payments = list(db.payments.find({'case_id': parse_object_id(case_id)}).sort('payment_date', -1))
+        
+        # Calculate totals
+        total_charges = sum(c.get('total_amount', 0) for c in case_charges)
+        discount = case.get('discount', 0) or 0
+        total_after_discount = max(0, total_charges - discount)  # Ensure non-negative
+        total_paid = sum(p.get('amount', 0) for p in payments)
+        balance = total_after_discount - total_paid
+        
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        story = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#2563eb'),
+            spaceAfter=30,
+            alignment=1  # Center
+        )
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#1f2937'),
+            spaceAfter=12
+        )
+        
+        # Title
+        story.append(Paragraph("INVOICE / BILL", title_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Hospital Info (you can customize this)
+        hospital_info = [
+            ["Life Plus Hospital"],
+            ["Hospital Management System"],
+            [f"Bill Date: {datetime.now().strftime('%d-%m-%Y %H:%M')}"]
+        ]
+        hospital_table = Table(hospital_info, colWidths=[4*inch])
+        hospital_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (0, 0), 16),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(hospital_table)
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Patient and Case Info
+        patient_info = []
+        if patient:
+            patient_info.append(["Patient Name:", patient.get('name', '')])
+            patient_info.append(["Phone:", patient.get('phone', '')])
+            patient_info.append(["Email:", patient.get('email', '')])
+            if 'address' in patient:
+                patient_info.append(["Address:", patient.get('address', '')])
+        patient_info.append(["Case Number:", case.get('case_number', '')])
+        patient_info.append(["Case Type:", case.get('case_type', '')])
+        if case.get('admission_date'):
+            patient_info.append(["Admission Date:", case.get('admission_date').strftime('%d-%m-%Y') if isinstance(case.get('admission_date'), datetime) else str(case.get('admission_date'))])
+        
+        patient_table = Table(patient_info, colWidths=[2*inch, 4*inch])
+        patient_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#374151')),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+        ]))
+        story.append(patient_table)
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Charges Table
+        story.append(Paragraph("Charges Details", heading_style))
+        charge_data = [["Date", "Charge Name", "Doctor", "Qty", "Unit Amount", "Total Amount"]]
+        for charge in case_charges:
+            charge_date = ''
+            if charge.get('created_at'):
+                charge_date = charge['created_at'].strftime('%d-%m-%Y') if isinstance(charge['created_at'], datetime) else str(charge['created_at'])[:10]
+            charge_data.append([
+                charge_date,
+                charge.get('charge_name', ''),
+                charge.get('doctor_name', ''),
+                str(charge.get('quantity', 1)),
+                f"{charge.get('unit_amount', 0):.2f}",
+                f"{charge.get('total_amount', 0):.2f}"
+            ])
+        
+        charge_table = Table(charge_data, colWidths=[1*inch, 2*inch, 1.5*inch, 0.5*inch, 1*inch, 1*inch])
+        charge_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (3, 0), (5, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+        ]))
+        story.append(charge_table)
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Payments Table
+        if payments:
+            story.append(Paragraph("Payment History", heading_style))
+            payment_data = [["Date", "Amount", "Mode", "Reference", "Notes"]]
+            for payment in payments:
+                payment_date = ''
+                if payment.get('payment_date'):
+                    payment_date = payment['payment_date'].strftime('%d-%m-%Y') if isinstance(payment['payment_date'], datetime) else str(payment['payment_date'])[:10]
+                payment_data.append([
+                    payment_date,
+                    f"{payment.get('amount', 0):.2f}",
+                    payment.get('payment_mode', ''),
+                    payment.get('payment_reference_number', ''),
+                    payment.get('notes', '')
+                ])
+            
+            payment_table = Table(payment_data, colWidths=[1.2*inch, 1*inch, 1*inch, 1.2*inch, 2.6*inch])
+            payment_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#10b981')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0fdf4')]),
+            ]))
+            story.append(payment_table)
+            story.append(Spacer(1, 0.2*inch))
+        
+        # Summary
+        story.append(Paragraph("Bill Summary", heading_style))
+        summary_data = [
+            ["Total Charges:", f"₹ {total_charges:.2f}"]
+        ]
+        if discount > 0:
+            summary_data.append(["Discount:", f"-₹ {discount:.2f}"])
+            summary_data.append(["Total After Discount:", f"₹ {total_after_discount:.2f}"])
+        summary_data.extend([
+            ["Total Paid:", f"₹ {total_paid:.2f}"],
+            ["Balance Amount:", f"₹ {balance:.2f}"]
+        ])
+        summary_table = Table(summary_data, colWidths=[3*inch, 3*inch])
+        # Calculate balance row index (last row)
+        balance_row_idx = len(summary_data) - 1
+        table_style = [
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#374151')),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+            ('BACKGROUND', (0, balance_row_idx), (1, balance_row_idx), colors.HexColor('#fef3c7')),
+        ]
+        # Add discount row styling if discount exists
+        if discount > 0:
+            discount_row_idx = 1  # Discount is second row
+            table_style.append(('TEXTCOLOR', (0, discount_row_idx), (1, discount_row_idx), colors.HexColor('#f59e0b')))
+        summary_table.setStyle(TableStyle(table_style))
+        story.append(summary_table)
+        
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        filename = f"Bill_{case.get('case_number', case_id)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        logging.error(f"Error generating bill PDF: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/billing/discount/<case_id>', methods=['PUT'])
+def update_case_discount(case_id):
+    """Update discount for a case"""
+    try:
+        data = request.get_json()
+        discount = float(data.get('discount', 0)) if data.get('discount') else 0.0
+        
+        # Ensure discount is non-negative
+        if discount < 0:
+            return jsonify({'error': 'Discount cannot be negative'}), 400
+        
+        # Check if case is closed
+        case = db.cases.find_one({'_id': parse_object_id(case_id)})
+        if not case:
+            return jsonify({'error': 'Case not found'}), 404
+        
+        if case.get('status') == 'closed':
+            return jsonify({'error': 'Cannot modify discount for a closed case'}), 400
+        
+        result = db.cases.update_one(
+            {'_id': parse_object_id(case_id)},
+            {'$set': {'discount': discount, 'updated_at': datetime.now()}}
+        )
+        if result.modified_count or result.matched_count:
+            return jsonify({'message': 'Discount updated successfully', 'discount': discount})
+        return jsonify({'error': 'Case not found'}), 404
+    except Exception as e:
+        logging.error(f"Error updating discount: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/billing/close-case/<case_id>', methods=['PUT'])
+def close_case(case_id):
+    """Close a case and mark it as billed - only if fully paid"""
+    try:
+        case = db.cases.find_one({'_id': parse_object_id(case_id)})
+        if not case:
+            return jsonify({'error': 'Case not found'}), 404
+        
+        # Check if case is already closed
+        if case.get('status') == 'closed':
+            return jsonify({'error': 'Case is already closed'}), 400
+        
+        # Calculate balance to ensure case is fully paid
+        case_charges = list(db.case_charges.find({'case_id': parse_object_id(case_id)}))
+        payments = list(db.payments.find({'case_id': parse_object_id(case_id)}))
+        
+        total_charges = sum(c.get('total_amount', 0) for c in case_charges)
+        discount = case.get('discount', 0) or 0
+        total_after_discount = max(0, total_charges - discount)
+        total_paid = sum(p.get('amount', 0) for p in payments)
+        balance = total_after_discount - total_paid
+        
+        # Only allow closing if balance is zero (fully paid)
+        if abs(balance) > 0.01:  # Allow small floating point differences
+            return jsonify({
+                'error': f'Cannot close case. Outstanding balance: ₹ {balance:.2f}. Please ensure all payments are completed before closing the case.'
+            }), 400
+        
+        result = db.cases.update_one(
+            {'_id': parse_object_id(case_id)},
+            {'$set': {'status': 'closed', 'closed_at': datetime.now(), 'updated_at': datetime.now()}}
+        )
+        if result.modified_count:
+            return jsonify({'message': 'Case closed successfully'})
+        return jsonify({'error': 'Case not found'}), 404
+    except Exception as e:
+        logging.error(f"Error closing case: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

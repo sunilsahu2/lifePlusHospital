@@ -49,7 +49,7 @@ function afterContentLoad() {
 }
 
 // Module loading function - ensure it's globally accessible
-window.loadModule = function(moduleName, event) {
+function loadModule(moduleName, event) {
     // Update active menu item
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     if (event && event.target) {
@@ -57,6 +57,10 @@ window.loadModule = function(moduleName, event) {
     }
     
     const contentArea = document.getElementById('content-area');
+    if (!contentArea) {
+        console.error('Content area not found');
+        return;
+    }
     
     switch(moduleName) {
         case 'doctors':
@@ -74,9 +78,6 @@ window.loadModule = function(moduleName, event) {
         case 'appointments':
             loadAppointments();
             break;
-        case 'prescriptions':
-            loadPrescriptions();
-            break;
         case 'billing-payments':
             loadBillingPayments();
             break;
@@ -92,7 +93,10 @@ window.loadModule = function(moduleName, event) {
         default:
             contentArea.innerHTML = '<div class="welcome-message"><h1>Module not found</h1></div>';
     }
-};
+}
+
+// Make loadModule globally accessible
+window.loadModule = loadModule;
 
 // ==================== DOCTORS MODULE ====================
 
@@ -701,6 +705,7 @@ function loadCases(page = 1) {
                                     <th>Case Number</th>
                                     <th>Patient</th>
                                     <th>Case Type</th>
+                                    <th>Status</th>
                                     <th>Admission Date</th>
                                     <th>Appointments</th>
                                     <th>Charges Count</th>
@@ -715,6 +720,12 @@ function loadCases(page = 1) {
                                     const nextAptDate = c.next_appointment_date;
                                     const nextAptTime = c.next_appointment_time;
                                     const nextAptDoctor = c.next_appointment_doctor || '';
+                                    
+                                    // Get case status
+                                    const status = c.status || 'open';
+                                    const statusDisplay = status === 'closed' ? 'Closed' : 'Open';
+                                    const statusColor = status === 'closed' ? '#10b981' : '#3b82f6';
+                                    const statusBg = status === 'closed' ? '#d1fae5' : '#dbeafe';
                                     
                                     let appointmentsDisplay = '';
                                     if (appointmentsCount > 0) {
@@ -739,17 +750,22 @@ function loadCases(page = 1) {
                                         <td>${c.case_number || ''}</td>
                                         <td>${c.patient_name || ''}</td>
                                         <td>${c.case_type || ''}</td>
+                                        <td>
+                                            <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background-color: ${statusBg}; color: ${statusColor};">
+                                                ${statusDisplay}
+                                            </span>
+                                        </td>
                                         <td>${c.admission_date ? new Date(c.admission_date).toLocaleDateString() : ''}</td>
                                         <td>${appointmentsDisplay}</td>
                                         <td>${c.charges_count || 0}</td>
                                         <td>${(c.charges_total || 0).toFixed(2)}</td>
                                         <td>
                                             <button class="btn btn-success" onclick="viewCaseDetails('${c.id}')">View</button>
-                                            <button class="btn btn-primary" onclick="editCase('${c.id}')">Edit</button>
+                                            <button class="btn btn-primary" onclick="editCase('${c.id}')" ${status === 'closed' ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>Edit</button>
                                         </td>
                                     </tr>
                                 `;
-                                }).join('') : '<tr><td colspan="8" style="text-align: center;">No cases found</td></tr>'}
+                                }).join('') : '<tr><td colspan="9" style="text-align: center;">No cases found</td></tr>'}
                             </tbody>
                         </table>
                     </div>
@@ -793,6 +809,8 @@ function clearCaseSearch() {
 
 let patientSearchTimeoutCase = null;
 let selectedPatientNameCase = '';
+let referredBySearchTimeout = null;
+let selectedReferredByName = '';
 
 function showCaseForm(caseId = null) {
     const title = caseId ? 'Edit Case' : 'Add Case';
@@ -820,12 +838,28 @@ function showCaseForm(caseId = null) {
                             <input type="date" name="admission_date">
                         </div>
                         <div class="form-group">
+                            <label>Time of Admission</label>
+                            <input type="time" name="admission_time" step="1">
+                        </div>
+                        <div class="form-group">
                             <label>Discharge Date</label>
                             <input type="date" name="discharge_date">
                         </div>
                         <div class="form-group">
+                            <label>Time of Discharge</label>
+                            <input type="time" name="discharge_time" step="1">
+                        </div>
+                        <div class="form-group">
                             <label>Diagnosis</label>
                             <textarea name="diagnosis"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Referred By</label>
+                            <input type="hidden" name="referred_by_type" id="caseReferredByTypeInput">
+                            <input type="hidden" name="referred_by_id" id="caseReferredByIdInput">
+                            <input type="text" id="caseReferredBySearchInput" placeholder="Search patient or doctor by name..." 
+                                   autocomplete="off" oninput="searchReferredBy(event)">
+                            <div id="caseReferredBySearchResults" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; width: 100%; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">Save</button>
@@ -842,10 +876,18 @@ function showCaseForm(caseId = null) {
                 .then(res => res.json())
                 .then(c => {
                     Object.keys(c).forEach(key => {
+                        // Skip referred_by fields - they are handled separately
+                        if (key === 'referred_by_id' || key === 'referred_by_type' || key === 'referred_by_name' || key === 'referred_by') {
+                            return;
+                        }
                         const input = document.querySelector(`[name="${key}"]`);
                         if (input) {
                             if (key.includes('date') && c[key]) {
                                 input.value = c[key].split('T')[0];
+                            } else if ((key === 'admission_time' || key === 'discharge_time') && c[key]) {
+                                // Handle time field - could be in format "HH:MM:SS" or "HH:MM"
+                                const timeValue = typeof c[key] === 'string' ? c[key].substring(0, 5) : c[key];
+                                input.value = timeValue || '';
                             } else {
                                 input.value = c[key] || '';
                             }
@@ -870,6 +912,58 @@ function showCaseForm(caseId = null) {
                                         selectedPatientNameCase = patient.name || '';
                                     }
                                 });
+                        }
+                    }
+                    
+                    // Populate referred by search field
+                    const referredByTypeInput = document.getElementById('caseReferredByTypeInput');
+                    const referredByIdInput = document.getElementById('caseReferredByIdInput');
+                    const referredBySearchInput = document.getElementById('caseReferredBySearchInput');
+                    
+                    if (c.referred_by_id && c.referred_by_type) {
+                        // New format: has type and ID
+                        if (referredByTypeInput) referredByTypeInput.value = c.referred_by_type;
+                        if (referredByIdInput) referredByIdInput.value = c.referred_by_id;
+                        
+                        if (referredBySearchInput) {
+                            // Use stored name if available, otherwise fetch
+                            if (c.referred_by_name) {
+                                referredBySearchInput.value = c.referred_by_name;
+                                selectedReferredByName = c.referred_by_name;
+                            } else {
+                                // Fetch the name based on type
+                                const apiUrl = c.referred_by_type === 'patient' 
+                                    ? `${API_BASE}/patients/${c.referred_by_id}`
+                                    : `${API_BASE}/doctors/${c.referred_by_id}`;
+                                
+                                fetch(apiUrl)
+                                    .then(r => r.json())
+                                    .then(item => {
+                                        if (referredBySearchInput && item.name) {
+                                            referredBySearchInput.value = item.name;
+                                            selectedReferredByName = item.name;
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error('Error fetching referred by:', err);
+                                    });
+                            }
+                        }
+                    } else if (c.referred_by && !c.referred_by_id) {
+                        // Legacy support: if referred_by is a string, populate it but clear type/ID
+                        if (referredByTypeInput) referredByTypeInput.value = '';
+                        if (referredByIdInput) referredByIdInput.value = '';
+                        if (referredBySearchInput) {
+                            referredBySearchInput.value = c.referred_by;
+                            selectedReferredByName = c.referred_by;
+                        }
+                    } else {
+                        // Clear referred by fields if not present
+                        if (referredByTypeInput) referredByTypeInput.value = '';
+                        if (referredByIdInput) referredByIdInput.value = '';
+                        if (referredBySearchInput) {
+                            referredBySearchInput.value = '';
+                            selectedReferredByName = '';
                         }
                     }
                 });
@@ -960,6 +1054,132 @@ function selectPatientForCase(patientId, patientName) {
     }
 }
 
+function searchReferredBy(event) {
+    const searchInput = document.getElementById('caseReferredBySearchInput');
+    const resultsDiv = document.getElementById('caseReferredBySearchResults');
+    const referredByTypeInput = document.getElementById('caseReferredByTypeInput');
+    const referredByIdInput = document.getElementById('caseReferredByIdInput');
+    
+    if (!searchInput || !resultsDiv) return;
+    
+    const query = searchInput.value.trim();
+    
+    // Clear previous timeout
+    if (referredBySearchTimeout) {
+        clearTimeout(referredBySearchTimeout);
+    }
+    
+    // If query is empty, hide results and clear selection
+    if (!query) {
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+        if (referredByTypeInput) referredByTypeInput.value = '';
+        if (referredByIdInput) referredByIdInput.value = '';
+        selectedReferredByName = '';
+        return;
+    }
+    
+    // If query matches selected referrer, don't search
+    if (query === selectedReferredByName) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+    
+    // Debounce search
+    referredBySearchTimeout = setTimeout(() => {
+        // Search both patients and doctors in parallel
+        Promise.all([
+            fetch(`${API_BASE}/patients?search=${encodeURIComponent(query)}&limit=20`).then(r => r.json()),
+            fetch(`${API_BASE}/doctors?search=${encodeURIComponent(query)}&limit=20`).then(r => r.json())
+        ])
+            .then(([patientsResponse, doctorsResponse]) => {
+                const patients = Array.isArray(patientsResponse) ? patientsResponse : (patientsResponse.patients || []);
+                const doctors = Array.isArray(doctorsResponse) ? doctorsResponse : (doctorsResponse.doctors || []);
+                
+                const allResults = [];
+                
+                // Add patients with type indicator
+                patients.forEach(patient => {
+                    allResults.push({
+                        id: patient.id,
+                        name: patient.name || '',
+                        type: 'patient',
+                        phone: patient.phone || '',
+                        email: patient.email || ''
+                    });
+                });
+                
+                // Add doctors with type indicator
+                doctors.forEach(doctor => {
+                    allResults.push({
+                        id: doctor.id,
+                        name: doctor.name || '',
+                        type: 'doctor',
+                        specialization: doctor.specialization || '',
+                        phone: doctor.phone || ''
+                    });
+                });
+                
+                if (allResults.length === 0) {
+                    resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No patients or doctors found</div>';
+                    resultsDiv.style.display = 'block';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = allResults.map(item => {
+                    const typeBadge = item.type === 'patient' 
+                        ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px;">PATIENT</span>'
+                        : '<span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px;">DOCTOR</span>';
+                    
+                    const details = item.type === 'patient'
+                        ? `${item.phone ? `<br/><small style="color: #666;">${item.phone}</small>` : ''}${item.email ? `<br/><small style="color: #666;">${item.email}</small>` : ''}`
+                        : `${item.specialization ? `<br/><small style="color: #666;">${item.specialization}</small>` : ''}${item.phone ? `<br/><small style="color: #666;">${item.phone}</small>` : ''}`;
+                    
+                    return `
+                        <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                             onmouseover="this.style.backgroundColor='#f0f0f0'" 
+                             onmouseout="this.style.backgroundColor='white'"
+                             onclick="selectReferredBy('${item.id}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.type}')">
+                            ${typeBadge}
+                            <strong>${item.name || ''}</strong>
+                            ${details}
+                        </div>
+                    `;
+                }).join('');
+                resultsDiv.style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Error searching referred by:', err);
+                resultsDiv.innerHTML = '<div style="padding: 10px; color: #d32f2f;">Error searching</div>';
+                resultsDiv.style.display = 'block';
+            });
+    }, 300);
+}
+
+function selectReferredBy(id, name, type) {
+    const referredByTypeInput = document.getElementById('caseReferredByTypeInput');
+    const referredByIdInput = document.getElementById('caseReferredByIdInput');
+    const referredBySearchInput = document.getElementById('caseReferredBySearchInput');
+    const resultsDiv = document.getElementById('caseReferredBySearchResults');
+    
+    if (referredByTypeInput) referredByTypeInput.value = type;
+    if (referredByIdInput) referredByIdInput.value = id;
+    if (referredBySearchInput) {
+        referredBySearchInput.value = name;
+        selectedReferredByName = name;
+    }
+    if (resultsDiv) {
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+    }
+    
+    // Clear search timeout
+    if (referredBySearchTimeout) {
+        clearTimeout(referredBySearchTimeout);
+        referredBySearchTimeout = null;
+    }
+}
+
 function saveCase(event, caseId) {
     event.preventDefault();
     const formData = new FormData(event.target);
@@ -983,6 +1203,7 @@ function viewCaseDetails(caseId) {
         .then(caseData => {
             const patientCharges = caseData.charges || [];
             const appointments = caseData.appointments || [];
+            const isClosed = caseData.status === 'closed';
             
             const patientChargesTotal = patientCharges.reduce((sum, c) => sum + (c.total_amount || 0), 0);
             
@@ -990,6 +1211,7 @@ function viewCaseDetails(caseId) {
                 <div class="module-content">
                     <div class="module-header">
                         <h1>Case Details: ${caseData.case_number || ''}</h1>
+                        ${isClosed ? '<span style="display: inline-block; padding: 6px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; background-color: #d1fae5; color: #10b981; margin-right: 12px;">Case Closed</span>' : ''}
                         <button class="btn btn-secondary" onclick="loadCases(currentCasesPage)">Back</button>
                     </div>
                     <div class="case-details-container">
@@ -997,13 +1219,19 @@ function viewCaseDetails(caseId) {
                             <h3>Case Information</h3>
                             <p><strong>Patient:</strong> ${caseData.patient?.name || ''}</p>
                             <p><strong>Case Type:</strong> ${caseData.case_type || ''}</p>
-                            <p><strong>Admission Date:</strong> ${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString() : ''}</p>
-                            ${caseData.discharge_date ? `<p><strong>Discharge Date:</strong> ${new Date(caseData.discharge_date).toLocaleDateString()}</p>` : ''}
+                            <p><strong>Status:</strong> <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background-color: ${isClosed ? '#d1fae5' : '#dbeafe'}; color: ${isClosed ? '#10b981' : '#3b82f6'};">
+                                ${isClosed ? 'Closed' : 'Open'}
+                            </span></p>
+                            <p><strong>Admission Date:</strong> ${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString() : ''}${caseData.admission_time ? ' ' + caseData.admission_time : ''}</p>
+                            ${caseData.discharge_date ? `<p><strong>Discharge Date:</strong> ${new Date(caseData.discharge_date).toLocaleDateString()}${caseData.discharge_time ? ' ' + caseData.discharge_time : ''}</p>` : ''}
+                            ${caseData.closed_at ? `<p><strong>Closed Date:</strong> ${new Date(caseData.closed_at).toLocaleDateString()}</p>` : ''}
                             ${caseData.diagnosis ? `<p><strong>Diagnosis:</strong> ${caseData.diagnosis}</p>` : ''}
+                            ${caseData.referred_by_name ? `<p><strong>Referred By:</strong> ${caseData.referred_by_name} <span style="color: #666; font-size: 12px;">(${caseData.referred_by_type === 'patient' ? 'Patient' : 'Doctor'})</span></p>` : caseData.referred_by ? `<p><strong>Referred By:</strong> ${caseData.referred_by}</p>` : ''}
                         </div>
                         ${appointments.length > 0 ? `
                         <div class="case-appointments-section" style="margin-bottom: 24px;">
                             <h3>Appointments</h3>
+                            ${isClosed ? '<p style="color: #666; font-size: 14px; margin-bottom: 12px;"><em>Case is closed. No new appointments can be added.</em></p>' : ''}
                             <div class="table-scroll-container" style="margin-top: 16px;">
                                 <table class="data-table">
                                     <thead>
@@ -1030,7 +1258,8 @@ function viewCaseDetails(caseId) {
                         ` : ''}
                         <div class="case-charges-section">
                             <h3>Patient Charges</h3>
-                            <button class="btn btn-primary" onclick="showCaseChargeForm('${caseId}')">Add Patient Charge</button>
+                            ${isClosed ? '<p style="color: #666; font-size: 14px; margin-bottom: 12px;"><em>Case is closed. No new charges can be added.</em></p>' : ''}
+                            <button class="btn btn-primary" onclick="showCaseChargeForm('${caseId}')" ${isClosed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>Add Patient Charge</button>
                             <div class="table-scroll-container" style="margin-top: 16px;">
                                 <table class="data-table">
                                     <thead>
@@ -1062,8 +1291,7 @@ function viewCaseDetails(caseId) {
                                                 <td>${c.unit_amount || ''}</td>
                                                 <td>${c.total_amount || ''}</td>
                                                 <td>
-                                                    <button class="btn btn-success" onclick="editCaseCharge('${c.id}', '${caseId}')">Edit</button>
-                                                    <button class="btn btn-danger" onclick="deleteCaseCharge('${c.id}', '${caseId}')">Delete</button>
+                                                    <button class="btn btn-success" onclick="editCaseCharge('${c.id}', '${caseId}')" ${isClosed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>Edit</button>
                                                 </td>
                                             </tr>
                                         `;
@@ -1073,16 +1301,17 @@ function viewCaseDetails(caseId) {
                             </div>
                             <p style="margin-top: 16px;"><strong>Total Patient Charges: ${patientChargesTotal}</strong></p>
                         </div>
-                        <div class="case-prescriptions-section" style="margin-top: 24px;">
+                        <div class="case-prescriptions-section">
                             <h3>Prescriptions</h3>
-                            <button class="btn btn-primary" onclick="showPrescriptionUploadForm('${caseId}')">Upload Prescription</button>
+                            ${isClosed ? '<p style="color: #666; font-size: 14px; margin-bottom: 12px;"><em>Case is closed. No new prescriptions can be uploaded.</em></p>' : ''}
+                            <button class="btn btn-primary" onclick="showPrescriptionUploadForm('${caseId}')" ${isClosed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>Upload Prescription</button>
                             <div class="table-scroll-container" style="margin-top: 16px;">
                                 <table class="data-table">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
                                             <th>File Name</th>
-                                            <th>Doctor</th>
+                                            <th>Doctor Name</th>
                                             <th>Notes</th>
                                             <th>Actions</th>
                                         </tr>
@@ -1097,8 +1326,7 @@ function viewCaseDetails(caseId) {
                                                 <td>${pres.doctor_name || ''}</td>
                                                 <td>${pres.notes || ''}</td>
                                                 <td>
-                                                    ${pres.file_path ? `<a href="${pres.file_path}" target="_blank" class="btn btn-success" style="text-decoration: none; display: inline-block; padding: 4px 12px;">View</a>` : ''}
-                                                    <button class="btn btn-danger" onclick="deleteCasePrescription('${pres.id}', '${caseId}')">Delete</button>
+                                                    ${pres.file_path ? `<button class="btn btn-success" onclick="viewPrescriptionInLightbox('${pres.file_path}', '${(pres.file_name || '').replace(/'/g, "\\'")}')">View</button>` : ''}
                                                 </td>
                                             </tr>
                                         `;
@@ -1121,93 +1349,110 @@ function viewCaseDetails(caseId) {
 }
 
 function showCaseChargeForm(caseId, chargeId = null) {
-    Promise.all([
-        fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
-    ]).then(([chargeMasterResponse]) => {
-        // Handle response format - API returns {charges: [...], total: ...} or array
-        const chargeMaster = Array.isArray(chargeMasterResponse) 
-            ? chargeMasterResponse 
-            : (chargeMasterResponse.charges || []);
-        
-        const title = chargeId ? 'Edit Patient Charge' : 'Add Patient Charge';
-        const html = `
-            <div class="modal">
-                <div class="modal-content">
-                    <h2>${title}</h2>
-                    <form id="caseChargeForm" onsubmit="saveCaseCharge(event, '${caseId}', '${chargeId || ''}')">
-                        <input type="hidden" name="case_id" value="${caseId}">
-                        <div class="form-group">
-                            <label>Charge Master</label>
-                            <select name="charge_master_id" id="chargeMasterSelect" onchange="updateChargeAmount()" required>
-                                <option value="">Select Charge</option>
-                                ${Array.isArray(chargeMaster) && chargeMaster.length > 0 ? chargeMaster.map(c => `<option value="${c.id}" data-amount="${c.amount || 0}">${c.name}</option>`).join('') : ''}
-                            </select>
-                        </div>
-                        <div class="form-group" id="doctorSelectGroup" style="display: none;">
-                            <label>Doctor <span style="color: #666; font-size: 12px;">(Required for OPD/IPD/Surgery charges)</span></label>
-                            <select name="doctor_id" id="doctorSelect">
-                                <option value="">Select Doctor</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Quantity</label>
-                            <input type="number" name="quantity" id="quantityInput" value="1" min="1" onchange="calculateTotal()" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Unit Amount</label>
-                            <input type="number" name="unit_amount" id="unitAmountInput" step="0.01" readonly required>
-                        </div>
-                        <div class="form-group">
-                            <label>Total Amount</label>
-                            <input type="number" name="total_amount" id="totalAmountInput" step="0.01" readonly>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Save</button>
-                            <button type="button" class="btn btn-secondary" onclick="viewCaseDetails('${caseId}')">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        document.getElementById('content-area').innerHTML = html;
-        
-        if (chargeId) {
-            Promise.all([
-                fetch(`${API_BASE}/case-charges/${chargeId}`).then(r => r.json()),
+    // Check if case is closed
+    fetch(`${API_BASE}/cases/${caseId}`)
+        .then(res => res.json())
+        .then(caseData => {
+            if (caseData.status === 'closed') {
+                alert('This case is closed. No charges can be added or modified.');
+                return Promise.reject(new Error('Case is closed'));
+            }
+            
+            return Promise.all([
                 fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
-            ]).then(([charge, chargeMasterResponse]) => {
-                // Populate form fields
-                Object.keys(charge).forEach(key => {
-                    const input = document.querySelector(`[name="${key}"]`);
-                    if (input) {
-                        if (key === 'doctor_id' && charge.doctor_id) {
-                            // Doctor will be populated after charge master is selected
-                            input.value = charge[key] || '';
-                        } else {
-                            input.value = charge[key] || '';
+            ]);
+        })
+        .then(([chargeMasterResponse]) => {
+            // Handle response format - API returns {charges: [...], total: ...} or array
+            const chargeMaster = Array.isArray(chargeMasterResponse) 
+                ? chargeMasterResponse 
+                : (chargeMasterResponse.charges || []);
+            
+            const title = chargeId ? 'Edit Patient Charge' : 'Add Patient Charge';
+            const html = `
+                <div class="modal">
+                    <div class="modal-content">
+                        <h2>${title}</h2>
+                        <form id="caseChargeForm" onsubmit="saveCaseCharge(event, '${caseId}', '${chargeId || ''}')">
+                            <input type="hidden" name="case_id" value="${caseId}">
+                            <div class="form-group">
+                                <label>Charge Master</label>
+                                <select name="charge_master_id" id="chargeMasterSelect" onchange="updateChargeAmount()" required>
+                                    <option value="">Select Charge</option>
+                                    ${Array.isArray(chargeMaster) && chargeMaster.length > 0 ? chargeMaster.map(c => `<option value="${c.id}" data-amount="${c.amount || 0}">${c.name}</option>`).join('') : ''}
+                                </select>
+                            </div>
+                            <div class="form-group" id="doctorSelectGroup" style="display: none;">
+                                <label>Doctor <span style="color: #666; font-size: 12px;">(Required for OPD/IPD/Surgery charges)</span></label>
+                                <select name="doctor_id" id="doctorSelect">
+                                    <option value="">Select Doctor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantity</label>
+                                <input type="number" name="quantity" id="quantityInput" value="1" min="1" onchange="calculateTotal()" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Unit Amount</label>
+                                <input type="number" name="unit_amount" id="unitAmountInput" step="0.01" readonly required>
+                            </div>
+                            <div class="form-group">
+                                <label>Total Amount</label>
+                                <input type="number" name="total_amount" id="totalAmountInput" step="0.01" readonly>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary" onclick="viewCaseDetails('${caseId}')">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content-area').innerHTML = html;
+            
+            if (chargeId) {
+                Promise.all([
+                    fetch(`${API_BASE}/case-charges/${chargeId}`).then(r => r.json()),
+                    fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
+                ]).then(([charge, chargeMasterResponse]) => {
+                    // Populate form fields
+                    Object.keys(charge).forEach(key => {
+                        const input = document.querySelector(`[name="${key}"]`);
+                        if (input) {
+                            if (key === 'doctor_id' && charge.doctor_id) {
+                                // Doctor will be populated after charge master is selected
+                                input.value = charge[key] || '';
+                            } else {
+                                input.value = charge[key] || '';
+                            }
                         }
+                    });
+                    
+                    // Set charge master and trigger update
+                    const chargeMasterSelect = document.getElementById('chargeMasterSelect');
+                    if (chargeMasterSelect && charge.charge_master_id) {
+                        chargeMasterSelect.value = charge.charge_master_id;
+                        updateChargeAmount();
+                        
+                        // After doctors are loaded, set the selected doctor
+                        setTimeout(() => {
+                            const doctorSelect = document.getElementById('doctorSelect');
+                            if (doctorSelect && charge.doctor_id) {
+                                doctorSelect.value = charge.doctor_id;
+                            }
+                        }, 500);
+                    } else {
+                        calculateTotal();
                     }
                 });
-                
-                // Set charge master and trigger update
-                const chargeMasterSelect = document.getElementById('chargeMasterSelect');
-                if (chargeMasterSelect && charge.charge_master_id) {
-                    chargeMasterSelect.value = charge.charge_master_id;
-                    updateChargeAmount();
-                    
-                    // After doctors are loaded, set the selected doctor
-                    setTimeout(() => {
-                        const doctorSelect = document.getElementById('doctorSelect');
-                        if (doctorSelect && charge.doctor_id) {
-                            doctorSelect.value = charge.doctor_id;
-                        }
-                    }, 500);
-                } else {
-                    calculateTotal();
-                }
-            });
-        }
-    });
+            }
+        })
+        .catch(err => {
+            if (err.message !== 'Case is closed') {
+                console.error('Error loading charge form:', err);
+                alert('Error loading charge form: ' + (err.message || err));
+            }
+        });
 }
 
 function updateChargeAmount() {
@@ -1741,6 +1986,32 @@ document.addEventListener('click', function(event) {
             }
         }, 200);
     }
+    
+    // Close referred by search results
+    const caseReferredBySearchInput = document.getElementById('caseReferredBySearchInput');
+    const caseReferredBySearchResults = document.getElementById('caseReferredBySearchResults');
+    if (caseReferredBySearchInput && caseReferredBySearchResults && 
+        !caseReferredBySearchInput.contains(event.target) && 
+        !caseReferredBySearchResults.contains(event.target)) {
+        setTimeout(() => {
+            if (caseReferredBySearchResults) {
+                caseReferredBySearchResults.style.display = 'none';
+            }
+        }, 200);
+    }
+    
+    // Close billing patient search results
+    const billingPatientSearchInput = document.getElementById('billingPatientSearchInput');
+    const billingPatientSearchResults = document.getElementById('billingPatientSearchResults');
+    if (billingPatientSearchInput && billingPatientSearchResults && 
+        !billingPatientSearchInput.contains(event.target) && 
+        !billingPatientSearchResults.contains(event.target)) {
+        setTimeout(() => {
+            if (billingPatientSearchResults) {
+                billingPatientSearchResults.style.display = 'none';
+            }
+        }, 200);
+    }
 });
 
 function loadCasesForPatient(selectedPatientId = null, selectedCaseId = null, allCases = null) {
@@ -2000,6 +2271,12 @@ function showPrescriptionUploadForm(caseId) {
     fetch(`${API_BASE}/cases/${caseId}`)
         .then(res => res.json())
         .then(caseData => {
+            // Check if case is closed
+            if (caseData.status === 'closed') {
+                alert('This case is closed. No prescriptions can be uploaded.');
+                return;
+            }
+            
             const patientId = caseData.patient_id || '';
             const patientName = caseData.patient?.name || '';
             
@@ -2112,228 +2389,1185 @@ function deleteCasePrescription(prescriptionId, caseId) {
     }
 }
 
+// Prescription Lightbox Functions
+let prescriptionZoomLevel = 1;
+let prescriptionLightboxImage = null;
+
+function viewPrescriptionInLightbox(filePath, fileName) {
+    prescriptionZoomLevel = 1;
+    const isPDF = filePath.toLowerCase().endsWith('.pdf');
+    const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filePath);
+    
+    const lightboxHTML = `
+        <div class="prescription-lightbox-overlay" id="prescriptionLightbox" onclick="closePrescriptionLightbox(event)">
+            <div class="prescription-lightbox-container" onclick="event.stopPropagation()">
+                <div class="prescription-lightbox-header">
+                    <h3>${fileName || 'Prescription'}</h3>
+                    <div class="prescription-lightbox-controls">
+                        ${isImage ? `
+                            <button class="btn btn-secondary" onclick="zoomPrescription('out')" title="Zoom Out">
+                                <span style="font-size: 18px;">−</span>
+                            </button>
+                            <span class="zoom-level" id="prescriptionZoomLevel">100%</span>
+                            <button class="btn btn-secondary" onclick="zoomPrescription('in')" title="Zoom In">
+                                <span style="font-size: 18px;">+</span>
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-primary" onclick="downloadPrescription('${filePath}', '${(fileName || 'prescription').replace(/'/g, "\\'")}')" title="Download">
+                            <span style="font-size: 16px;">⬇</span> Download
+                        </button>
+                        <button class="btn btn-danger" onclick="closePrescriptionLightbox()" title="Close">
+                            <span style="font-size: 18px;">×</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="prescription-lightbox-content">
+                    ${isPDF ? `
+                        <iframe src="${filePath}" class="prescription-pdf-viewer" frameborder="0"></iframe>
+                    ` : isImage ? `
+                        <img src="${filePath}" id="prescriptionLightboxImage" class="prescription-image-viewer" alt="${fileName || 'Prescription'}" style="transform: scale(${prescriptionZoomLevel}); transition: transform 0.3s ease;">
+                    ` : `
+                        <div style="padding: 20px; text-align: center;">
+                            <p>Preview not available for this file type.</p>
+                            <a href="${filePath}" download="${fileName || 'prescription'}" class="btn btn-primary">Download File</a>
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', lightboxHTML);
+    prescriptionLightboxImage = document.getElementById('prescriptionLightboxImage');
+    document.body.style.overflow = 'hidden';
+    
+    // Close on Escape key
+    document.addEventListener('keydown', handlePrescriptionLightboxKeydown);
+}
+
+function handlePrescriptionLightboxKeydown(event) {
+    if (event.key === 'Escape') {
+        closePrescriptionLightbox();
+    }
+}
+
+function closePrescriptionLightbox(event) {
+    if (event && event.target.id !== 'prescriptionLightbox' && !event.target.closest('.prescription-lightbox-container')) {
+        return;
+    }
+    const lightbox = document.getElementById('prescriptionLightbox');
+    if (lightbox) {
+        lightbox.remove();
+        document.body.style.overflow = '';
+        prescriptionZoomLevel = 1;
+        prescriptionLightboxImage = null;
+        document.removeEventListener('keydown', handlePrescriptionLightboxKeydown);
+    }
+}
+
+function zoomPrescription(direction) {
+    if (!prescriptionLightboxImage) return;
+    
+    if (direction === 'in') {
+        prescriptionZoomLevel = Math.min(prescriptionZoomLevel + 0.25, 3); // Max 300%
+    } else if (direction === 'out') {
+        prescriptionZoomLevel = Math.max(prescriptionZoomLevel - 0.25, 0.5); // Min 50%
+    }
+    
+    prescriptionLightboxImage.style.transform = `scale(${prescriptionZoomLevel})`;
+    const zoomLevelElement = document.getElementById('prescriptionZoomLevel');
+    if (zoomLevelElement) {
+        zoomLevelElement.textContent = Math.round(prescriptionZoomLevel * 100) + '%';
+    }
+}
+
+function downloadPrescription(filePath, fileName) {
+    const link = document.createElement('a');
+    link.href = filePath;
+    link.download = fileName || 'prescription';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 // ==================== BILLING & PAYMENTS MODULE ====================
 
+let selectedBillingPatientId = null;
+let selectedBillingCaseId = null;
+let billingPatientSearchTimeout = null;
+
 function loadBillingPayments() {
+    selectedBillingPatientId = null;
+    selectedBillingCaseId = null;
+    
     const html = `
         <div class="module-content">
             <div class="module-header">
                 <h1>Billing & Payments</h1>
             </div>
-            <div class="billing-search">
+            <div class="billing-search" style="margin-bottom: 24px;">
                 <h3>Search Patient</h3>
-                <input type="text" id="patientSearchInput" placeholder="Search by patient name or phone" onkeyup="searchPatientsForBilling()">
-                <div id="patientSearchResults"></div>
+                <div style="position: relative;">
+                    <input type="text" id="billingPatientSearchInput" 
+                           placeholder="Search by patient name or phone..." 
+                           autocomplete="off" 
+                           oninput="searchPatientsForBilling(event)"
+                           style="width: 100%; max-width: 500px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    <div id="billingPatientSearchResults" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 300px; overflow-y: auto; width: 100%; max-width: 500px; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                </div>
             </div>
-            <div id="billingDetails" style="display:none;">
-                <h3>Case Selection</h3>
-                <div id="casesList"></div>
-                <div id="caseBillingDetails"></div>
+            <div id="billingCaseSelection" style="display: none; margin-bottom: 24px;">
+                <h3>Select Case</h3>
+                <div id="billingCasesList" class="table-scroll-container" style="max-height: 400px; overflow-y: auto; overflow-x: auto;"></div>
+            </div>
+            <div id="billingDetails" style="display: none; width: 100%;">
+                <div id="caseBillingContent" style="width: 100%;"></div>
             </div>
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
 }
 
-function searchPatientsForBilling() {
-    const query = document.getElementById('patientSearchInput').value;
+function searchPatientsForBilling(event) {
+    const searchInput = document.getElementById('billingPatientSearchInput');
+    const resultsDiv = document.getElementById('billingPatientSearchResults');
+    
+    if (!searchInput || !resultsDiv) return;
+    
+    const query = searchInput.value.trim();
+    
+    // Clear previous timeout
+    if (billingPatientSearchTimeout) {
+        clearTimeout(billingPatientSearchTimeout);
+    }
+    
+    // If query is empty, hide results
     if (!query || query.length < 2) {
-        const resultsDiv = document.getElementById('patientSearchResults');
-        if (resultsDiv) resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
         return;
     }
     
-    fetch(`${API_BASE}/patients?search=${encodeURIComponent(query)}&limit=50`)
+    // Debounce search
+    billingPatientSearchTimeout = setTimeout(() => {
+        fetch(`${API_BASE}/patients?search=${encodeURIComponent(query)}&limit=20`)
+            .then(res => res.json())
+            .then(data => {
+                const patients = Array.isArray(data) ? data : (data.patients || []);
+                
+                if (patients.length === 0) {
+                    resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No patients found</div>';
+                    resultsDiv.style.display = 'block';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = patients.map(patient => `
+                    <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                         onmouseover="this.style.backgroundColor='#f0f0f0'" 
+                         onmouseout="this.style.backgroundColor='white'"
+                         onclick="selectBillingPatient('${patient.id}', '${(patient.name || '').replace(/'/g, "\\'")}')">
+                        <strong>${patient.name || ''}</strong>
+                        ${patient.phone ? `<br/><small style="color: #666;">${patient.phone}</small>` : ''}
+                        ${patient.email ? `<br/><small style="color: #666;">${patient.email}</small>` : ''}
+                    </div>
+                `).join('');
+                resultsDiv.style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Error searching patients:', err);
+                resultsDiv.innerHTML = '<div style="padding: 10px; color: #d32f2f;">Error searching patients</div>';
+                resultsDiv.style.display = 'block';
+            });
+    }, 300);
+}
+
+function selectBillingPatient(patientId, patientName) {
+    selectedBillingPatientId = patientId;
+    const searchInput = document.getElementById('billingPatientSearchInput');
+    const resultsDiv = document.getElementById('billingPatientSearchResults');
+    
+    if (searchInput) searchInput.value = patientName;
+    if (resultsDiv) {
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+    }
+    
+    // Show loading state
+    document.getElementById('billingCasesList').innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading cases...</p>';
+    document.getElementById('billingCaseSelection').style.display = 'block';
+    
+    // Load cases for this patient - use patient_id filter for faster query
+    fetch(`${API_BASE}/cases?page=1&limit=100&patient_id=${patientId}`)
         .then(res => res.json())
         .then(data => {
-            // Handle both old format (array) and new format (object with patients property)
-            const patients = Array.isArray(data) ? data : (data.patients || []);
+            const cases = data.cases || [];
+            
+            if (cases.length === 0) {
+                document.getElementById('billingCasesList').innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No cases found for this patient.</p>';
+                return;
+            }
             
             const html = `
-                <ul class="search-results">
-                    ${patients.length > 0 ? patients.map(p => `<li onclick="selectPatient('${p.id}', '${p.name || ''}')">${p.name || ''} - ${p.phone || ''}</li>`).join('') : '<li class="no-results">No patients found</li>'}
-                </ul>
+                <div class="table-scroll-container" style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead style="position: sticky; top: 0; background: #f9fafb; z-index: 5;">
+                            <tr>
+                                <th>Case Number</th>
+                                <th>Case Type</th>
+                                <th>Admission Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cases.map(c => {
+                                const status = c.status || 'open';
+                                const statusColor = status === 'closed' ? '#10b981' : '#f59e0b';
+                                return `
+                                <tr>
+                                    <td>${c.case_number || ''}</td>
+                                    <td>${c.case_type || ''}</td>
+                                    <td>${c.admission_date ? new Date(c.admission_date).toLocaleDateString() : ''}</td>
+                                    <td><span style="color: ${statusColor}; font-weight: 600;">${status.toUpperCase()}</span></td>
+                                    <td><button class="btn btn-primary" onclick="loadCaseBilling('${c.id}')">View Bill</button></td>
+                                </tr>
+                            `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
             `;
-            const resultsDiv = document.getElementById('patientSearchResults');
-            if (resultsDiv) resultsDiv.innerHTML = html;
+            document.getElementById('billingCasesList').innerHTML = html;
         })
         .catch(err => {
-            console.error('Error searching patients:', err);
-            const resultsDiv = document.getElementById('patientSearchResults');
-            if (resultsDiv) resultsDiv.innerHTML = '<li class="no-results">Error searching patients</li>';
+            console.error('Error loading cases:', err);
+            document.getElementById('billingCasesList').innerHTML = '<p style="color: #d32f2f; text-align: center; padding: 20px;">Error loading cases. Please try again.</p>';
         });
+    
+    // Clear search timeout
+    if (billingPatientSearchTimeout) {
+        clearTimeout(billingPatientSearchTimeout);
+        billingPatientSearchTimeout = null;
+    }
 }
 
-function selectPatient(patientId, patientName) {
-    window.selectedPatientId = patientId;
-    window.selectedPatientName = patientName;
+function loadCaseBilling(caseId) {
+    selectedBillingCaseId = caseId;
     
-    fetch(`${API_BASE}/cases?page=1&limit=100`)
+    fetch(`${API_BASE}/billing/case/${caseId}`)
         .then(res => res.json())
         .then(data => {
-            const patientCases = data.cases.filter(c => c.patient_id === patientId);
+            const caseData = data.case;
+            const charges = data.charges || [];
+            const payments = data.payments || [];
+            const totalCharges = data.total_charges || 0;
+            const discount = data.discount || 0;
+            const totalAfterDiscount = data.total_after_discount || totalCharges;
+            const totalPaid = data.total_paid || 0;
+            const balance = data.balance || 0;
+            
             const html = `
-                <h4>Cases for ${patientName}</h4>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Case Number</th>
-                            <th>Case Type</th>
-                            <th>Admission Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${patientCases.map(c => `
-                            <tr>
-                                <td>${c.case_number || ''}</td>
-                                <td>${c.case_type || ''}</td>
-                                <td>${c.admission_date ? new Date(c.admission_date).toLocaleDateString() : ''}</td>
-                                <td><button class="btn btn-primary" onclick="showCaseBilling('${c.id}')">View Bill</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                <div style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                        <h2 style="margin: 0;">Bill for Case: ${caseData.case_number || ''}</h2>
+                        <button class="btn btn-success" onclick="generateBillPDF('${caseId}')">
+                            Generate Bill
+                        </button>
+                        ${caseData.status === 'closed' ? '<span style="color: #10b981; font-size: 14px; margin-left: 12px; font-weight: 600;">✓ Case Closed</span>' : ''}
+                    </div>
+                    
+                    <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 4px;">
+                        <h3 style="margin-bottom: 12px;">Patient Information</h3>
+                        <p><strong>Name:</strong> ${caseData.patient?.name || ''}</p>
+                        <p><strong>Phone:</strong> ${caseData.patient?.phone || ''}</p>
+                        <p><strong>Email:</strong> ${caseData.patient?.email || ''}</p>
+                        <p><strong>Case Type:</strong> ${caseData.case_type || ''}</p>
+                        <p><strong>Admission Date:</strong> ${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString() : ''}${caseData.admission_time ? ' ' + caseData.admission_time : ''}</p>
+                        ${caseData.discharge_date ? `<p><strong>Discharge Date:</strong> ${new Date(caseData.discharge_date).toLocaleDateString()}${caseData.discharge_time ? ' ' + caseData.discharge_time : ''}</p>` : ''}
+                    </div>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3>Charges</h3>
+                        </div>
+                        <div class="table-scroll-container" style="max-height: 300px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Charge Name</th>
+                                        <th>Doctor</th>
+                                        <th>Quantity</th>
+                                        <th>Unit Amount</th>
+                                        <th>Total Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${charges.length > 0 ? charges.map(c => {
+                                        const chargeDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+                                        return `
+                                        <tr>
+                                            <td>${chargeDate}</td>
+                                            <td>${c.charge_name || ''}</td>
+                                            <td>${c.doctor_name || ''}</td>
+                                            <td>${c.quantity || 1}</td>
+                                            <td>₹ ${(c.unit_amount || 0).toFixed(2)}</td>
+                                            <td>₹ ${(c.total_amount || 0).toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                    }).join('') : '<tr><td colspan="6" style="text-align: center;">No charges found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3>Payments</h3>
+                            <button class="btn btn-primary" onclick="showBillingPaymentForm('${caseId}')">Add Payment</button>
+                        </div>
+                        <div class="table-scroll-container" style="max-height: 300px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Mode</th>
+                                        <th>Reference</th>
+                                        <th>Notes</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payments.length > 0 ? payments.map(p => {
+                                        const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '';
+                                        return `
+                                        <tr>
+                                            <td>${paymentDate}</td>
+                                            <td>${(p.amount || 0).toFixed(2)}</td>
+                                            <td>${p.payment_mode || ''}</td>
+                                            <td>${p.payment_reference_number || ''}</td>
+                                            <td>${p.notes || ''}</td>
+                                            <td>
+                                                <button class="btn btn-success" onclick="editBillingPayment('${p.id}', '${caseId}')">Edit</button>
+                                                <button class="btn btn-danger" onclick="deleteBillingPayment('${p.id}', '${caseId}')">Delete</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                    }).join('') : '<tr><td colspan="6" style="text-align: center;">No payments found</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 24px; padding: 20px; background: #fef3c7; border-radius: 4px; border: 2px solid #f59e0b;">
+                        <h3 style="margin-bottom: 16px;">Discount</h3>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <label style="font-weight: 600; min-width: 120px;">Discount Amount:</label>
+                            <input type="number" id="discountAmount" step="0.01" min="0" max="${totalCharges}" 
+                                   value="${discount}" 
+                                   onchange="updateDiscount('${caseId}', this.value)"
+                                   ${caseData.status === 'closed' ? 'disabled style="opacity: 0.5; cursor: not-allowed; background-color: #f0f0f0;"' : 'style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 150px; font-size: 14px;"'}
+                                   placeholder="0.00">
+                            <span style="color: #666; font-size: 14px;">₹</span>
+                            ${caseData.status === 'closed' ? '<span style="color: #666; font-size: 14px; font-style: italic;">(Case is closed)</span>' : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 24px; padding: 20px; background: #f0f9ff; border-radius: 4px; border: 2px solid #0ea5e9;">
+                        <h3 style="margin-bottom: 16px;">Bill Summary</h3>
+                        <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 600;">
+                            <div>
+                                <p style="margin: 8px 0;"><strong>Total Charges:</strong> ₹ ${totalCharges.toFixed(2)}</p>
+                                ${discount > 0 ? `<p style="margin: 8px 0; color: #f59e0b;"><strong>Discount:</strong> -₹ ${discount.toFixed(2)}</p>` : ''}
+                                <p style="margin: 8px 0;"><strong>Total After Discount:</strong> ₹ ${totalAfterDiscount.toFixed(2)}</p>
+                                <p style="margin: 8px 0;"><strong>Total Paid:</strong> ₹ ${totalPaid.toFixed(2)}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="margin: 8px 0; color: ${balance > 0 ? '#dc2626' : '#10b981'};">
+                                    <strong>Balance:</strong> ₹ ${balance.toFixed(2)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
-            document.getElementById('casesList').innerHTML = html;
+            document.getElementById('caseBillingContent').innerHTML = html;
             document.getElementById('billingDetails').style.display = 'block';
-            document.getElementById('patientSearchResults').innerHTML = '';
+            
+            // Scroll to billing details section to ensure it's visible
+            setTimeout(() => {
+                const billingDetails = document.getElementById('billingDetails');
+                if (billingDetails) {
+                    billingDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        })
+        .catch(err => {
+            console.error('Error loading case billing:', err);
+            alert('Error loading case billing: ' + err);
         });
 }
 
-function showCaseBilling(caseId) {
-    Promise.all([
-        fetch(`${API_BASE}/cases/${caseId}`).then(r => r.json()),
-        fetch(`${API_BASE}/bills?case_id=${caseId}`).then(r => r.json()),
-        fetch(`${API_BASE}/payments?case_id=${caseId}`).then(r => r.json())
-    ]).then(([caseData, bills, payments]) => {
-        const patientCharges = caseData.charges || [];
-        const totalCharges = patientCharges.reduce((sum, c) => sum + (c.total_amount || 0), 0);
-        const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        const balance = totalCharges - totalPaid;
-        
-        // Auto-create bill if not exists
-        if (bills.length === 0 && totalCharges > 0) {
-            fetch(`${API_BASE}/bills`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    case_id: caseId,
-                    total_amount: totalCharges,
-                    paid_amount: totalPaid,
-                    balance_amount: balance
-                })
-            }).then(() => showCaseBilling(caseId));
-            return;
-        }
-        
-        const html = `
-            <div class="billing-summary">
-                <h3>Bill Summary - ${caseData.case_number || ''}</h3>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Charge Name</th>
-                            <th>Quantity</th>
-                            <th>Unit Amount</th>
-                            <th>Total Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${patientCharges.map(c => `
-                            <tr>
-                                <td>${c.charge_name || ''}</td>
-                                <td>${c.quantity || ''}</td>
-                                <td>${c.unit_amount || ''}</td>
-                                <td>${c.total_amount || ''}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                <div class="bill-totals">
-                    <p><strong>Total Charges: ${totalCharges}</strong></p>
-                    <p><strong>Total Paid: ${totalPaid}</strong></p>
-                    <p><strong>Balance: ${balance}</strong></p>
+
+function showBillingPaymentForm(caseId) {
+    // Remove any existing modals first
+    const existingModals = document.querySelectorAll('.modal');
+    existingModals.forEach(modal => modal.remove());
+    
+    // Fetch current balance to show in form
+    fetch(`${API_BASE}/billing/case/${caseId}`)
+        .then(res => res.json())
+        .then(data => {
+            const balance = data.balance || 0;
+            const totalAfterDiscount = data.total_after_discount || 0;
+            
+            const html = `
+                <div class="modal" id="billingPaymentModal">
+                    <div class="modal-content">
+                        <h2>Add Payment</h2>
+                        <form id="billingPaymentForm" onsubmit="return saveBillingPayment(event, '${caseId}')">
+                            <div class="form-group">
+                                <label>Payment Type *</label>
+                                <div style="display: flex; gap: 20px; margin-top: 8px;">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="radio" name="payment_type" value="full" checked onchange="handlePaymentTypeChange('full', ${balance})" style="margin-right: 8px;">
+                                        <span>Full Payment (₹ ${balance.toFixed(2)})</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="radio" name="payment_type" value="partial" onchange="handlePaymentTypeChange('partial', ${balance})" style="margin-right: 8px;">
+                                        <span>Partial Payment</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Amount *</label>
+                                <input type="number" step="0.01" name="amount" id="paymentAmountInput" value="${balance > 0 ? balance.toFixed(2) : '0.00'}" min="0.01" max="${totalAfterDiscount}" required>
+                                <small style="color: #666; display: block; margin-top: 4px;">Balance: ₹ ${balance.toFixed(2)}</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Date *</label>
+                                <input type="date" name="payment_date" value="${new Date().toISOString().split('T')[0]}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Mode *</label>
+                                <select name="payment_mode" required>
+                                    <option value="">Select Mode</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Card">Card</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Cheque">Cheque</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reference Number</label>
+                                <input type="text" name="payment_reference_number">
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea name="notes" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Payment</button>
+                                <button type="button" class="btn btn-secondary" onclick="closeBillingModal()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <button class="btn btn-primary" onclick="showPaymentForm('${caseId}')">Add Payment</button>
-                <h4>Payment History</h4>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Payment Mode</th>
-                            <th>Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${payments.map(p => `
-                            <tr>
-                                <td>${p.payment_date ? new Date(p.payment_date).toLocaleDateString() : ''}</td>
-                                <td>${p.amount || ''}</td>
-                                <td>${p.payment_mode || ''}</td>
-                                <td>${p.notes || ''}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-        document.getElementById('caseBillingDetails').innerHTML = html;
-        window.currentBillingCaseId = caseId;
-    });
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        })
+        .catch(err => {
+            console.error('Error loading billing data:', err);
+            alert('Error loading billing data: ' + err);
+        });
 }
 
-function showPaymentForm(caseId) {
-    const html = `
-        <div class="modal">
-            <div class="modal-content">
-                <h2>Add Payment</h2>
-                <form id="paymentForm" onsubmit="savePayment(event, '${caseId}')">
-                    <div class="form-group">
-                        <label>Amount</label>
-                        <input type="number" name="amount" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Payment Mode</label>
-                        <select name="payment_mode" required>
-                            <option value="Cash">Cash</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Card">Card</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Payment Date</label>
-                        <input type="date" name="payment_date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Notes</label>
-                        <textarea name="notes"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save</button>
-                        <button type="button" class="btn btn-secondary" onclick="showCaseBilling('${caseId}')">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    document.getElementById('caseBillingDetails').innerHTML = html;
+function handlePaymentTypeChange(paymentType, balance) {
+    const amountInput = document.getElementById('paymentAmountInput');
+    if (amountInput) {
+        if (paymentType === 'full') {
+            // Set amount to full balance
+            amountInput.value = balance > 0 ? balance.toFixed(2) : '0.00';
+            amountInput.readOnly = true;
+            amountInput.style.backgroundColor = '#f0f0f0';
+        } else {
+            // Partial payment - allow user to enter amount
+            amountInput.value = '';
+            amountInput.readOnly = false;
+            amountInput.style.backgroundColor = 'white';
+            amountInput.focus();
+        }
+    }
 }
 
-function savePayment(event, caseId) {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const data = Object.fromEntries(formData);
+function saveBillingPayment(event, caseId) {
+    // Prevent default form submission
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+    }
+    
+    // Get the form element
+    const form = event ? event.target : document.getElementById('billingPaymentForm');
+    if (!form) {
+        alert('Payment form not found');
+        return false;
+    }
+    
+    // Verify this is the billing payment form, not the payout payment form
+    if (form.id !== 'billingPaymentForm' && form.id !== 'billingPaymentEditForm') {
+        console.error('Wrong form submitted:', form.id);
+        return false;
+    }
+    
+    const formData = new FormData(form);
+    const data = {};
+    
+    // Collect all form fields
+    for (let [key, value] of formData.entries()) {
+        if (value && value.trim() !== '') {
+            data[key] = value.trim();
+        }
+    }
+    
+    // Add case_id
     data.case_id = caseId;
     
+    // Convert amount to float
+    if (data.amount) {
+        data.amount = parseFloat(data.amount);
+        if (isNaN(data.amount)) {
+            alert('Please enter a valid payment amount');
+            return false;
+        }
+    } else {
+        alert('Payment amount is required');
+        return false;
+    }
+    
+    // Convert payment_date to ISO string format (YYYY-MM-DD)
+    // Keep it as string, backend will handle conversion
+    if (data.payment_date) {
+        // payment_date is already in YYYY-MM-DD format from date input
+        // Convert to ISO string for backend
+        const dateObj = new Date(data.payment_date + 'T00:00:00');
+        data.payment_date = dateObj.toISOString();
+    } else {
+        // Use current date if not provided
+        data.payment_date = new Date().toISOString();
+    }
+    
+    // Ensure payment_mode is provided
+    if (!data.payment_mode) {
+        alert('Payment mode is required');
+        return false;
+    }
+    
+    console.log('Saving billing payment to /api/payments:', data);
+    console.log('Case ID:', caseId);
+    console.log('Form ID:', form.id);
+    
+    // IMPORTANT: Use /api/payments endpoint, NOT /api/payouts
     fetch(`${API_BASE}/payments`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     })
-    .then(() => showCaseBilling(caseId))
-    .catch(err => alert('Error saving payment: ' + err));
+    .then(res => {
+        console.log('Payment response status:', res.status);
+        console.log('Response URL:', res.url);
+        if (!res.ok) {
+            return res.json().then(err => {
+                console.error('Payment error response:', err);
+                throw new Error(err.error || 'Failed to save payment');
+            });
+        }
+        return res.json();
+    })
+    .then(responseData => {
+        console.log('Payment success response:', responseData);
+        if (responseData.message || responseData.id) {
+            alert('Payment saved successfully!');
+            closeBillingModal();
+            loadCaseBilling(caseId);
+        } else {
+            alert('Error saving payment: ' + (responseData.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Error saving payment:', err);
+        alert('Error saving payment: ' + (err.message || err));
+    });
+    
+    return false;
+}
+
+function editBillingPayment(paymentId, caseId) {
+    // Remove any existing modals first
+    const existingModal = document.querySelector('.modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    fetch(`${API_BASE}/payments/${paymentId}`)
+        .then(res => res.json())
+        .then(payment => {
+            const html = `
+                <div class="modal">
+                    <div class="modal-content">
+                        <h2>Edit Payment</h2>
+                        <form id="billingPaymentEditForm" onsubmit="updateBillingPayment(event, '${paymentId}', '${caseId}')">
+                            <div class="form-group">
+                                <label>Payment Amount *</label>
+                                <input type="number" step="0.01" name="amount" value="${payment.amount || 0}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Date *</label>
+                                <input type="date" name="payment_date" value="${payment.payment_date ? new Date(payment.payment_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Mode *</label>
+                                <select name="payment_mode" required>
+                                    <option value="">Select Mode</option>
+                                    <option value="Cash" ${payment.payment_mode === 'Cash' ? 'selected' : ''}>Cash</option>
+                                    <option value="Card" ${payment.payment_mode === 'Card' ? 'selected' : ''}>Card</option>
+                                    <option value="UPI" ${payment.payment_mode === 'UPI' ? 'selected' : ''}>UPI</option>
+                                    <option value="Bank Transfer" ${payment.payment_mode === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer</option>
+                                    <option value="Cheque" ${payment.payment_mode === 'Cheque' ? 'selected' : ''}>Cheque</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reference Number</label>
+                                <input type="text" name="payment_reference_number" value="${payment.payment_reference_number || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea name="notes" rows="3">${payment.notes || ''}</textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Update Payment</button>
+                                <button type="button" class="btn btn-secondary" onclick="closeBillingModal()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        })
+        .catch(err => {
+            console.error('Error loading payment:', err);
+            alert('Error loading payment: ' + err);
+        });
+}
+
+function updateBillingPayment(event, paymentId, caseId) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+    
+    // Convert amount to float
+    if (data.amount) {
+        data.amount = parseFloat(data.amount);
+    }
+    
+    // Convert payment_date to datetime
+    if (data.payment_date) {
+        data.payment_date = new Date(data.payment_date);
+    }
+    
+    fetch(`${API_BASE}/payments/${paymentId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message) {
+            closeBillingModal();
+            loadCaseBilling(caseId);
+        } else {
+            alert('Error updating payment: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Error updating payment:', err);
+        alert('Error updating payment: ' + err);
+    });
+}
+
+function deleteBillingPayment(paymentId, caseId) {
+    if (!confirm('Are you sure you want to delete this payment?')) {
+        return;
+    }
+    
+    fetch(`${API_BASE}/payments/${paymentId}`, {method: 'DELETE'})
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                loadCaseBilling(caseId);
+            } else {
+                alert('Error deleting payment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error deleting payment:', err);
+            alert('Error deleting payment: ' + err);
+        });
+}
+
+function updateDiscount(caseId, discountAmount) {
+    const discount = parseFloat(discountAmount) || 0;
+    
+    // Get current total charges to validate discount
+    fetch(`${API_BASE}/billing/case/${caseId}`)
+        .then(res => res.json())
+        .then(billingData => {
+            const totalCharges = billingData.total_charges || 0;
+            
+            if (discount < 0) {
+                alert('Discount cannot be negative');
+                document.getElementById('discountAmount').value = 0;
+                return;
+            }
+            
+            if (discount > totalCharges) {
+                alert(`Discount cannot exceed total charges (₹ ${totalCharges.toFixed(2)})`);
+                document.getElementById('discountAmount').value = Math.min(discount, totalCharges);
+                return;
+            }
+            
+            fetch(`${API_BASE}/billing/discount/${caseId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({discount: discount})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message || data.discount !== undefined) {
+                    // Reload billing details to show updated calculations
+                    loadCaseBilling(caseId);
+                } else {
+                    alert('Error updating discount: ' + (data.error || 'Unknown error'));
+                    // Reload to reset the value
+                    loadCaseBilling(caseId);
+                }
+            })
+            .catch(err => {
+                console.error('Error updating discount:', err);
+                alert('Error updating discount: ' + err);
+                // Reload to reset the value
+                loadCaseBilling(caseId);
+            });
+        })
+        .catch(err => {
+            console.error('Error fetching billing data:', err);
+            alert('Error validating discount: ' + err);
+        });
+}
+
+function generateBillPDF(caseId) {
+    // Fetch billing data and show as HTML in lightbox
+    fetch(`${API_BASE}/billing/case/${caseId}`)
+        .then(res => res.json())
+        .then(data => {
+            const caseData = data.case;
+            const charges = data.charges || [];
+            const payments = data.payments || [];
+            const totalCharges = data.total_charges || 0;
+            const discount = data.discount || 0;
+            const totalAfterDiscount = data.total_after_discount || totalCharges;
+            const totalPaid = data.total_paid || 0;
+            const balance = data.balance || 0;
+            
+            // Generate HTML bill
+            const billHTML = generateBillHTML(caseData, charges, payments, totalCharges, discount, totalAfterDiscount, totalPaid, balance);
+            
+            // Create lightbox to display bill
+            const lightboxHTML = `
+                <div class="prescription-lightbox-overlay" id="billLightbox" onclick="closeBillLightbox(event)">
+                    <div class="prescription-lightbox-container" onclick="event.stopPropagation()" style="max-width: 90%; max-height: 95vh; width: 100%;">
+                        <div class="prescription-lightbox-header">
+                            <h3>Bill / Invoice Review - ${caseData.case_number || ''}</h3>
+                            <div class="prescription-lightbox-controls">
+                                <button class="btn btn-primary" onclick="printBill()" title="Print Bill">
+                                    🖨 Print
+                                </button>
+                                <button class="btn btn-success" onclick="closeCaseAndBill('${caseId}')" id="closeCaseBtn" title="Close Case (Only if fully paid)" ${caseData.status === 'closed' || Math.abs(balance) > 0.01 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                                    ✓ Close Case
+                                </button>
+                                ${Math.abs(balance) > 0.01 ? '<span style="color: #dc2626; font-size: 12px; margin-left: 8px;">(Balance: ₹ ' + balance.toFixed(2) + ')</span>' : ''}
+                                <button class="btn btn-danger" onclick="closeBillLightbox()" title="Close">
+                                    <span style="font-size: 18px;">×</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="prescription-lightbox-content" style="padding: 20px; overflow-y: auto; background: white;">
+                            <div id="billContent">
+                                ${billHTML}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove any existing lightbox
+            const existingLightbox = document.getElementById('billLightbox');
+            if (existingLightbox) {
+                existingLightbox.remove();
+            }
+            
+            document.body.insertAdjacentHTML('beforeend', lightboxHTML);
+            document.body.style.overflow = 'hidden';
+            
+            // Close on Escape key
+            document.addEventListener('keydown', handleBillLightboxKeydown);
+        })
+        .catch(err => {
+            console.error('Error loading bill:', err);
+            alert('Error loading bill: ' + (err.message || err));
+        });
+}
+
+function generateBillHTML(caseData, charges, payments, totalCharges, discount, totalAfterDiscount, totalPaid, balance) {
+    const billDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const billTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    
+    // Determine watermark text based on payment status
+    let watermarkText = '';
+    let watermarkColor = '';
+    if (Math.abs(balance) < 0.01) { // Fully paid (balance is 0 or very close to 0)
+        watermarkText = 'BILL PAID';
+        watermarkColor = '#10b981'; // Green
+    } else if (totalPaid > 0) { // Partial payment
+        watermarkText = 'PARTIAL BILL PAID';
+        watermarkColor = '#f59e0b'; // Orange/Amber
+    } else { // No payment
+        watermarkText = 'BILL NOT PAID';
+        watermarkColor = '#dc2626'; // Red
+    }
+    
+    return `
+        <div class="bill-container" style="max-width: 210mm; margin: 0 auto; background: white; padding: 0; font-family: Arial, sans-serif; position: relative;">
+            <!-- Watermark (only visible in print) -->
+            <div class="bill-watermark" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 72px; font-weight: 900; color: ${watermarkColor}; opacity: 0.15; z-index: 1; pointer-events: none; white-space: nowrap; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); display: none;">
+                ${watermarkText}
+            </div>
+            <!-- Bill Header (minimal for letterhead) -->
+            <div class="bill-header" style="text-align: center; margin-top: 0; margin-bottom: 30px; padding-top: 80mm; position: relative; z-index: 2;">
+                <h1 style="color: #2563eb; margin: 0 0 15px 0; font-size: 28px; font-weight: 700; text-transform: uppercase;">INVOICE / BILL</h1>
+                ${caseData.patient?.name ? `
+                <div style="margin: 15px 0 20px 0; padding: 10px; background: #f0f9ff; border-radius: 4px; border: 1px solid #0ea5e9; display: inline-block;">
+                    <p style="color: #1f2937; margin: 0; font-size: 16px; font-weight: 600;">
+                        Patient: <span style="color: #2563eb;">${caseData.patient.name}</span>
+                    </p>
+                </div>
+                ` : ''}
+                <div style="margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <p style="color: #666; margin: 0; font-size: 14px;">Bill Date: ${billDate} ${billTime}</p>
+                    <!-- Payment Status Badge -->
+                    <span style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; background-color: ${watermarkColor === '#10b981' ? '#d1fae5' : watermarkColor === '#f59e0b' ? '#fef3c7' : '#fee2e2'}; color: ${watermarkColor}; border: 2px solid ${watermarkColor};">
+                        ${watermarkText}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Patient & Case Info -->
+            <div style="margin-bottom: 30px; position: relative; z-index: 2;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb; width: 30%;">Patient Name:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient?.name || ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Phone:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient?.phone || ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Email:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient?.email || ''}</td>
+                    </tr>
+                    ${caseData.patient?.address ? `
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Address:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient.address}</td>
+                    </tr>
+                    ` : ''}
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Case Number:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.case_number || ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Case Type:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.case_type || ''}</td>
+                    </tr>
+                    ${caseData.admission_date ? `
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Admission Date:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(caseData.admission_date).toLocaleDateString('en-IN')}${caseData.admission_time ? ' ' + caseData.admission_time : ''}</td>
+                    </tr>
+                    ` : ''}
+                    ${caseData.discharge_date ? `
+                    <tr>
+                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Discharge Date:</td>
+                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(caseData.discharge_date).toLocaleDateString('en-IN')}${caseData.discharge_time ? ' ' + caseData.discharge_time : ''}</td>
+                    </tr>
+                    ` : ''}
+                </table>
+            </div>
+            
+            <!-- Charges Table -->
+            <div style="margin-bottom: 30px; position: relative; z-index: 2;">
+                <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 8px;">Charges Details</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background: #2563eb; color: white;">
+                            <th style="padding: 12px; text-align: left; border: 1px solid #1d4ed8;">Date</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #1d4ed8;">Charge Name</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #1d4ed8;">Doctor</th>
+                            <th style="padding: 12px; text-align: center; border: 1px solid #1d4ed8;">Qty</th>
+                            <th style="padding: 12px; text-align: right; border: 1px solid #1d4ed8;">Unit Amount</th>
+                            <th style="padding: 12px; text-align: right; border: 1px solid #1d4ed8;">Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${charges.length > 0 ? charges.map((c, idx) => {
+                            const chargeDate = c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '';
+                            const rowBg = idx % 2 === 0 ? '#ffffff' : '#f9fafb';
+                            return `
+                            <tr style="background: ${rowBg};">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${chargeDate}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${c.charge_name || ''}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${c.doctor_name || ''}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: center;">${c.quantity || 1}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: right;">₹ ${(c.unit_amount || 0).toFixed(2)}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: right; font-weight: 600;">₹ ${(c.total_amount || 0).toFixed(2)}</td>
+                            </tr>
+                            `;
+                        }).join('') : `
+                        <tr>
+                            <td colspan="6" style="padding: 20px; text-align: center; border: 1px solid #e5e7eb; color: #666;">No charges found</td>
+                        </tr>
+                        `}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Payments Table -->
+            ${payments.length > 0 ? `
+            <div style="margin-bottom: 30px; position: relative; z-index: 2;">
+                <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #10b981; padding-bottom: 8px;">Payment History</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #10b981; color: white;">
+                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Date</th>
+                            <th style="padding: 12px; text-align: right; border: 1px solid #059669;">Amount</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Mode</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Reference</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${payments.map((p, idx) => {
+                            const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString('en-IN') : '';
+                            const rowBg = idx % 2 === 0 ? '#ffffff' : '#f0fdf4';
+                            return `
+                            <tr style="background: ${rowBg};">
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${paymentDate}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: right; font-weight: 600;">₹ ${(p.amount || 0).toFixed(2)}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${p.payment_mode || ''}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${p.payment_reference_number || ''}</td>
+                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${p.notes || ''}</td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ` : ''}
+            
+            <!-- Bill Summary -->
+            <div style="margin-top: 40px; padding: 20px; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; position: relative; z-index: 2;">
+                <h3 style="color: #1f2937; margin-bottom: 20px; font-size: 20px; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">Bill Summary</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb; width: 50%;">Total Charges:</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb;">₹ ${totalCharges.toFixed(2)}</td>
+                    </tr>
+                    ${discount > 0 ? `
+                    <tr>
+                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb; color: #f59e0b;">Discount:</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb; color: #f59e0b;">-₹ ${discount.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb;">Total After Discount:</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb;">₹ ${totalAfterDiscount.toFixed(2)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr>
+                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb;">Total Paid:</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb;">₹ ${totalPaid.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; background: #fef3c7; font-weight: 700; border: 1px solid #e5e7eb; font-size: 16px; color: ${balance > 0 ? '#dc2626' : '#10b981'};">Balance Amount:</td>
+                        <td style="padding: 15px; text-align: right; font-weight: 700; border: 1px solid #e5e7eb; font-size: 16px; color: ${balance > 0 ? '#dc2626' : '#10b981'};">₹ ${balance.toFixed(2)}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Footer -->
+            <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #666; font-size: 12px; position: relative; z-index: 2;">
+                <p>This is a computer-generated bill. No signature required.</p>
+                <p style="margin-top: 10px;">Thank you for choosing Life Plus Hospital</p>
+            </div>
+        </div>
+    `;
+}
+
+function printBill() {
+    const billContent = document.getElementById('billContent');
+    if (billContent) {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Bill / Invoice</title>
+                    <style>
+                        * {
+                            box-sizing: border-box;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            font-family: Arial, sans-serif;
+                            background: white;
+                        }
+                        .bill-container {
+                            max-width: 210mm;
+                            margin: 0 auto;
+                            padding: 0;
+                            background: white;
+                        }
+                        .bill-header {
+                            padding-top: 80mm !important;
+                        }
+                        .bill-watermark {
+                            display: block !important;
+                        }
+                        @media print {
+                            @page {
+                                size: A4;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            .bill-container {
+                                max-width: 210mm;
+                                margin: 0;
+                                padding: 0;
+                            }
+                            .bill-header {
+                                padding-top: 80mm !important;
+                                page-break-after: avoid;
+                            }
+                            .bill-watermark {
+                                display: block !important;
+                            }
+                            table {
+                                page-break-inside: auto;
+                            }
+                            tr {
+                                page-break-inside: avoid;
+                                page-break-after: auto;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${billContent.innerHTML}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 250);
+    }
+}
+
+function handleBillLightboxKeydown(event) {
+    if (event.key === 'Escape') {
+        closeBillLightbox();
+    }
+}
+
+function closeBillLightbox(event) {
+    if (event && event.target.id !== 'billLightbox' && !event.target.closest('.prescription-lightbox-container')) {
+        return;
+    }
+    const lightbox = document.getElementById('billLightbox');
+    if (lightbox) {
+        lightbox.remove();
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleBillLightboxKeydown);
+    }
+}
+
+
+function closeCaseAndBill(caseId) {
+    // First check if case can be closed (balance must be 0)
+    fetch(`${API_BASE}/billing/case/${caseId}`)
+        .then(res => res.json())
+        .then(data => {
+            const balance = data.balance || 0;
+            
+            // Check if balance is zero (fully paid)
+            if (Math.abs(balance) > 0.01) {
+                alert(`Cannot close case. Outstanding balance: ₹ ${balance.toFixed(2)}\n\nPlease ensure all payments are completed before closing the case.`);
+                return;
+            }
+            
+            if (!confirm('Close this case? This action cannot be undone. The case will be marked as closed and no further modifications will be allowed.')) {
+                return;
+            }
+            
+            fetch(`${API_BASE}/billing/close-case/${caseId}`, {
+                method: 'PUT'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    alert('Case closed successfully!');
+                    closeBillLightbox();
+                    // Reload billing details
+                    loadCaseBilling(caseId);
+                } else {
+                    alert('Error closing case: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Error closing case:', err);
+                alert('Error closing case: ' + err);
+            });
+        })
+        .catch(err => {
+            console.error('Error checking case balance:', err);
+            alert('Error checking case balance: ' + err);
+        });
+}
+
+function closeBillingModal() {
+    const modal = document.querySelector('.modal');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 // ==================== CHARGE MASTER MODULE ====================
@@ -2498,15 +3732,15 @@ function loadPayouts(page = 1) {
                             <option value="cancelled">Cancelled</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" onclick="loadPayoutRecords()">Load Records</button>
+                    <button class="btn btn-primary" onclick="loadPayoutRecords(1)">Load Records</button>
                     <button class="btn btn-secondary" onclick="generatePayoutReport()">Generate Report</button>
                 </div>
             </div>
-            <div id="payoutTableContainer"></div>
+            <div id="payoutTableContainer" class="table-scroll-container"></div>
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
-    loadPayoutRecords();
+    loadPayoutRecords(1);
 }
 
 function loadPayoutRecords(page = 1) {
@@ -2528,23 +3762,24 @@ function loadPayoutRecords(page = 1) {
             const totalPages = Math.max(1, Math.ceil(total / payoutPageLimit));
             
             const html = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>Case Number</th>
-                            <th>Patient Name</th>
-                            <th>Doctor Name</th>
-                            <th>OPD/IPD</th>
-                            <th>Total Charge Amount</th>
-                            <th>Doctor Charge Amount</th>
-                            <th>Payment Status</th>
-                            <th>Payment Details</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${payouts.length > 0 ? payouts.map(p => {
+                <div class="table-scroll-container" style="max-height: calc(100vh - 350px); overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Case Number</th>
+                                <th>Patient Name</th>
+                                <th>Doctor Name</th>
+                                <th>OPD/IPD</th>
+                                <th>Total Charge Amount</th>
+                                <th>Doctor Charge Amount</th>
+                                <th>Payment Status</th>
+                                <th>Payment Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${payouts.length > 0 ? payouts.map(p => {
                             const dateTime = p.date_time ? new Date(p.date_time).toLocaleString() : '';
                             const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '';
                             const isPaidOrPartial = p.payment_status === 'paid' || p.payment_status === 'partial_paid';
@@ -2597,16 +3832,18 @@ function loadPayoutRecords(page = 1) {
                                     </td>
                                 </tr>
                             `;
-                        }).join('') : '<tr><td colspan="10" style="text-align: center;">No payout records found</td></tr>'}
-                    </tbody>
-                </table>
-                ${totalPages > 1 ? `
-                    <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-                        <button class="btn btn-secondary" onclick="loadPayoutRecords(${Math.max(1, page - 1)})" ${page === 1 ? 'disabled' : ''}>Previous</button>
-                        <span>Page ${page} of ${totalPages}</span>
-                        <button class="btn btn-secondary" onclick="loadPayoutRecords(${Math.min(totalPages, page + 1)})" ${page === totalPages ? 'disabled' : ''}>Next</button>
+                            }).join('') : '<tr><td colspan="10" style="text-align: center;">No payout records found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        ${page > 1 ? `<button class="btn btn-secondary" onclick="loadPayoutRecords(${page - 1})">Previous</button>` : '<span></span>'}
+                        <span style="margin: 0 15px;">Page ${page} of ${totalPages}</span>
+                        ${page < totalPages ? `<button class="btn btn-secondary" onclick="loadPayoutRecords(${page + 1})">Next</button>` : '<span></span>'}
                     </div>
-                ` : ''}
+                    <div style="color: #666;">Total: ${total} payout records</div>
+                </div>
             `;
             document.getElementById('payoutTableContainer').innerHTML = html;
         })
@@ -2997,66 +4234,73 @@ function closePayoutModal() {
 }
 
 function generatePayoutReport() {
-    const date = document.getElementById('payoutDate').value;
-    if (!date) {
-        alert('Please select a date');
-        return;
+    const startDate = document.getElementById('payoutStartDate')?.value || '';
+    const endDate = document.getElementById('payoutEndDate')?.value || '';
+    const status = document.getElementById('payoutStatusFilter')?.value || '';
+    
+    // Build URL with filters
+    let url = `${API_BASE}/payouts/export-excel?`;
+    const params = [];
+    if (startDate) params.push(`start_date=${startDate}`);
+    if (endDate) params.push(`end_date=${endDate}`);
+    if (status) params.push(`payment_status=${status}`);
+    url += params.join('&');
+    
+    // Show loading message
+    const originalText = event?.target?.textContent || 'Generate Report';
+    if (event?.target) {
+        event.target.textContent = 'Generating...';
+        event.target.disabled = true;
     }
     
-    fetch(`${API_BASE}/doctor-payouts?date=${date}`)
-        .then(res => res.json())
-        .then(data => {
-            const totalChargeAmount = data.reduce((sum, item) => sum + (item.total_charge_amount || 0), 0);
-            const totalDoctorChargeAmount = data.reduce((sum, item) => sum + (item.doctor_charge_amount || 0), 0);
+    // Fetch and download Excel file
+    fetch(url)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to generate report');
+            }
+            return res.blob();
+        })
+        .then(blob => {
+            // Create download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
             
-            const html = `
-                <div class="payout-report">
-                    <h3>Payout Report for ${date}</h3>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Case Number</th>
-                                <th>Patient Name</th>
-                                <th>OPD/IPD</th>
-                                <th>Total Charge Amount</th>
-                                <th>Doctor Charge Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.map(item => {
-                                const doctorCharges = item.doctor_charges || [];
-                                let doctorChargeDisplay = '';
-                                if (doctorCharges.length > 0) {
-                                    doctorChargeDisplay = doctorCharges.map(dc => 
-                                        `${dc.doctor_name || 'Unknown Doctor'}: ${(dc.total_amount || 0).toFixed(2)}`
-                                    ).join('<br/>');
-                                } else {
-                                    doctorChargeDisplay = (item.doctor_charge_amount || 0).toFixed(2);
-                                }
-                                
-                                return `
-                                <tr>
-                                    <td>${item.case_number || ''}</td>
-                                    <td>${item.patient_name || ''}</td>
-                                    <td>${item.case_type || ''}</td>
-                                    <td>${(item.total_charge_amount || 0).toFixed(2)}</td>
-                                    <td style="font-size: 12px;">${doctorChargeDisplay}</td>
-                                </tr>
-                            `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                    <div class="payout-totals">
-                        <p><strong>Total Charge Amount: ${totalChargeAmount}</strong></p>
-                        <p><strong>Total Doctor Charge Amount: ${totalDoctorChargeAmount}</strong></p>
-                    </div>
-                </div>
-            `;
-            document.getElementById('payoutResults').innerHTML = html;
+            // Generate filename with date range
+            let filename = 'payouts_report';
+            if (startDate && endDate) {
+                filename += `_${startDate}_to_${endDate}`;
+            } else if (startDate) {
+                filename += `_from_${startDate}`;
+            } else if (endDate) {
+                filename += `_until_${endDate}`;
+            }
+            filename += '.xlsx';
+            
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+            
+            // Reset button
+            if (event?.target) {
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+            }
+            
+            alert('Report downloaded successfully!');
         })
         .catch(err => {
-            console.error('Error generating payout report:', err);
-            alert('Error generating payout report: ' + err);
+            console.error('Error generating report:', err);
+            alert('Error generating report: ' + (err.message || err));
+            
+            // Reset button
+            if (event?.target) {
+                event.target.textContent = originalText;
+                event.target.disabled = false;
+            }
         });
 }
 
