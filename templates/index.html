@@ -30,17 +30,15 @@
                 <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">×</button>
             </div>
             <nav class="sidebar-menu">
-                <ul>
-                    <li><a href="#" onclick="loadModule('doctors', event); closeMobileMenu();">Doctors</a></li>
-                    <li><a href="#" onclick="loadModule('doctor-charges', event); closeMobileMenu();">Doctor Charges</a></li>
-                    <li><a href="#" onclick="loadModule('patients', event); closeMobileMenu();">Patients</a></li>
-                    <li><a href="#" onclick="loadModule('cases', event); closeMobileMenu();">Cases</a></li>
-                    <li><a href="#" onclick="loadModule('appointments', event); closeMobileMenu();">Appointments</a></li>
-                    <li><a href="#" onclick="loadModule('billing-payments', event); closeMobileMenu();">Billing & Payments</a></li>
-                    <li><a href="#" onclick="loadModule('charge-master', event); closeMobileMenu();">Charge Master</a></li>
-                    <li><a href="#" onclick="loadModule('payouts', event); closeMobileMenu();">Payouts</a></li>
-                    <li><a href="#" onclick="loadModule('reports', event); closeMobileMenu();">Reports</a></li>
+                <ul id="sidebarMenu">
+                    <!-- Menu items will be populated based on user permissions -->
                 </ul>
+                <div style="margin-top: auto; padding: 16px; border-top: 1px solid #e5e7eb;">
+                    <div style="margin-bottom: 12px; color: #666; font-size: 14px;" id="userInfo">
+                        <!-- User info will be populated -->
+                    </div>
+                    <button class="btn btn-secondary" onclick="handleLogout()" style="width: 100%;">Logout</button>
+                </div>
             </nav>
         </aside>
         

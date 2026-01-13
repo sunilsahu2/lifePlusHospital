@@ -1,6 +1,247 @@
 // API Base URL
 const API_BASE = '/api';
 
+// ==================== SESSION MANAGEMENT ====================
+let currentUser = null;
+
+// Check authentication on page load
+function checkAuth() {
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+    
+    if (!userId || !username) {
+        showLoginPage();
+        return false;
+    }
+    
+    // Verify session is still valid
+    fetch(`${API_BASE}/auth/check`, {
+        headers: {
+            'X-User-Id': userId,
+            'X-Username': username
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.authenticated && data.user) {
+            currentUser = data.user;
+            // Don't reload - just populate menu
+            populateMenu();
+            populateUserInfo();
+        } else {
+            showLoginPage();
+        }
+    })
+    .catch(() => {
+        showLoginPage();
+    });
+    
+    return true;
+}
+
+function showLoginPage() {
+    document.body.innerHTML = `
+        <div class="login-container">
+            <div class="login-box">
+                <h1>Hospital Management System</h1>
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="username" name="username" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                </form>
+                <div id="loginError" style="color: #dc2626; margin-top: 12px; display: none;"></div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+}
+
+function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+    
+    fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.user) {
+            currentUser = data.user;
+            localStorage.setItem('userId', data.user.id);
+            localStorage.setItem('username', data.user.username);
+            // Reload to show main app
+            window.location.reload();
+        } else {
+            errorDiv.textContent = data.error || 'Login failed';
+            errorDiv.style.display = 'block';
+        }
+    })
+    .catch(err => {
+        errorDiv.textContent = 'Login failed. Please try again.';
+        errorDiv.style.display = 'block';
+    });
+}
+
+function handleLogout() {
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+    
+    fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        headers: {
+            'X-User-Id': userId || '',
+            'X-Username': username || ''
+        }
+    })
+    .then(() => {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        currentUser = null;
+        showLoginPage();
+    })
+    .catch(() => {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        currentUser = null;
+        showLoginPage();
+    });
+}
+
+function showMainApp() {
+    // Populate menu based on permissions
+    populateMenu();
+    // Show user info
+    populateUserInfo();
+}
+
+function populateMenu() {
+    const menu = document.getElementById('sidebarMenu');
+    if (!menu) return;
+    
+    const modules = [
+        {name: 'doctors', label: 'Doctors'},
+        {name: 'doctor-charges', label: 'Doctor Charges'},
+        {name: 'patients', label: 'Patients'},
+        {name: 'cases', label: 'Cases'},
+        {name: 'appointments', label: 'Appointments'},
+        {name: 'billing-payments', label: 'Billing & Payments'},
+        {name: 'charge-master', label: 'Charge Master'},
+        {name: 'payouts', label: 'Payouts'},
+        {name: 'reports', label: 'Reports'}
+    ];
+    
+    let menuHTML = '';
+    
+    modules.forEach(module => {
+        if (hasPermission(module.name, 'view')) {
+            menuHTML += `<li><a href="#" onclick="loadModule('${module.name}', event); closeMobileMenu();">${module.label}</a></li>`;
+        }
+    });
+    
+    // Admin-only modules
+    if (currentUser && currentUser.username === 'sunilsahu') {
+        menuHTML += `<li><a href="#" onclick="loadModule('users', event); closeMobileMenu();">User Management</a></li>`;
+        menuHTML += `<li><a href="#" onclick="loadModule('activity-logs', event); closeMobileMenu();">Activity Logs</a></li>`;
+    }
+    
+    menu.innerHTML = menuHTML;
+}
+
+function populateUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    if (!userInfo || !currentUser) return;
+    
+    userInfo.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px;">${currentUser.full_name || currentUser.username}</div>
+        <div style="font-size: 12px; color: #999;">${currentUser.role === 'admin' ? 'Administrator' : 'User'}</div>
+    `;
+}
+
+function hasPermission(module, action) {
+    if (!currentUser) return false;
+    
+    // Admin has full access
+    if (currentUser.username === 'sunilsahu') return true;
+    
+    const permissions = currentUser.permissions || {};
+    const modulePerms = permissions[module] || {};
+    
+    if (action === 'view') return modulePerms.view || false;
+    if (action === 'edit') return modulePerms.edit || false;
+    if (action === 'delete') return modulePerms.delete || false;
+    
+    return false;
+}
+
+function getAuthHeaders() {
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+    return {
+        'X-User-Id': userId || '',
+        'X-Username': username || '',
+        'Content-Type': 'application/json'
+    };
+}
+
+// Check auth on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+        // Populate menu if authenticated
+        if (localStorage.getItem('userId')) {
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username');
+            fetch(`${API_BASE}/auth/check`, {
+                headers: {
+                    'X-User-Id': userId,
+                    'X-Username': username
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.authenticated && data.user) {
+                    currentUser = data.user;
+                    populateMenu();
+                    populateUserInfo();
+                }
+            });
+        }
+    });
+} else {
+    checkAuth();
+    // Populate menu if authenticated
+    if (localStorage.getItem('userId')) {
+        const userId = localStorage.getItem('userId');
+        const username = localStorage.getItem('username');
+        fetch(`${API_BASE}/auth/check`, {
+            headers: {
+                'X-User-Id': userId,
+                'X-Username': username
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.authenticated && data.user) {
+                currentUser = data.user;
+                populateMenu();
+                populateUserInfo();
+            }
+        });
+    }
+}
+
 // Utility function to wrap tables in responsive wrapper for mobile
 function wrapTablesInContainer() {
     const tables = document.querySelectorAll('.data-table');
@@ -89,6 +330,12 @@ function loadModule(moduleName, event) {
             break;
         case 'reports':
             loadReports();
+            break;
+        case 'users':
+            loadUsers();
+            break;
+        case 'activity-logs':
+            loadActivityLogs();
             break;
         default:
             contentArea.innerHTML = '<div class="welcome-message"><h1>Module not found</h1></div>';
@@ -4345,4 +4592,387 @@ function loadReports() {
             document.getElementById('content-area').innerHTML = html;
         })
         .catch(err => console.error('Error loading reports:', err));
+}
+
+// ==================== USER MANAGEMENT MODULE ====================
+
+function loadUsers() {
+    fetch(`${API_BASE}/users`, {
+        headers: getAuthHeaders()
+    })
+    .then(res => res.json())
+    .then(users => {
+        if (users.error) {
+            alert('Error: ' + users.error);
+            return;
+        }
+        
+        const html = `
+            <div class="module-content">
+                <div class="module-header">
+                    <h1>User Management</h1>
+                    <button class="btn btn-primary" onclick="showUserForm()">Add User</button>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.length > 0 ? users.map(u => `
+                                <tr>
+                                    <td>${u.username || ''}</td>
+                                    <td>${u.full_name || ''}</td>
+                                    <td>${u.email || ''}</td>
+                                    <td>${u.role || 'user'}</td>
+                                    <td><span style="color: ${u.is_active ? '#10b981' : '#dc2626'}; font-weight: 600;">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+                                    <td>
+                                        <button class="btn btn-success" onclick="showUserForm('${u.id}')">Edit</button>
+                                        ${u.username !== 'sunilsahu' ? `<button class="btn btn-danger" onclick="deleteUser('${u.id}')">Delete</button>` : ''}
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="6" style="text-align: center;">No users found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        document.getElementById('content-area').innerHTML = html;
+    })
+    .catch(err => {
+        console.error('Error loading users:', err);
+        alert('Error loading users: ' + err);
+    });
+}
+
+function showUserForm(userId = null) {
+    const title = userId ? 'Edit User' : 'Add User';
+    const modules = ['doctors', 'doctor-charges', 'patients', 'cases', 'appointments', 'billing-payments', 'charge-master', 'payouts', 'reports'];
+    
+    let formHTML = `
+        <div class="modal">
+            <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <h2>${title}</h2>
+                <form id="userForm" onsubmit="saveUser(event, '${userId || ''}')">
+                    <div class="form-group">
+                        <label>Username *</label>
+                        <input type="text" name="username" id="userUsername" required ${userId ? 'readonly style="background: #f0f0f0;"' : ''}>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="full_name" id="userFullName">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" id="userEmail">
+                    </div>
+                    ${!userId ? `
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" name="password" required>
+                    </div>
+                    ` : `
+                    <div class="form-group">
+                        <label>New Password (leave blank to keep current)</label>
+                        <input type="password" name="password">
+                    </div>
+                    `}
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="is_active" id="userIsActive">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Module Permissions</label>
+                        <div style="border: 1px solid #ddd; border-radius: 4px; padding: 16px; max-height: 400px; overflow-y: auto;">
+                            ${modules.map(module => `
+                                <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
+                                    <div style="font-weight: 600; margin-bottom: 8px; text-transform: capitalize;">${module.replace('-', ' ')}</div>
+                                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" name="permissions[${module}][view]" id="perm_${module}_view" style="margin-right: 6px;">
+                                            <span>View</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" name="permissions[${module}][edit]" id="perm_${module}_edit" style="margin-right: 6px;">
+                                            <span>Edit</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" name="permissions[${module}][delete]" id="perm_${module}_delete" style="margin-right: 6px;">
+                                            <span>Delete</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" onclick="loadUsers()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('content-area').innerHTML = formHTML;
+    
+    if (userId) {
+        fetch(`${API_BASE}/users`, {
+            headers: getAuthHeaders()
+        })
+        .then(res => res.json())
+        .then(users => {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                document.getElementById('userUsername').value = user.username || '';
+                document.getElementById('userFullName').value = user.full_name || '';
+                document.getElementById('userEmail').value = user.email || '';
+                document.getElementById('userIsActive').value = user.is_active ? 'true' : 'false';
+                
+                // Set permissions
+                const permissions = user.permissions || {};
+                modules.forEach(module => {
+                    const modulePerms = permissions[module] || {};
+                    document.getElementById(`perm_${module}_view`).checked = modulePerms.view || false;
+                    document.getElementById(`perm_${module}_edit`).checked = modulePerms.edit || false;
+                    document.getElementById(`perm_${module}_delete`).checked = modulePerms.delete || false;
+                });
+            }
+        });
+    }
+}
+
+function saveUser(event, userId) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    // Build permissions object
+    const permissions = {};
+    const modules = ['doctors', 'doctor-charges', 'patients', 'cases', 'appointments', 'billing-payments', 'charge-master', 'payouts', 'reports'];
+    
+    modules.forEach(module => {
+        const view = formData.get(`permissions[${module}][view]`) === 'on';
+        const edit = formData.get(`permissions[${module}][edit]`) === 'on';
+        const del = formData.get(`permissions[${module}][delete]`) === 'on';
+        
+        if (view || edit || del) {
+            permissions[module] = {view, edit, delete: del};
+        }
+    });
+    
+    const data = {
+        username: formData.get('username'),
+        full_name: formData.get('full_name'),
+        email: formData.get('email'),
+        is_active: formData.get('is_active') === 'true',
+        permissions: permissions
+    };
+    
+    if (formData.get('password')) {
+        data.password = formData.get('password');
+    }
+    
+    const url = userId ? `${API_BASE}/users/${userId}` : `${API_BASE}/users`;
+    const method = userId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert(data.message || 'User saved successfully');
+            loadUsers();
+        }
+    })
+    .catch(err => {
+        console.error('Error saving user:', err);
+        alert('Error saving user: ' + err);
+    });
+}
+
+function deleteUser(userId) {
+    if (!confirm('Are you sure you want to delete this user?')) {
+        return;
+    }
+    
+    fetch(`${API_BASE}/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('User deleted successfully');
+            loadUsers();
+        }
+    })
+    .catch(err => {
+        console.error('Error deleting user:', err);
+        alert('Error deleting user: ' + err);
+    });
+}
+
+// ==================== ACTIVITY LOGS MODULE ====================
+
+let currentActivityLogsPage = 1;
+const activityLogsPageLimit = 50;
+
+function loadActivityLogs(page = 1) {
+    currentActivityLogsPage = page;
+    
+    const usernameFilter = document.getElementById('activityUsernameFilter')?.value || '';
+    const moduleFilter = document.getElementById('activityModuleFilter')?.value || '';
+    const actionFilter = document.getElementById('activityActionFilter')?.value || '';
+    
+    let url = `${API_BASE}/activity-logs?page=${page}&limit=${activityLogsPageLimit}`;
+    if (usernameFilter) url += `&username=${encodeURIComponent(usernameFilter)}`;
+    if (moduleFilter) url += `&module=${encodeURIComponent(moduleFilter)}`;
+    if (actionFilter) url += `&action=${encodeURIComponent(actionFilter)}`;
+    
+    fetch(url, {
+        headers: getAuthHeaders()
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        const logs = data.logs || [];
+        const total = data.total || 0;
+        const totalPages = Math.max(1, Math.ceil(total / activityLogsPageLimit));
+        
+        const html = `
+            <div class="module-content">
+                <div class="module-header">
+                    <h1>Activity Logs</h1>
+                </div>
+                <div style="margin-bottom: 20px; padding: 16px; background: #f9fafb; border-radius: 4px;">
+                    <h3 style="margin-bottom: 12px;">Filters</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 14px;">Username</label>
+                            <input type="text" id="activityUsernameFilter" placeholder="Filter by username..." 
+                                   value="${usernameFilter}" style="padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 14px;">Module</label>
+                            <select id="activityModuleFilter" style="padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">All Modules</option>
+                                <option value="doctors">Doctors</option>
+                                <option value="doctor-charges">Doctor Charges</option>
+                                <option value="patients">Patients</option>
+                                <option value="cases">Cases</option>
+                                <option value="appointments">Appointments</option>
+                                <option value="billing-payments">Billing & Payments</option>
+                                <option value="charge-master">Charge Master</option>
+                                <option value="payouts">Payouts</option>
+                                <option value="reports">Reports</option>
+                                <option value="users">Users</option>
+                                <option value="activity-logs">Activity Logs</option>
+                                <option value="auth">Authentication</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 4px; font-size: 14px;">Action</label>
+                            <select id="activityActionFilter" style="padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">All Actions</option>
+                                <option value="view">View</option>
+                                <option value="create">Create</option>
+                                <option value="update">Update</option>
+                                <option value="delete">Delete</option>
+                                <option value="login">Login</option>
+                                <option value="logout">Logout</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="loadActivityLogs(1)">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Username</th>
+                                <th>Action</th>
+                                <th>Module</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${logs.length > 0 ? logs.map(log => {
+                                const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+                                const details = log.details ? JSON.stringify(log.details) : '';
+                                return `
+                                <tr>
+                                    <td>${timestamp}</td>
+                                    <td>${log.username || ''}</td>
+                                    <td><span style="padding: 4px 8px; border-radius: 4px; background: ${getActionColor(log.action)}; color: white; font-size: 12px; font-weight: 600;">${log.action || ''}</span></td>
+                                    <td>${log.module || ''}</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${details}">${details || '-'}</td>
+                                    <td>${log.ip_address || '-'}</td>
+                                </tr>
+                            `;
+                            }).join('') : '<tr><td colspan="6" style="text-align: center;">No activity logs found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        ${currentActivityLogsPage > 1 ? `<button class="btn btn-secondary" onclick="loadActivityLogs(${currentActivityLogsPage - 1})">Previous</button>` : ''}
+                        <span style="margin: 0 15px;">Page ${currentActivityLogsPage} of ${totalPages}</span>
+                        ${currentActivityLogsPage < totalPages ? `<button class="btn btn-secondary" onclick="loadActivityLogs(${currentActivityLogsPage + 1})">Next</button>` : ''}
+                    </div>
+                    <div style="color: #666;">Total: ${total} logs</div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('content-area').innerHTML = html;
+        
+        // Set filter values
+        if (document.getElementById('activityModuleFilter')) {
+            document.getElementById('activityModuleFilter').value = moduleFilter;
+        }
+        if (document.getElementById('activityActionFilter')) {
+            document.getElementById('activityActionFilter').value = actionFilter;
+        }
+    })
+    .catch(err => {
+        console.error('Error loading activity logs:', err);
+        alert('Error loading activity logs: ' + err);
+    });
+}
+
+function getActionColor(action) {
+    const colors = {
+        'view': '#3b82f6',
+        'create': '#10b981',
+        'update': '#f59e0b',
+        'delete': '#dc2626',
+        'login': '#8b5cf6',
+        'logout': '#6b7280'
+    };
+    return colors[action] || '#6b7280';
 }

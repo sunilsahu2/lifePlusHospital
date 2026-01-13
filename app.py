@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory, send_file
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file, session
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
@@ -7,7 +7,9 @@ import urllib.parse
 import logging
 import os
 import uuid
+import hashlib
 from werkzeug.utils import secure_filename
+from functools import wraps
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -29,7 +31,8 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+CORS(app, supports_credentials=True)
 
 # MongoDB Connection Configuration
 MONGODB_USERNAME = 'sunilsahu'
@@ -2300,6 +2303,330 @@ def close_case(case_id):
         return jsonify({'error': 'Case not found'}), 404
     except Exception as e:
         logging.error(f"Error closing case: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== AUTHENTICATION & AUTHORIZATION ====================
+
+def hash_password(password):
+    """Hash password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def check_permission(user, module, action):
+    """Check if user has permission for module and action (view/edit/delete)"""
+    if not user:
+        return False
+    
+    # Admin user has full access
+    if user.get('username') == 'sunilsahu':
+        return True
+    
+    permissions = user.get('permissions', {})
+    module_perms = permissions.get(module, {})
+    
+    # Check if user has the specific action permission
+    if action == 'view':
+        return module_perms.get('view', False)
+    elif action == 'edit':
+        return module_perms.get('edit', False)
+    elif action == 'delete':
+        return module_perms.get('delete', False)
+    
+    return False
+
+def log_activity(user_id, username, action, module, details=None):
+    """Log user activity for audit trail"""
+    try:
+        activity = {
+            'user_id': parse_object_id(user_id) if user_id else None,
+            'username': username,
+            'action': action,  # 'view', 'create', 'update', 'delete', 'login', 'logout'
+            'module': module,  # 'doctors', 'patients', 'cases', etc.
+            'details': details or {},
+            'ip_address': request.remote_addr,
+            'timestamp': datetime.now()
+        }
+        db.activity_logs.insert_one(activity)
+    except Exception as e:
+        logging.error(f"Error logging activity: {e}")
+
+# Initialize admin user if not exists
+def initialize_admin_user():
+    """Create admin user 'sunilsahu' if it doesn't exist"""
+    try:
+        admin = db.users.find_one({'username': 'sunilsahu'})
+        if not admin:
+            admin_user = {
+                'username': 'sunilsahu',
+                'password': hash_password('admin123'),  # Default password - should be changed
+                'full_name': 'Admin User',
+                'email': 'admin@hospital.com',
+                'role': 'admin',
+                'is_active': True,
+                'permissions': {},  # Empty means full access for admin
+                'created_at': datetime.now(),
+                'created_by': None
+            }
+            db.users.insert_one(admin_user)
+            logging.info("Admin user 'sunilsahu' created with default password 'admin123'")
+    except Exception as e:
+        logging.error(f"Error initializing admin user: {e}")
+
+# Initialize admin on startup
+initialize_admin_user()
+
+# ==================== AUTHENTICATION API ====================
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """User login endpoint"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({'error': 'Username and password are required'}), 400
+        
+        # Find user
+        user = db.users.find_one({'username': username, 'is_active': True})
+        if not user:
+            log_activity(None, username, 'login_failed', 'auth', {'reason': 'user_not_found'})
+            return jsonify({'error': 'Invalid username or password'}), 401
+        
+        # Check password
+        hashed_password = hash_password(password)
+        if user.get('password') != hashed_password:
+            log_activity(str(user.get('_id')), username, 'login_failed', 'auth', {'reason': 'invalid_password'})
+            return jsonify({'error': 'Invalid username or password'}), 401
+        
+        # Create session
+        user_data = serialize_doc(user)
+        user_data.pop('password', None)  # Remove password from response
+        
+        # Log successful login
+        log_activity(str(user.get('_id')), username, 'login', 'auth')
+        
+        return jsonify({
+            'message': 'Login successful',
+            'user': user_data
+        })
+    except Exception as e:
+        logging.error(f"Error during login: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """User logout endpoint"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        username = request.headers.get('X-Username', 'unknown')
+        
+        if user_id:
+            log_activity(user_id, username, 'logout', 'auth')
+        
+        return jsonify({'message': 'Logout successful'})
+    except Exception as e:
+        logging.error(f"Error during logout: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/check', methods=['GET'])
+def check_auth():
+    """Check if user is authenticated"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'authenticated': False}), 401
+        
+        user = db.users.find_one({'_id': parse_object_id(user_id), 'is_active': True})
+        if not user:
+            return jsonify({'authenticated': False}), 401
+        
+        user_data = serialize_doc(user)
+        user_data.pop('password', None)
+        return jsonify({'authenticated': True, 'user': user_data})
+    except Exception as e:
+        logging.error(f"Error checking auth: {e}")
+        return jsonify({'authenticated': False}), 401
+
+# ==================== USERS MANAGEMENT API ====================
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    """Get all users (admin only)"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        user = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not user or user.get('username') != 'sunilsahu':
+            return jsonify({'error': 'Access denied. Admin only.'}), 403
+        
+        users = list(db.users.find({}).sort('created_at', -1))
+        for u in users:
+            u.pop('password', None)  # Remove passwords
+        
+        log_activity(user_id, user.get('username'), 'view', 'users')
+        return jsonify(serialize_doc(users))
+    except Exception as e:
+        logging.error(f"Error getting users: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users', methods=['POST'])
+def create_user():
+    """Create new user (admin only)"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        admin = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not admin or admin.get('username') != 'sunilsahu':
+            return jsonify({'error': 'Access denied. Admin only.'}), 403
+        
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({'error': 'Username and password are required'}), 400
+        
+        # Check if username exists
+        existing = db.users.find_one({'username': username})
+        if existing:
+            return jsonify({'error': 'Username already exists'}), 400
+        
+        # Create user
+        new_user = {
+            'username': username,
+            'password': hash_password(password),
+            'full_name': data.get('full_name', ''),
+            'email': data.get('email', ''),
+            'role': 'user',
+            'is_active': data.get('is_active', True),
+            'permissions': data.get('permissions', {}),
+            'created_at': datetime.now(),
+            'created_by': parse_object_id(user_id)
+        }
+        
+        result = db.users.insert_one(new_user)
+        new_user['_id'] = result.inserted_id
+        new_user.pop('password', None)
+        
+        log_activity(user_id, admin.get('username'), 'create', 'users', {'target_user': username})
+        return jsonify({'id': str(result.inserted_id), 'message': 'User created successfully', 'user': serialize_doc(new_user)}), 201
+    except Exception as e:
+        logging.error(f"Error creating user: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users/<id>', methods=['PUT'])
+def update_user(id):
+    """Update user (admin only)"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        admin = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not admin or admin.get('username') != 'sunilsahu':
+            return jsonify({'error': 'Access denied. Admin only.'}), 403
+        
+        data = request.get_json()
+        update_data = {}
+        
+        if 'full_name' in data:
+            update_data['full_name'] = data['full_name']
+        if 'email' in data:
+            update_data['email'] = data['email']
+        if 'is_active' in data:
+            update_data['is_active'] = data['is_active']
+        if 'permissions' in data:
+            update_data['permissions'] = data['permissions']
+        if 'password' in data and data['password']:
+            update_data['password'] = hash_password(data['password'])
+        
+        update_data['updated_at'] = datetime.now()
+        
+        result = db.users.update_one({'_id': parse_object_id(id)}, {'$set': update_data})
+        if result.modified_count:
+            target_user = db.users.find_one({'_id': parse_object_id(id)})
+            target_user.pop('password', None)
+            log_activity(user_id, admin.get('username'), 'update', 'users', {'target_user_id': id})
+            return jsonify({'message': 'User updated successfully', 'user': serialize_doc(target_user)})
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        logging.error(f"Error updating user: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users/<id>', methods=['DELETE'])
+def delete_user(id):
+    """Delete user (admin only)"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        admin = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not admin or admin.get('username') != 'sunilsahu':
+            return jsonify({'error': 'Access denied. Admin only.'}), 403
+        
+        # Prevent deleting admin user
+        target_user = db.users.find_one({'_id': parse_object_id(id)})
+        if target_user and target_user.get('username') == 'sunilsahu':
+            return jsonify({'error': 'Cannot delete admin user'}), 400
+        
+        result = db.users.delete_one({'_id': parse_object_id(id)})
+        if result.deleted_count:
+            log_activity(user_id, admin.get('username'), 'delete', 'users', {'target_user_id': id})
+            return jsonify({'message': 'User deleted successfully'})
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        logging.error(f"Error deleting user: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== ACTIVITY LOGS API ====================
+
+@app.route('/api/activity-logs', methods=['GET'])
+def get_activity_logs():
+    """Get activity logs (admin only)"""
+    try:
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        admin = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not admin or admin.get('username') != 'sunilsahu':
+            return jsonify({'error': 'Access denied. Admin only.'}), 403
+        
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 50))
+        skip = (page - 1) * limit
+        
+        # Optional filters
+        username_filter = request.args.get('username', '').strip()
+        module_filter = request.args.get('module', '').strip()
+        action_filter = request.args.get('action', '').strip()
+        
+        query = {}
+        if username_filter:
+            query['username'] = {'$regex': username_filter, '$options': 'i'}
+        if module_filter:
+            query['module'] = module_filter
+        if action_filter:
+            query['action'] = action_filter
+        
+        total = db.activity_logs.count_documents(query)
+        logs = list(db.activity_logs.find(query).sort('timestamp', -1).skip(skip).limit(limit))
+        
+        log_activity(user_id, admin.get('username'), 'view', 'activity-logs')
+        return jsonify({
+            'logs': serialize_doc(logs),
+            'total': total,
+            'page': page,
+            'limit': limit
+        })
+    except Exception as e:
+        logging.error(f"Error getting activity logs: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
