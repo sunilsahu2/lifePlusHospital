@@ -1,0 +1,451 @@
+/* Patient Detail View Styles */
+
+/* Patient Profile Card */
+.patient-detail-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.patient-profile-card {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+}
+
+.patient-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: white;
+    margin: 0 auto 20px;
+    border: 4px solid var(--gray-100);
+}
+
+.patient-photo img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.patient-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gray-900);
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.patient-meta {
+    text-align: center;
+    font-size: 14px;
+    color: var(--gray-600);
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.patient-info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.patient-info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+}
+
+.patient-info-item:last-child {
+    border-bottom: none;
+}
+
+.patient-info-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.patient-info-text {
+    flex: 1;
+    color: var(--gray-700);
+}
+
+.patient-actions {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Tabbed Interface */
+.patient-tabs {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+}
+
+.tab-navigation {
+    display: flex;
+    border-bottom: 2px solid var(--gray-200);
+    background: var(--gray-50);
+    overflow-x: auto;
+}
+
+.tab-navigation::-webkit-scrollbar {
+    height: 4px;
+}
+
+.tab-navigation::-webkit-scrollbar-track {
+    background: var(--gray-100);
+}
+
+.tab-navigation::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 2px;
+}
+
+.tab-button {
+    padding: 16px 24px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: var(--transition);
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+
+.tab-button:hover {
+    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: white;
+}
+
+.tab-content {
+    padding: 24px;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* Case Cards */
+.cases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.case-card {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    border: 2px solid var(--gray-200);
+    transition: var(--transition);
+    position: relative;
+}
+
+.case-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.case-number {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.case-status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.case-status-badge.open {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.case-status-badge.closed {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+.case-details {
+    font-size: 14px;
+    color: var(--gray-700);
+}
+
+.case-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.case-detail-row:last-child {
+    border-bottom: none;
+}
+
+.case-detail-label {
+    font-weight: 600;
+    color: var(--gray-600);
+}
+
+.case-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+/* Appointments List */
+.appointments-list {
+    margin-top: 20px;
+}
+
+.appointment-item {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid var(--primary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.appointment-item:hover {
+    background: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.appointment-info {
+    flex: 1;
+}
+
+.appointment-date {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+}
+
+.appointment-doctor {
+    font-size: 14px;
+    color: var(--gray-600);
+}
+
+.appointment-time {
+    font-size: 14px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Prescriptions List */
+.prescriptions-list {
+    margin-top: 20px;
+}
+
+.prescription-item {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: var(--transition);
+}
+
+.prescription-item:hover {
+    background: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.prescription-icon {
+    font-size: 32px;
+}
+
+.prescription-info {
+    flex: 1;
+}
+
+.prescription-date {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+}
+
+.prescription-doctor {
+    font-size: 13px;
+    color: var(--gray-600);
+}
+
+.prescription-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Billing Summary */
+.billing-summary-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: white;
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    margin-top: 20px;
+}
+
+.billing-summary-card h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.billing-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.billing-row:last-child {
+    border-bottom: none;
+    font-size: 18px;
+    font-weight: 700;
+    padding-top: 16px;
+    margin-top: 8px;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.billing-label {
+    opacity: 0.9;
+}
+
+.billing-amount {
+    font-weight: 700;
+}
+
+.billing-progress {
+    margin-top: 16px;
+}
+
+.billing-progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.billing-progress-fill {
+    height: 100%;
+    background: white;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .patient-detail-container {
+        grid-template-columns: 1fr;
+    }
+
+    .patient-profile-card {
+        position: relative;
+        top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .tab-navigation {
+        flex-wrap: nowrap;
+    }
+
+    .tab-button {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+
+    .cases-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .patient-photo {
+        width: 100px;
+        height: 100px;
+        font-size: 40px;
+    }
+
+    .patient-name {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .patient-detail-container {
+        gap: 16px;
+    }
+
+    .patient-profile-card,
+    .patient-tabs {
+        padding: 16px;
+    }
+
+    .tab-content {
+        padding: 16px;
+    }
+
+    .case-actions,
+    .prescription-actions {
+        flex-direction: column;
+    }
+
+    .case-actions .btn,
+    .prescription-actions .btn {
+        width: 100%;
+    }
+}

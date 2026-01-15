@@ -1,32 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="description" content="Comprehensive Hospital Management System for managing doctors, patients, cases, appointments, billing and more">
+    <meta name="description"
+        content="Comprehensive Hospital Management System for managing doctors, patients, cases, appointments, billing and more">
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Hospital Management">
     <title>Hospital Management System</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/patient-detail.css">
+    <link rel="stylesheet" href="/static/css/calendar.css">
+    <link rel="stylesheet" href="/static/css/case-detail.css">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
 </head>
+
 <body>
     <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
         <span></span>
         <span></span>
         <span></span>
     </button>
-    
+
     <div class="overlay" id="overlay"></div>
-    
+
     <div class="container">
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>Hospital Management</h2>
+            <div class="sidebar-header" style="display: flex; align-items: center; gap: 12px; padding: 20px;">
+                <img src="https://lifeplushospital.in/img/logo-1.jpg" alt="Logo"
+                    style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
+                <h2 style="font-size: 1.2rem; margin: 0; color: #1e293b; font-weight: 700;">Life Plus Hospital</h2>
                 <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">×</button>
             </div>
             <nav class="sidebar-menu">
@@ -41,7 +50,7 @@
                 </div>
             </nav>
         </aside>
-        
+
         <main class="main-content">
             <div id="content-area">
                 <div class="welcome-message">
@@ -51,8 +60,12 @@
             </div>
         </main>
     </div>
-    
+
     <script src="/static/js/main.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/patient-detail.js"></script>
+    <script src="/static/js/calendar.js"></script>
+    <script src="/static/js/case-detail.js"></script>
     <script>
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
@@ -62,7 +75,7 @@
                     .catch(err => console.log('Service Worker registration failed:', err));
             });
         }
-        
+
         // Mobile menu toggle functions
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -71,7 +84,7 @@
             overlay.classList.toggle('active');
             document.body.classList.toggle('menu-open');
         }
-        
+
         function closeMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
@@ -79,21 +92,22 @@
             overlay.classList.remove('active');
             document.body.classList.remove('menu-open');
         }
-        
+
         // Make functions globally available
         window.toggleMobileMenu = toggleMobileMenu;
         window.closeMobileMenu = closeMobileMenu;
-        
+
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
             const toggleBtn = document.getElementById('mobileMenuToggle');
             const closeBtn = document.getElementById('sidebarClose');
             const overlay = document.getElementById('overlay');
-            
+
             if (toggleBtn) toggleBtn.addEventListener('click', toggleMobileMenu);
             if (closeBtn) closeBtn.addEventListener('click', closeMobileMenu);
             if (overlay) overlay.addEventListener('click', closeMobileMenu);
         });
     </script>
 </body>
+
 </html>

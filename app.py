@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 import urllib.parse
 import logging
 import os
@@ -32,6 +32,8 @@ logging.basicConfig(
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'static', 'uploads')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 CORS(app, supports_credentials=True)
 
 # MongoDB Connection Configuration
@@ -72,9 +74,24 @@ def serialize_doc(doc):
 # Helper function to parse ObjectId
 def parse_object_id(id_str):
     try:
+        if not id_str:
+            return None
         return ObjectId(id_str)
     except:
         return None
+
+def is_case_closed(case_id):
+    """Check if a case is closed. Returns True if closed, False otherwise."""
+    if not case_id:
+        return False
+    # Ensure it's an ObjectId for the query
+    from bson.objectid import ObjectId as BsonObjectId
+    if not isinstance(case_id, BsonObjectId):
+        case_id = parse_object_id(str(case_id))
+    if not case_id:
+        return False
+    case = db.cases.find_one({'_id': case_id}, {'status': 1})
+    return case and case.get('status') == 'closed'
 
 # ==================== ROUTES ====================
 
@@ -364,9 +381,31 @@ def get_cases():
             
             # Get case charges count and total
             case_id = case['_id']
-            case_charges = list(db.case_charges.find({'case_id': case_id}))
-            case['charges_count'] = len(case_charges)
-            case['charges_total'] = sum(charge.get('total_amount', 0) for charge in case_charges)
+            
+            # Hospital Charges
+            pipeline_charges = [
+                {'$match': {'case_id': case_id}},
+                {'$group': {'_id': None, 'total': {'$sum': '$total_amount'}, 'count': {'$sum': 1}}}
+            ]
+            charges_res = list(db.case_charges.aggregate(pipeline_charges))
+            hospital_total = charges_res[0]['total'] if charges_res else 0
+            hospital_count = charges_res[0]['count'] if charges_res else 0
+            
+            # Legacy Doctor Charges
+            doctor_charges_res = list(db.case_doctor_charges.find({'case_id': case_id}))
+            doctor_total = sum(c.get('amount', 0) for c in doctor_charges_res)
+            
+            case['charges_count'] = hospital_count + len(doctor_charges_res)
+            case['charges_total'] = hospital_total + doctor_total
+            
+            # Get payments and calculate due
+            pipeline_payments = [
+                {'$match': {'case_id': case_id}},
+                {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+            ]
+            payments_res = list(db.payments.aggregate(pipeline_payments))
+            case['paid_amount'] = payments_res[0]['total'] if payments_res else 0
+            case['due_amount'] = case['charges_total'] - case['paid_amount']
             
             # Get appointments for this case
             case_appointments = list(db.appointments.find({'case_id': case_id}).sort('appointment_date', 1))
@@ -457,9 +496,17 @@ def get_case(id):
                     case['referred_by_name'] = referred_by.get('name', '')
         
         # Get case charges (patient charges)
-        case_charges = list(db.case_charges.find({'case_id': parse_object_id(id)}))
+        all_charges = list(db.case_charges.find({'case_id': parse_object_id(id)}).sort('created_at', -1))
+        
+        hospital_charges = []
+        pathology_charges = []
+        pharmacy_charges = []
+        new_doctor_charges = []
+        
         # Populate charge master names and doctor names
-        for charge in case_charges:
+        for charge in all_charges:
+            ctype = charge.get('charge_type', 'hospital')
+            
             if 'charge_master_id' in charge:
                 charge_master = db.charge_master.find_one({'_id': charge['charge_master_id']})
                 if charge_master:
@@ -470,9 +517,25 @@ def get_case(id):
                 doctor = db.doctors.find_one({'_id': charge['doctor_id']})
                 if doctor:
                     charge['doctor_name'] = doctor.get('name', '')
-        case['charges'] = serialize_doc(case_charges)
+            
+            # Split into categories
+            if charge.get('is_doctor_charge'):
+                # Normalize for doctor charges UI expectations
+                charge['amount'] = charge.get('total_amount', 0)
+                charge['date'] = charge.get('charge_date')
+                new_doctor_charges.append(charge)
+            elif ctype == 'pathology':
+                pathology_charges.append(charge)
+            elif ctype == 'pharmacy':
+                pharmacy_charges.append(charge)
+            else:
+                hospital_charges.append(charge)
+                
+        case['charges'] = serialize_doc(hospital_charges)
+        case['pathology_charges'] = serialize_doc(pathology_charges)
+        case['pharmacy_charges'] = serialize_doc(pharmacy_charges)
         
-        # Get case doctor charges
+        # Get case doctor charges (legacy)
         case_doctor_charges = list(db.case_doctor_charges.find({'case_id': parse_object_id(id)}))
         # Populate doctor names
         for charge in case_doctor_charges:
@@ -480,7 +543,9 @@ def get_case(id):
                 doctor = db.doctors.find_one({'_id': charge['doctor_id']})
                 if doctor:
                     charge['doctor_name'] = doctor.get('name', '')
-        case['doctor_charges'] = serialize_doc(case_doctor_charges)
+                    
+        # Combine legacy and new doctor charges
+        case['doctor_charges'] = serialize_doc(case_doctor_charges + new_doctor_charges)
         
         # Get appointments for this case
         case_appointments = list(db.appointments.find({'case_id': parse_object_id(id)}))
@@ -509,6 +574,16 @@ def get_case(id):
                 if doctor:
                     pres['doctor_name'] = doctor.get('name', '')
         case['prescriptions'] = serialize_doc(case_prescriptions)
+
+        # Get case studies
+        case_studies = list(db.case_studies.find({'case_id': parse_object_id(id)}).sort('created_at', -1))
+        # Populate doctor names
+        for study in case_studies:
+            if 'doctor_id' in study and study['doctor_id']:
+                doctor = db.doctors.find_one({'_id': study['doctor_id']})
+                if doctor:
+                    study['doctor_name'] = doctor.get('name', '')
+        case['case_studies'] = serialize_doc(case_studies)
         
         return jsonify(serialize_doc(case))
     except Exception as e:
@@ -548,8 +623,37 @@ def create_case():
 @app.route('/api/cases/<id>', methods=['PUT'])
 def update_case(id):
     try:
+        case_id_obj = parse_object_id(id)
+        if is_case_closed(case_id_obj):
+            return jsonify({'error': 'Cannot update a closed case'}), 400
+            
         data = request.get_json()
         
+        # Check if trying to close the case
+        if data.get('status') == 'closed':
+            # Calculate total charges
+            pipeline_charges = [
+                {'$match': {'case_id': case_id_obj}},
+                {'$group': {'_id': None, 'total': {'$sum': '$total_amount'}}}
+            ]
+            charges_result = list(db.case_charges.aggregate(pipeline_charges))
+            total_charges = charges_result[0]['total'] if charges_result else 0
+            
+            # Add legacy doctor charges
+            doctor_charges_legacy = list(db.case_doctor_charges.find({'case_id': case_id_obj}))
+            total_charges += sum(c.get('amount', 0) for c in doctor_charges_legacy)
+            
+            # Calculate total payments
+            pipeline_payments = [
+                {'$match': {'case_id': case_id_obj}},
+                {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+            ]
+            payments_result = list(db.payments.aggregate(pipeline_payments))
+            total_payments = payments_result[0]['total'] if payments_result else 0
+            
+            if total_payments < total_charges:
+                return jsonify({'error': f'Cannot close case. Payment overdue. Total: {total_charges}, Paid: {total_payments}'}), 400
+
         # Convert patient_id to ObjectId if present
         if 'patient_id' in data and data['patient_id']:
             data['patient_id'] = parse_object_id(data['patient_id'])
@@ -559,10 +663,10 @@ def update_case(id):
             data['referred_by_id'] = parse_object_id(data['referred_by_id'])
         
         data['updated_at'] = datetime.now()
-        result = db.cases.update_one({'_id': parse_object_id(id)}, {'$set': data})
+        result = db.cases.update_one({'_id': case_id_obj}, {'$set': data})
         if result.modified_count:
             return jsonify({'message': 'Case updated successfully'})
-        return jsonify({'error': 'Case not found'}), 404
+        return jsonify({'message': 'Case updated successfully (No changes made)'}) # Handle no changes but valid request
     except Exception as e:
         logging.error(f"Error updating case: {e}")
         return jsonify({'error': str(e)}), 500
@@ -643,6 +747,11 @@ def create_appointment():
 @app.route('/api/appointments/<id>', methods=['PUT'])
 def update_appointment(id):
     try:
+        appointment_id = parse_object_id(id)
+        appointment = db.appointments.find_one({'_id': appointment_id})
+        if appointment and is_case_closed(appointment.get('case_id')):
+            return jsonify({'error': 'Cannot update appointment for a closed case'}), 400
+            
         data = request.get_json()
         
         # Convert IDs to ObjectId if present
@@ -665,7 +774,12 @@ def update_appointment(id):
 @app.route('/api/appointments/<id>', methods=['DELETE'])
 def delete_appointment(id):
     try:
-        result = db.appointments.delete_one({'_id': parse_object_id(id)})
+        appointment_id = parse_object_id(id)
+        appointment = db.appointments.find_one({'_id': appointment_id})
+        if appointment and is_case_closed(appointment.get('case_id')):
+            return jsonify({'error': 'Cannot delete appointment for a closed case'}), 400
+            
+        result = db.appointments.delete_one({'_id': appointment_id})
         if result.deleted_count:
             return jsonify({'message': 'Appointment deleted successfully'})
         return jsonify({'error': 'Appointment not found'}), 404
@@ -726,6 +840,7 @@ def create_prescription():
             doctor_id = request.form.get('doctor_id')
             prescription_date = request.form.get('prescription_date')
             notes = request.form.get('notes', '')
+            medications = request.form.get('medications', '')
             
             # Check if case is closed
             if case_id:
@@ -753,6 +868,7 @@ def create_prescription():
                     'patient_id': parse_object_id(patient_id) if patient_id else None,
                     'doctor_id': parse_object_id(doctor_id) if doctor_id else None,
                     'prescription_date': datetime.strptime(prescription_date, '%Y-%m-%d') if prescription_date else datetime.now(),
+                    'medications': medications,
                     'file_path': f'/static/uploads/prescriptions/{unique_filename}',
                     'file_name': filename,
                     'notes': notes,
@@ -793,9 +909,14 @@ def create_prescription():
 @app.route('/api/prescriptions/<id>', methods=['PUT'])
 def update_prescription(id):
     try:
+        prescription_id = parse_object_id(id)
+        prescription = db.prescriptions.find_one({'_id': prescription_id})
+        if prescription and is_case_closed(prescription.get('case_id')):
+            return jsonify({'error': 'Cannot update prescription for a closed case'}), 400
+            
         data = request.get_json()
         data['updated_at'] = datetime.now()
-        result = db.prescriptions.update_one({'_id': parse_object_id(id)}, {'$set': data})
+        result = db.prescriptions.update_one({'_id': prescription_id}, {'$set': data})
         if result.modified_count:
             return jsonify({'message': 'Prescription updated successfully'})
         return jsonify({'error': 'Prescription not found'}), 404
@@ -806,7 +927,12 @@ def update_prescription(id):
 @app.route('/api/prescriptions/<id>', methods=['DELETE'])
 def delete_prescription(id):
     try:
-        result = db.prescriptions.delete_one({'_id': parse_object_id(id)})
+        prescription_id = parse_object_id(id)
+        prescription = db.prescriptions.find_one({'_id': prescription_id})
+        if prescription and is_case_closed(prescription.get('case_id')):
+            return jsonify({'error': 'Cannot delete prescription for a closed case'}), 400
+            
+        result = db.prescriptions.delete_one({'_id': prescription_id})
         if result.deleted_count:
             return jsonify({'message': 'Prescription deleted successfully'})
         return jsonify({'error': 'Prescription not found'}), 404
@@ -900,8 +1026,24 @@ def get_case_charges():
 @app.route('/api/case-charges', methods=['POST'])
 def create_case_charge():
     try:
-        data = request.get_json()
+        data = {}
+        file_path = None
         
+        # Handle different content types
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.form.to_dict()
+            if 'file' in request.files:
+                file = request.files['file']
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    file_ext = os.path.splitext(filename)[1].lower()
+                    unique_filename = f"bill_{uuid.uuid4().hex}{file_ext}"
+                    upload_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    file.save(upload_path)
+                    file_path = f"/static/uploads/{unique_filename}"
+        else:
+            data = request.get_json() or {}
+
         # Convert case_id and charge_master_id to ObjectId
         if 'case_id' in data and data['case_id']:
             case_id_obj = parse_object_id(data['case_id'])
@@ -911,16 +1053,29 @@ def create_case_charge():
             case = db.cases.find_one({'_id': case_id_obj})
             if case and case.get('status') == 'closed':
                 return jsonify({'error': 'Cannot add charges to a closed case'}), 400
+        else:
+             return jsonify({'error': 'Case ID is required'}), 400
+
         if 'charge_master_id' in data and data['charge_master_id']:
             data['charge_master_id'] = parse_object_id(data['charge_master_id'])
+        
         if 'doctor_id' in data and data['doctor_id']:
             data['doctor_id'] = parse_object_id(data['doctor_id'])
         
+        # Determine charge type (default to 'hospital' if not provided)
+        # Note: Frontend 'Add Doctor Charge' sends is_doctor_charge=True but maybe not charge_type
+        if 'charge_type' not in data:
+            data['charge_type'] = 'hospital'
+            
         # Convert quantity and amounts to proper types
         if 'quantity' in data:
             data['quantity'] = int(data['quantity']) if data['quantity'] else 1
+        else:
+            data['quantity'] = 1
+            
         if 'unit_amount' in data:
             data['unit_amount'] = float(data['unit_amount']) if data['unit_amount'] else 0.0
+        
         if 'total_amount' in data:
             data['total_amount'] = float(data['total_amount']) if data['total_amount'] else 0.0
         elif 'quantity' in data and 'unit_amount' in data:
@@ -928,53 +1083,26 @@ def create_case_charge():
             data['total_amount'] = float(data['quantity']) * float(data['unit_amount'])
         
         data['created_at'] = datetime.now()
+        if 'charge_date' not in data:
+            data['charge_date'] = datetime.now()
+        else:
+             # Ensure date format if string
+             if isinstance(data['charge_date'], str):
+                 try:
+                     # Try parsing ISO format
+                     data['charge_date'] = datetime.fromisoformat(data['charge_date'].replace('Z', '+00:00'))
+                 except:
+                     pass # Keep as string or default to simple date
+
+        if file_path:
+            data['file_path'] = file_path
+
         result = db.case_charges.insert_one(data)
         
-        # If doctor_id exists, create payout record
+        # If doctor_id exists, create payout record (Placeholder)
+        # If doctor_id exists, create payout record (Placeholder)
         if 'doctor_id' in data and data['doctor_id'] and 'case_id' in data and data['case_id']:
-            try:
-                # Get case details
-                case = db.cases.find_one({'_id': data['case_id']})
-                if case:
-                    # Get patient name
-                    patient_name = ''
-                    if 'patient_id' in case:
-                        patient = db.patients.find_one({'_id': case['patient_id']})
-                        if patient:
-                            patient_name = patient.get('name', '')
-                    
-                    # Calculate doctor charge amount from doctor_charges collection
-                    doctor_charge_amount = 0
-                    if 'charge_master_id' in data and data['charge_master_id']:
-                        doctor_charge = db.doctor_charges.find_one({
-                            'doctor_id': data['doctor_id'],
-                            'charge_master_id': data['charge_master_id']
-                        })
-                        if doctor_charge:
-                            # Get amount from doctor_charges and multiply by quantity
-                            doctor_charge_amount = doctor_charge.get('amount', 0) * data.get('quantity', 1)
-                    
-                    # Use the total_amount of this specific charge
-                    total_charge_amount = data.get('total_amount', 0)
-                    
-                    # Create payout record
-                    payout_data = {
-                        'case_id': data['case_id'],
-                        'doctor_id': data['doctor_id'],
-                        'case_charge_id': result.inserted_id,  # Link to the case charge
-                        'date_time': datetime.now(),
-                        'case_number': case.get('case_number', ''),
-                        'patient_name': patient_name,
-                        'case_type': case.get('case_type', ''),
-                        'total_charge_amount': total_charge_amount,
-                        'doctor_charge_amount': doctor_charge_amount,
-                        'payment_status': 'pending',
-                        'created_at': datetime.now()
-                    }
-                    db.payouts.insert_one(payout_data)
-            except Exception as payout_error:
-                logging.error(f"Error creating payout record: {payout_error}")
-                # Don't fail the case charge creation if payout creation fails
+            pass
         
         return jsonify({'id': str(result.inserted_id), 'message': 'Case charge created successfully'}), 201
     except Exception as e:
@@ -1029,7 +1157,12 @@ def update_case_charge(id):
 @app.route('/api/case-charges/<id>', methods=['DELETE'])
 def delete_case_charge(id):
     try:
-        result = db.case_charges.delete_one({'_id': parse_object_id(id)})
+        charge_id = parse_object_id(id)
+        charge = db.case_charges.find_one({'_id': charge_id})
+        if charge and is_case_closed(charge.get('case_id')):
+            return jsonify({'error': 'Cannot delete charges for a closed case'}), 400
+            
+        result = db.case_charges.delete_one({'_id': charge_id})
         if result.deleted_count:
             return jsonify({'message': 'Case charge deleted successfully'})
         return jsonify({'error': 'Case charge not found'}), 404
@@ -1223,11 +1356,32 @@ def get_case_doctor_charge(id):
 def create_case_doctor_charge():
     try:
         data = request.get_json()
-        data['created_at'] = datetime.now()
-        result = db.case_doctor_charges.insert_one(data)
-        return jsonify({'id': str(result.inserted_id), 'message': 'Case doctor charge created successfully'}), 201
+        
+        # Parse fields for case_charges schema
+        case_id = data.get('case_id')
+        doctor_id = data.get('doctor_id')
+        amount = float(data.get('amount', 0))
+        date = data.get('charge_date')
+        notes = data.get('notes', '')
+        
+        # Create record for case_charges
+        charge_record = {
+            'case_id': parse_object_id(case_id) if case_id else None,
+            'doctor_id': parse_object_id(doctor_id) if doctor_id else None,
+            'charge_name': 'Doctor Charge',
+            'quantity': 1,
+            'rate': amount,
+            'total_amount': amount,
+            'charge_date': date if date else datetime.now(),
+            'notes': notes,
+            'created_at': datetime.now(),
+            'is_doctor_charge': True # Flag to distinguish if needed
+        }
+        
+        result = db.case_charges.insert_one(charge_record)
+        return jsonify({'id': str(result.inserted_id), 'message': 'Doctor charge added successfully'}), 201
     except Exception as e:
-        logging.error(f"Error creating case doctor charge: {e}")
+        logging.error(f"Error creating doctor charge: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/case-doctor-charges/<id>', methods=['PUT'])
@@ -1419,7 +1573,11 @@ def create_payment():
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-        
+            
+        case_id = data.get('case_id')
+        if case_id and is_case_closed(case_id):
+            return jsonify({'error': 'Cannot record payments for a closed case'}), 400
+            
         data['created_at'] = datetime.now()
         
         # Ensure case_id and patient_id are ObjectIds
@@ -1493,9 +1651,14 @@ def create_payment():
 @app.route('/api/payments/<id>', methods=['PUT'])
 def update_payment(id):
     try:
+        payment_id = parse_object_id(id)
+        payment = db.payments.find_one({'_id': payment_id})
+        if payment and is_case_closed(payment.get('case_id')):
+            return jsonify({'error': 'Cannot update payment for a closed case'}), 400
+            
         data = request.get_json()
         data['updated_at'] = datetime.now()
-        result = db.payments.update_one({'_id': parse_object_id(id)}, {'$set': data})
+        result = db.payments.update_one({'_id': payment_id}, {'$set': data})
         if result.modified_count:
             return jsonify({'message': 'Payment updated successfully'})
         return jsonify({'error': 'Payment not found'}), 404
@@ -1506,7 +1669,12 @@ def update_payment(id):
 @app.route('/api/payments/<id>', methods=['DELETE'])
 def delete_payment(id):
     try:
-        result = db.payments.delete_one({'_id': parse_object_id(id)})
+        payment_id = parse_object_id(id)
+        payment = db.payments.find_one({'_id': payment_id})
+        if payment and is_case_closed(payment.get('case_id')):
+            return jsonify({'error': 'Cannot delete payment for a closed case'}), 400
+            
+        result = db.payments.delete_one({'_id': payment_id})
         if result.deleted_count:
             return jsonify({'message': 'Payment deleted successfully'})
         return jsonify({'error': 'Payment not found'}), 404
@@ -2296,7 +2464,12 @@ def close_case(case_id):
         
         result = db.cases.update_one(
             {'_id': parse_object_id(case_id)},
-            {'$set': {'status': 'closed', 'closed_at': datetime.now(), 'updated_at': datetime.now()}}
+            {'$set': {
+                'status': 'closed', 
+                'closed_at': datetime.now(), 
+                'billed_at': datetime.now(),
+                'updated_at': datetime.now()
+            }}
         )
         if result.modified_count:
             return jsonify({'message': 'Case closed successfully'})
@@ -2627,6 +2800,260 @@ def get_activity_logs():
         })
     except Exception as e:
         logging.error(f"Error getting activity logs: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== DASHBOARD API ====================
+
+@app.route('/api/dashboard/stats', methods=['GET'])
+def get_dashboard_stats():
+    """Get dashboard statistics"""
+    try:
+        # Total patients
+        total_patients = db.patients.count_documents({})
+        
+        # Patients added this week
+        week_ago = datetime.now() - timedelta(days=7)
+        patients_this_week = db.patients.count_documents({'created_at': {'$gte': week_ago}})
+        patients_trend = round((patients_this_week / max(total_patients - patients_this_week, 1)) * 100, 1) if total_patients > 0 else 0
+        
+        # Active cases (status is 'open' or 'Open' or doesn't exist)
+        active_cases = db.cases.count_documents({
+            '$or': [
+                {'status': {'$regex': '^open$', '$options': 'i'}},
+                {'status': {'$exists': False}}
+            ]
+        })
+        
+        # Cases added today
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        cases_today = db.cases.count_documents({'created_at': {'$gte': today_start}})
+        cases_trend = round((cases_today / max(active_cases - cases_today, 1)) * 100, 1) if active_cases > 0 else 0
+        
+        # Today's appointments
+        today_appointments = db.appointments.count_documents({
+            'appointment_date': {
+                '$gte': today_start,
+                '$lt': today_start + timedelta(days=1)
+            }
+        })
+        
+        # Yesterday's appointments for comparison
+        yesterday_start = today_start - timedelta(days=1)
+        yesterday_appointments = db.appointments.count_documents({
+            'appointment_date': {
+                '$gte': yesterday_start,
+                '$lt': today_start
+            }
+        })
+        appointments_trend = round(((today_appointments - yesterday_appointments) / max(yesterday_appointments, 1)) * 100, 1) if yesterday_appointments > 0 else 0
+        
+        # Revenue this month
+        month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        payments_this_month = list(db.payments.find({'payment_date': {'$gte': month_start}}))
+        revenue_this_month = sum(payment.get('amount', 0) for payment in payments_this_month)
+        
+        # Revenue last month for comparison
+        if month_start.month == 1:
+            last_month_start = month_start.replace(year=month_start.year - 1, month=12)
+        else:
+            last_month_start = month_start.replace(month=month_start.month - 1)
+        
+        payments_last_month = list(db.payments.find({
+            'payment_date': {
+                '$gte': last_month_start,
+                '$lt': month_start
+            }
+        }))
+        revenue_last_month = sum(payment.get('amount', 0) for payment in payments_last_month)
+        revenue_trend = round(((revenue_this_month - revenue_last_month) / max(revenue_last_month, 1)) * 100, 1) if revenue_last_month > 0 else 0
+        
+        return jsonify({
+            'total_patients': total_patients,
+            'patients_trend': patients_trend,
+            'active_cases': active_cases,
+            'cases_trend': cases_trend,
+            'today_appointments': today_appointments,
+            'appointments_trend': appointments_trend,
+            'revenue_this_month': revenue_this_month,
+            'revenue_trend': revenue_trend
+        })
+    except Exception as e:
+        logging.error(f"Error getting dashboard stats: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/activity', methods=['GET'])
+def get_dashboard_activity():
+    """Get recent activity feed"""
+    try:
+        limit = int(request.args.get('limit', 10))
+        activities = []
+        
+        # Recent patient registrations
+        recent_patients = list(db.patients.find().sort('created_at', -1).limit(3))
+        for patient in recent_patients:
+            activities.append({
+                'type': 'patient_registration',
+                'icon': 'user',
+                'message': f"Patient Registration (New) - {patient.get('name', 'Unknown')}",
+                'timestamp': patient.get('created_at', datetime.now())
+            })
+        
+        # Recent appointments
+        recent_appointments = list(db.appointments.find().sort('created_at', -1).limit(3))
+        for apt in recent_appointments:
+            patient = db.patients.find_one({'_id': apt.get('patient_id')})
+            patient_name = patient.get('name', 'Unknown') if patient else 'Unknown'
+            activities.append({
+                'type': 'appointment',
+                'icon': 'calendar',
+                'message': f"Appointment Scheduled - {patient_name}",
+                'timestamp': apt.get('created_at', datetime.now())
+            })
+        
+        # Recent payments
+        recent_payments = list(db.payments.find().sort('payment_date', -1).limit(3))
+        for payment in recent_payments:
+            amount = payment.get('amount', 0)
+            activities.append({
+                'type': 'payment',
+                'icon': 'money',
+                'message': f"Payment Received - ₹{amount:,.2f}",
+                'timestamp': payment.get('payment_date', datetime.now())
+            })
+        
+        # Sort all activities by timestamp
+        activities.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        # Limit to requested number
+        activities = activities[:limit]
+        
+        # Serialize timestamps
+        for activity in activities:
+            if isinstance(activity['timestamp'], datetime):
+                activity['timestamp'] = activity['timestamp'].isoformat()
+        
+        return jsonify({'activities': activities})
+    except Exception as e:
+        logging.error(f"Error getting dashboard activity: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/upcoming-appointments', methods=['GET'])
+def get_upcoming_appointments():
+    """Get today's upcoming appointments"""
+    try:
+        # Get today's date range
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        
+        # Find today's appointments
+        appointments = list(db.appointments.find({
+            'appointment_date': {
+                '$gte': today_start,
+                '$lt': today_end
+            }
+        }).sort('appointment_time', 1))
+        
+        # Populate patient and doctor names
+        for apt in appointments:
+            if 'patient_id' in apt and apt['patient_id']:
+                patient = db.patients.find_one({'_id': apt['patient_id']})
+                if patient:
+                    apt['patient_name'] = patient.get('name', 'Unknown')
+                else:
+                    apt['patient_name'] = 'Unknown'
+            else:
+                apt['patient_name'] = 'Unknown'
+            
+            if 'doctor_id' in apt and apt['doctor_id']:
+                doctor = db.doctors.find_one({'_id': apt['doctor_id']})
+                if doctor:
+                    apt['doctor_name'] = doctor.get('name', 'Unknown')
+                else:
+                    apt['doctor_name'] = 'Unknown'
+            else:
+                apt['doctor_name'] = 'Unknown'
+        
+        return jsonify({
+            'appointments': serialize_doc(appointments),
+            'total': len(appointments)
+        })
+    except Exception as e:
+        logging.error(f"Error getting upcoming appointments: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/case-studies', methods=['POST'])
+def create_case_study():
+    try:
+        data = request.get_json()
+        case_id = data.get('case_id')
+        doctor_id = data.get('doctor_id')
+        title = data.get('study_title')
+        details = data.get('details')
+        
+        if not all([case_id, title, details]):
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        study_doc = {
+            'case_id': parse_object_id(case_id),
+            'doctor_id': parse_object_id(doctor_id) if doctor_id else None,
+            'study_title': title,
+            'details': details,
+            'created_at': datetime.now(),
+            'updated_at': datetime.now()
+        }
+        
+        result = db.case_studies.insert_one(study_doc)
+        return jsonify({'id': str(result.inserted_id), 'message': 'Case study added successfully'}), 201
+    except Exception as e:
+        logging.error(f"Error creating case study: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/case-studies/<id>', methods=['PUT'])
+def update_case_study(id):
+    try:
+        data = request.get_json()
+        title = data.get('study_title')
+        details = data.get('details')
+        
+        update_fields = {'updated_at': datetime.now()}
+        if title:
+            update_fields['study_title'] = title
+        if details:
+            update_fields['details'] = details
+            
+        result = db.case_studies.update_one(
+            {'_id': parse_object_id(id)},
+            {'$set': update_fields}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({'error': 'Case study not found'}), 404
+            
+        return jsonify({'message': 'Case study updated successfully'})
+    except Exception as e:
+        logging.error(f"Error updating case study: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/case-studies/<id>', methods=['DELETE'])
+def delete_case_study(id):
+    try:
+        result = db.case_studies.delete_one({'_id': parse_object_id(id)})
+        if result.deleted_count == 0:
+            return jsonify({'error': 'Case study not found'}), 404
+        return jsonify({'message': 'Case study deleted successfully'})
+    except Exception as e:
+        logging.error(f"Error deleting case study: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/case-studies/<id>', methods=['GET'])
+def get_case_study(id):
+    try:
+        study = db.case_studies.find_one({'_id': parse_object_id(id)})
+        if not study:
+            return jsonify({'error': 'Case study not found'}), 404
+        return jsonify(serialize_doc(study))
+    except Exception as e:
+        logging.error(f"Error getting case study: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

@@ -1,0 +1,366 @@
+/* Dashboard Styles */
+
+/* Statistics Cards Grid */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Different colors for each stat card */
+.stat-card-patients::before {
+    background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.stat-card-cases::before {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.stat-card-appointments::before {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.stat-card-revenue::before {
+    background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.stat-icon {
+    font-size: 48px;
+    line-height: 1;
+    opacity: 0.9;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.stat-trend {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.trend-positive {
+    color: #059669;
+    background: #d1fae5;
+}
+
+.trend-negative {
+    color: #dc2626;
+    background: #fee2e2;
+}
+
+/* Dashboard Row Layout */
+.dashboard-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.dashboard-section {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+}
+
+.dashboard-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+/* Activity Timeline */
+.activity-timeline {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-timeline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-timeline::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 3px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 3px;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    border-left: 3px solid transparent;
+}
+
+.activity-item:hover {
+    background: var(--gray-50);
+    border-left-color: var(--primary-color);
+}
+
+.activity-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-message {
+    font-size: 14px;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.activity-time {
+    font-size: 12px;
+    color: var(--gray-500);
+}
+
+/* Appointments Widget */
+.appointments-widget {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.appointments-table thead th {
+    background: var(--gray-50);
+    padding: 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.appointments-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition);
+}
+
+.appointments-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.appointments-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.appointments-table td {
+    padding: 12px;
+    font-size: 14px;
+    color: var(--gray-700);
+}
+
+.appointments-table td strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.appointments-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid var(--gray-100);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+}
+
+/* Loading and Empty States */
+.loading-spinner {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray-500);
+    font-size: 14px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray-500);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--danger-color);
+}
+
+.error-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .dashboard-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-icon {
+        font-size: 40px;
+    }
+    
+    .stat-value {
+        font-size: 28px;
+    }
+    
+    .dashboard-section {
+        padding: 20px;
+    }
+    
+    .activity-timeline,
+    .appointments-widget {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stat-icon {
+        font-size: 36px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
+    .appointments-table {
+        font-size: 12px;
+    }
+    
+    .appointments-table thead {
+        display: none;
+    }
+    
+    .appointments-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--border-radius);
+        padding: 12px;
+    }
+    
+    .appointments-table td {
+        display: block;
+        text-align: left;
+        padding: 6px 0;
+        border-bottom: none;
+    }
+    
+    .appointments-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-right: 8px;
+    }
+}

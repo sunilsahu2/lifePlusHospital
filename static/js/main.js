@@ -8,12 +8,12 @@ let currentUser = null;
 function checkAuth() {
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('username');
-    
+
     if (!userId || !username) {
         showLoginPage();
         return false;
     }
-    
+
     // Verify session is still valid
     fetch(`${API_BASE}/auth/check`, {
         headers: {
@@ -21,21 +21,21 @@ function checkAuth() {
             'X-Username': username
         }
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.authenticated && data.user) {
-            currentUser = data.user;
-            // Don't reload - just populate menu
-            populateMenu();
-            populateUserInfo();
-        } else {
+        .then(res => res.json())
+        .then(data => {
+            if (data.authenticated && data.user) {
+                currentUser = data.user;
+                // Don't reload - just populate menu
+                populateMenu();
+                populateUserInfo();
+            } else {
+                showLoginPage();
+            }
+        })
+        .catch(() => {
             showLoginPage();
-        }
-    })
-    .catch(() => {
-        showLoginPage();
-    });
-    
+        });
+
     return true;
 }
 
@@ -60,7 +60,7 @@ function showLoginPage() {
             </div>
         </div>
     `;
-    
+
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
 }
 
@@ -69,35 +69,35 @@ function handleLogin(event) {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('loginError');
-    
+
     fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username, password})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.user) {
-            currentUser = data.user;
-            localStorage.setItem('userId', data.user.id);
-            localStorage.setItem('username', data.user.username);
-            // Reload to show main app
-            window.location.reload();
-        } else {
-            errorDiv.textContent = data.error || 'Login failed';
+        .then(res => res.json())
+        .then(data => {
+            if (data.user) {
+                currentUser = data.user;
+                localStorage.setItem('userId', data.user.id);
+                localStorage.setItem('username', data.user.username);
+                // Reload to show main app
+                window.location.reload();
+            } else {
+                errorDiv.textContent = data.error || 'Login failed';
+                errorDiv.style.display = 'block';
+            }
+        })
+        .catch(err => {
+            errorDiv.textContent = 'Login failed. Please try again.';
             errorDiv.style.display = 'block';
-        }
-    })
-    .catch(err => {
-        errorDiv.textContent = 'Login failed. Please try again.';
-        errorDiv.style.display = 'block';
-    });
+        });
 }
 
 function handleLogout() {
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('username');
-    
+
     fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         headers: {
@@ -105,18 +105,18 @@ function handleLogout() {
             'X-Username': username || ''
         }
     })
-    .then(() => {
-        localStorage.removeItem('userId');
-        localStorage.removeItem('username');
-        currentUser = null;
-        showLoginPage();
-    })
-    .catch(() => {
-        localStorage.removeItem('userId');
-        localStorage.removeItem('username');
-        currentUser = null;
-        showLoginPage();
-    });
+        .then(() => {
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            currentUser = null;
+            showLoginPage();
+        })
+        .catch(() => {
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            currentUser = null;
+            showLoginPage();
+        });
 }
 
 function showMainApp() {
@@ -126,43 +126,51 @@ function showMainApp() {
     populateUserInfo();
 }
 
+
 function populateMenu() {
     const menu = document.getElementById('sidebarMenu');
     if (!menu) return;
-    
+
     const modules = [
-        {name: 'doctors', label: 'Doctors'},
-        {name: 'doctor-charges', label: 'Doctor Charges'},
-        {name: 'patients', label: 'Patients'},
-        {name: 'cases', label: 'Cases'},
-        {name: 'appointments', label: 'Appointments'},
-        {name: 'billing-payments', label: 'Billing & Payments'},
-        {name: 'charge-master', label: 'Charge Master'},
-        {name: 'payouts', label: 'Payouts'},
-        {name: 'reports', label: 'Reports'}
+        { name: 'dashboard', label: '📊 Dashboard' },
+        { name: 'doctors', label: '👨‍⚕️ Doctors' },
+        { name: 'doctor-charges', label: 'Doctor Charges' },
+        { name: 'patients', label: '👥 Patients' },
+        { name: 'cases', label: '📋 Cases' },
+        { name: 'appointments', label: '📅 Appointments' },
+        { name: 'billing-payments', label: '💰 Billing & Payments' },
+        { name: 'charge-master', label: 'Charge Master' },
+        { name: 'payouts', label: 'Payouts' },
+        { name: 'reports', label: '📊 Reports' }
     ];
-    
+
     let menuHTML = '';
-    
+
     modules.forEach(module => {
         if (hasPermission(module.name, 'view')) {
             menuHTML += `<li><a href="#" onclick="loadModule('${module.name}', event); closeMobileMenu();">${module.label}</a></li>`;
         }
     });
-    
+
     // Admin-only modules
     if (currentUser && currentUser.username === 'sunilsahu') {
         menuHTML += `<li><a href="#" onclick="loadModule('users', event); closeMobileMenu();">User Management</a></li>`;
         menuHTML += `<li><a href="#" onclick="loadModule('activity-logs', event); closeMobileMenu();">Activity Logs</a></li>`;
     }
-    
+
     menu.innerHTML = menuHTML;
+
+    // Auto-load dashboard on first load
+    if (!window.dashboardLoaded) {
+        window.dashboardLoaded = true;
+        setTimeout(() => loadModule('dashboard'), 100);
+    }
 }
 
 function populateUserInfo() {
     const userInfo = document.getElementById('userInfo');
     if (!userInfo || !currentUser) return;
-    
+
     userInfo.innerHTML = `
         <div style="font-weight: 600; margin-bottom: 4px;">${currentUser.full_name || currentUser.username}</div>
         <div style="font-size: 12px; color: #999;">${currentUser.role === 'admin' ? 'Administrator' : 'User'}</div>
@@ -171,17 +179,20 @@ function populateUserInfo() {
 
 function hasPermission(module, action) {
     if (!currentUser) return false;
-    
+
+    // Dashboard is accessible to all authenticated users
+    if (module === 'dashboard') return true;
+
     // Admin has full access
     if (currentUser.username === 'sunilsahu') return true;
-    
+
     const permissions = currentUser.permissions || {};
     const modulePerms = permissions[module] || {};
-    
+
     if (action === 'view') return modulePerms.view || false;
     if (action === 'edit') return modulePerms.edit || false;
     if (action === 'delete') return modulePerms.delete || false;
-    
+
     return false;
 }
 
@@ -209,14 +220,14 @@ if (document.readyState === 'loading') {
                     'X-Username': username
                 }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.authenticated && data.user) {
-                    currentUser = data.user;
-                    populateMenu();
-                    populateUserInfo();
-                }
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.authenticated && data.user) {
+                        currentUser = data.user;
+                        populateMenu();
+                        populateUserInfo();
+                    }
+                });
         }
     });
 } else {
@@ -231,14 +242,14 @@ if (document.readyState === 'loading') {
                 'X-Username': username
             }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.authenticated && data.user) {
-                currentUser = data.user;
-                populateMenu();
-                populateUserInfo();
-            }
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.authenticated && data.user) {
+                    currentUser = data.user;
+                    populateMenu();
+                    populateUserInfo();
+                }
+            });
     }
 }
 
@@ -296,14 +307,17 @@ function loadModule(moduleName, event) {
     if (event && event.target) {
         event.target.classList.add('active');
     }
-    
+
     const contentArea = document.getElementById('content-area');
     if (!contentArea) {
         console.error('Content area not found');
         return;
     }
-    
-    switch(moduleName) {
+
+    switch (moduleName) {
+        case 'dashboard':
+            loadDashboard();
+            break;
         case 'doctors':
             loadDoctors();
             break;
@@ -354,7 +368,7 @@ let doctorsSearchQuery = '';
 function loadDoctors(page = 1) {
     currentDoctorsPage = page;
     const searchParam = doctorsSearchQuery ? `&search=${encodeURIComponent(doctorsSearchQuery)}` : '';
-    
+
     fetch(`${API_BASE}/doctors?page=${page}&limit=${doctorsPageLimit}${searchParam}`)
         .then(res => res.json())
         .then(data => {
@@ -362,7 +376,7 @@ function loadDoctors(page = 1) {
             const doctors = Array.isArray(data.doctors) ? data.doctors : (Array.isArray(data) ? data : []);
             const total = data.total !== undefined ? data.total : (Array.isArray(doctors) ? doctors.length : 0);
             const totalPages = Math.max(1, Math.ceil(total / doctorsPageLimit));
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
@@ -478,7 +492,7 @@ function showDoctorForm(doctorId = null) {
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
-    
+
     if (doctorId) {
         fetch(`${API_BASE}/doctors/${doctorId}`)
             .then(res => res.json())
@@ -488,7 +502,7 @@ function showDoctorForm(doctorId = null) {
                     loadDoctors();
                     return;
                 }
-                
+
                 // Populate form fields
                 Object.keys(doctor).forEach(key => {
                     const input = document.querySelector(`[name="${key}"]`);
@@ -513,40 +527,40 @@ function saveDoctor(event, doctorId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = {};
-    
+
     // Convert form data to object
     for (let [key, value] of formData.entries()) {
         data[key] = value || null;
     }
-    
+
     // Remove null/empty values for cleaner data
     Object.keys(data).forEach(key => {
         if (data[key] === '' || data[key] === null) {
             delete data[key];
         }
     });
-    
+
     const url = doctorId ? `${API_BASE}/doctors/${doctorId}` : `${API_BASE}/doctors`;
     const method = doctorId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(responseData => {
-        if (responseData.message) {
-            alert(responseData.message);
-            loadDoctors(currentDoctorsPage); // Reload current page after save
-        } else if (responseData.error) {
-            alert('Error: ' + responseData.error);
-        }
-    })
-    .catch(err => {
-        console.error('Error saving doctor:', err);
-        alert('Error saving doctor: ' + err.message);
-    });
+        .then(res => res.json())
+        .then(responseData => {
+            if (responseData.message) {
+                alert(responseData.message);
+                loadDoctors(currentDoctorsPage); // Reload current page after save
+            } else if (responseData.error) {
+                alert('Error: ' + responseData.error);
+            }
+        })
+        .catch(err => {
+            console.error('Error saving doctor:', err);
+            alert('Error saving doctor: ' + err.message);
+        });
 }
 
 function editDoctor(id) {
@@ -555,7 +569,7 @@ function editDoctor(id) {
 
 function deleteDoctor(id) {
     if (confirm('Are you sure you want to deactivate this doctor? The doctor will be removed from the active list.')) {
-        fetch(`${API_BASE}/doctors/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/doctors/${id}`, { method: 'DELETE' })
             .then(res => res.json())
             .then(data => {
                 if (data.message) {
@@ -574,7 +588,7 @@ const doctorChargesPageLimit = 10;
 
 function loadDoctorCharges(page = 1) {
     currentDoctorChargesPage = page;
-    
+
     Promise.all([
         fetch(`${API_BASE}/doctor-charges?page=${page}&limit=${doctorChargesPageLimit}`).then(r => r.json()),
         fetch(`${API_BASE}/doctors?limit=1000`).then(r => r.json()),
@@ -585,7 +599,7 @@ function loadDoctorCharges(page = 1) {
         const total = chargesResponse.total !== undefined ? chargesResponse.total : charges.length;
         const doctors = Array.isArray(doctorsResponse) ? doctorsResponse : (doctorsResponse.doctors || []);
         const chargeMaster = Array.isArray(chargeMasterResponse) ? chargeMasterResponse : (chargeMasterResponse.charges || []);
-        
+
         const html = `
             <div class="module-content">
                 <div class="module-header">
@@ -641,7 +655,7 @@ function showDoctorChargeForm(chargeId = null) {
     const title = chargeId ? 'Edit Doctor Charge' : 'Add Doctor Charge';
     const doctors = window.doctorsList || [];
     const chargeMaster = window.chargeMasterList || [];
-    
+
     const html = `
         <div class="modal">
             <div class="modal-content">
@@ -682,7 +696,7 @@ function showDoctorChargeForm(chargeId = null) {
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
-    
+
     if (chargeId) {
         fetch(`${API_BASE}/doctor-charges/${chargeId}`)
             .then(res => res.json())
@@ -699,17 +713,17 @@ function saveDoctorCharge(event, chargeId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     const url = chargeId ? `${API_BASE}/doctor-charges/${chargeId}` : `${API_BASE}/doctor-charges`;
     const method = chargeId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => loadDoctorCharges(currentDoctorChargesPage))
-    .catch(err => alert('Error saving doctor charge: ' + err));
+        .then(() => loadDoctorCharges(currentDoctorChargesPage))
+        .catch(err => alert('Error saving doctor charge: ' + err));
 }
 
 function editDoctorCharge(id) {
@@ -718,7 +732,7 @@ function editDoctorCharge(id) {
 
 function deleteDoctorCharge(id) {
     if (confirm('Are you sure you want to delete this doctor charge?')) {
-        fetch(`${API_BASE}/doctor-charges/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/doctor-charges/${id}`, { method: 'DELETE' })
             .then(() => loadDoctorCharges(currentDoctorChargesPage))
             .catch(err => alert('Error deleting doctor charge: ' + err));
     }
@@ -733,7 +747,7 @@ let patientsSearchQuery = '';
 function loadPatients(page = 1) {
     currentPatientsPage = page;
     const searchParam = patientsSearchQuery ? `&search=${encodeURIComponent(patientsSearchQuery)}` : '';
-    
+
     fetch(`${API_BASE}/patients?page=${page}&limit=${patientsPageLimit}${searchParam}`)
         .then(res => res.json())
         .then(data => {
@@ -741,7 +755,7 @@ function loadPatients(page = 1) {
             const patients = Array.isArray(data.patients) ? data.patients : (Array.isArray(data) ? data : []);
             const total = data.total !== undefined ? data.total : (Array.isArray(patients) ? patients.length : 0);
             const totalPages = Math.max(1, Math.ceil(total / patientsPageLimit));
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
@@ -777,6 +791,7 @@ function loadPatients(page = 1) {
                                         <td>${patient.phone || ''}</td>
                                         <td>${patient.email || ''}</td>
                                         <td>
+                                            <button class="btn btn-info" onclick="loadPatientDetail('${patient.id}')">View Details</button>
                                             <button class="btn btn-success" onclick="editPatient('${patient.id}')">Edit</button>
                                             <button class="btn btn-danger" onclick="deletePatient('${patient.id}')">Delete</button>
                                         </td>
@@ -871,7 +886,7 @@ function showPatientForm(patientId = null) {
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
-    
+
     if (patientId) {
         fetch(`${API_BASE}/patients/${patientId}`)
             .then(res => res.json())
@@ -888,17 +903,17 @@ function savePatient(event, patientId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     const url = patientId ? `${API_BASE}/patients/${patientId}` : `${API_BASE}/patients`;
     const method = patientId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => loadPatients(currentPatientsPage))
-    .catch(err => alert('Error saving patient: ' + err));
+        .then(() => loadPatients(currentPatientsPage))
+        .catch(err => alert('Error saving patient: ' + err));
 }
 
 function editPatient(id) {
@@ -907,7 +922,7 @@ function editPatient(id) {
 
 function deletePatient(id) {
     if (confirm('Are you sure you want to delete this patient?')) {
-        fetch(`${API_BASE}/patients/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/patients/${id}`, { method: 'DELETE' })
             .then(() => loadPatients(currentPatientsPage))
             .catch(err => alert('Error deleting patient: ' + err));
     }
@@ -922,7 +937,7 @@ let casesSearchQuery = '';
 function loadCases(page = 1) {
     currentCasesPage = page;
     const searchParam = casesSearchQuery ? `&search=${encodeURIComponent(casesSearchQuery)}` : '';
-    
+
     fetch(`${API_BASE}/cases?page=${page}&limit=${casesPageLimit}${searchParam}`)
         .then(res => res.json())
         .then(data => {
@@ -930,7 +945,7 @@ function loadCases(page = 1) {
             const cases = Array.isArray(data.cases) ? data.cases : (Array.isArray(data) ? data : []);
             const total = data.total !== undefined ? data.total : (Array.isArray(cases) ? cases.length : 0);
             const totalPages = Math.max(1, Math.ceil(total / casesPageLimit));
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
@@ -962,37 +977,37 @@ function loadCases(page = 1) {
                             </thead>
                             <tbody>
                                 ${Array.isArray(cases) && cases.length > 0 ? cases.map(c => {
-                                    const appointments = c.appointments || [];
-                                    const appointmentsCount = c.appointments_count || 0;
-                                    const nextAptDate = c.next_appointment_date;
-                                    const nextAptTime = c.next_appointment_time;
-                                    const nextAptDoctor = c.next_appointment_doctor || '';
-                                    
-                                    // Get case status
-                                    const status = c.status || 'open';
-                                    const statusDisplay = status === 'closed' ? 'Closed' : 'Open';
-                                    const statusColor = status === 'closed' ? '#10b981' : '#3b82f6';
-                                    const statusBg = status === 'closed' ? '#d1fae5' : '#dbeafe';
-                                    
-                                    let appointmentsDisplay = '';
-                                    if (appointmentsCount > 0) {
-                                        if (nextAptDate) {
-                                            const aptDate = new Date(nextAptDate).toLocaleDateString();
-                                            appointmentsDisplay = `<div style="font-size: 12px;">
+                const appointments = c.appointments || [];
+                const appointmentsCount = c.appointments_count || 0;
+                const nextAptDate = c.next_appointment_date;
+                const nextAptTime = c.next_appointment_time;
+                const nextAptDoctor = c.next_appointment_doctor || '';
+
+                // Get case status
+                const status = c.status || 'open';
+                const statusDisplay = status === 'closed' ? 'Closed' : 'Open';
+                const statusColor = status === 'closed' ? '#10b981' : '#3b82f6';
+                const statusBg = status === 'closed' ? '#d1fae5' : '#dbeafe';
+
+                let appointmentsDisplay = '';
+                if (appointmentsCount > 0) {
+                    if (nextAptDate) {
+                        const aptDate = new Date(nextAptDate).toLocaleDateString();
+                        appointmentsDisplay = `<div style="font-size: 12px;">
                                                 <div><strong>${appointmentsCount} appointment${appointmentsCount > 1 ? 's' : ''}</strong></div>
                                                 <div style="color: #2563eb; margin-top: 4px;">
                                                     Next: ${aptDate} ${nextAptTime || ''}
                                                     ${nextAptDoctor ? `<br/>Dr. ${nextAptDoctor}` : ''}
                                                 </div>
                                             </div>`;
-                                        } else {
-                                            appointmentsDisplay = `<div style="font-size: 12px;"><strong>${appointmentsCount} appointment${appointmentsCount > 1 ? 's' : ''}</strong></div>`;
-                                        }
-                                    } else {
-                                        appointmentsDisplay = '<span style="color: #999;">No appointments</span>';
-                                    }
-                                    
-                                    return `
+                    } else {
+                        appointmentsDisplay = `<div style="font-size: 12px;"><strong>${appointmentsCount} appointment${appointmentsCount > 1 ? 's' : ''}</strong></div>`;
+                    }
+                } else {
+                    appointmentsDisplay = '<span style="color: #999;">No appointments</span>';
+                }
+
+                return `
                                     <tr>
                                         <td>${c.case_number || ''}</td>
                                         <td>${c.patient_name || ''}</td>
@@ -1012,7 +1027,7 @@ function loadCases(page = 1) {
                                         </td>
                                     </tr>
                                 `;
-                                }).join('') : '<tr><td colspan="9" style="text-align: center;">No cases found</td></tr>'}
+            }).join('') : '<tr><td colspan="9" style="text-align: center;">No cases found</td></tr>'}
                             </tbody>
                         </table>
                     </div>
@@ -1059,7 +1074,7 @@ let selectedPatientNameCase = '';
 let referredBySearchTimeout = null;
 let selectedReferredByName = '';
 
-function showCaseForm(caseId = null) {
+function showCaseForm(caseId = null, patientId = null, patientName = null) {
     const title = caseId ? 'Edit Case' : 'Add Case';
     const html = `
         <div class="modal">
@@ -1068,11 +1083,14 @@ function showCaseForm(caseId = null) {
                 <form id="caseForm" onsubmit="saveCase(event, '${caseId || ''}')">
                     <div class="form-group">
                         <label>Patient *</label>
-                        <input type="hidden" name="patient_id" id="casePatientIdInput" required>
+                        <input type="hidden" name="patient_id" id="casePatientIdInput" value="${patientId || ''}" required>
                         <input type="text" id="casePatientSearchInput" placeholder="Search patient by name..." 
-                               autocomplete="off" oninput="searchPatientsForCase(event)">
+                               autocomplete="off" oninput="searchPatientsForCase(event)"
+                               value="${patientName || ''}" 
+                               ${patientId ? 'disabled style="background-color: #f3f4f6;"' : ''}>
                         <div id="casePatientSearchResults" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; width: 100%; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
                     </div>
+
                         <div class="form-group">
                             <label>Case Type</label>
                             <select name="case_type" required>
@@ -1108,6 +1126,16 @@ function showCaseForm(caseId = null) {
                                    autocomplete="off" oninput="searchReferredBy(event)">
                             <div id="caseReferredBySearchResults" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; width: 100%; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
                         </div>
+                        ${caseId ? `
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="status" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="open">Open</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">Note: Case can only be closed if all charges are fully paid.</div>
+                        </div>
+                        ` : ''}
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">Save</button>
                             <button type="button" class="btn btn-secondary" onclick="loadCases(currentCasesPage)">Cancel</button>
@@ -1116,121 +1144,123 @@ function showCaseForm(caseId = null) {
                 </div>
             </div>
         `;
-        document.getElementById('content-area').innerHTML = html;
-        
-        if (caseId) {
-            fetch(`${API_BASE}/cases/${caseId}`)
-                .then(res => res.json())
-                .then(c => {
-                    Object.keys(c).forEach(key => {
-                        // Skip referred_by fields - they are handled separately
-                        if (key === 'referred_by_id' || key === 'referred_by_type' || key === 'referred_by_name' || key === 'referred_by') {
-                            return;
-                        }
-                        const input = document.querySelector(`[name="${key}"]`);
-                        if (input) {
-                            if (key.includes('date') && c[key]) {
-                                input.value = c[key].split('T')[0];
-                            } else if ((key === 'admission_time' || key === 'discharge_time') && c[key]) {
-                                // Handle time field - could be in format "HH:MM:SS" or "HH:MM"
-                                const timeValue = typeof c[key] === 'string' ? c[key].substring(0, 5) : c[key];
-                                input.value = timeValue || '';
-                            } else {
-                                input.value = c[key] || '';
-                            }
-                        }
-                    });
-                    
-                    // Populate patient search field
-                    if (c.patient_id) {
-                        const patientIdInput = document.getElementById('casePatientIdInput');
-                        const patientSearchInput = document.getElementById('casePatientSearchInput');
-                        if (patientIdInput) patientIdInput.value = c.patient_id;
-                        if (patientSearchInput && c.patient) {
-                            patientSearchInput.value = c.patient.name || '';
-                            selectedPatientNameCase = c.patient.name || '';
-                        } else if (patientSearchInput && c.patient_id) {
-                            // Fetch patient name
-                            fetch(`${API_BASE}/patients/${c.patient_id}`)
-                                .then(r => r.json())
-                                .then(patient => {
-                                    if (patientSearchInput) {
-                                        patientSearchInput.value = patient.name || '';
-                                        selectedPatientNameCase = patient.name || '';
-                                    }
-                                });
-                        }
+    document.getElementById('content-area').innerHTML = html;
+
+    if (caseId) {
+        fetch(`${API_BASE}/cases/${caseId}`)
+            .then(res => res.json())
+            .then(c => {
+                Object.keys(c).forEach(key => {
+                    // Skip referred_by fields - they are handled separately
+                    if (key === 'referred_by_id' || key === 'referred_by_type' || key === 'referred_by_name' || key === 'referred_by') {
+                        return;
                     }
-                    
-                    // Populate referred by search field
-                    const referredByTypeInput = document.getElementById('caseReferredByTypeInput');
-                    const referredByIdInput = document.getElementById('caseReferredByIdInput');
-                    const referredBySearchInput = document.getElementById('caseReferredBySearchInput');
-                    
-                    if (c.referred_by_id && c.referred_by_type) {
-                        // New format: has type and ID
-                        if (referredByTypeInput) referredByTypeInput.value = c.referred_by_type;
-                        if (referredByIdInput) referredByIdInput.value = c.referred_by_id;
-                        
-                        if (referredBySearchInput) {
-                            // Use stored name if available, otherwise fetch
-                            if (c.referred_by_name) {
-                                referredBySearchInput.value = c.referred_by_name;
-                                selectedReferredByName = c.referred_by_name;
-                            } else {
-                                // Fetch the name based on type
-                                const apiUrl = c.referred_by_type === 'patient' 
-                                    ? `${API_BASE}/patients/${c.referred_by_id}`
-                                    : `${API_BASE}/doctors/${c.referred_by_id}`;
-                                
-                                fetch(apiUrl)
-                                    .then(r => r.json())
-                                    .then(item => {
-                                        if (referredBySearchInput && item.name) {
-                                            referredBySearchInput.value = item.name;
-                                            selectedReferredByName = item.name;
-                                        }
-                                    })
-                                    .catch(err => {
-                                        console.error('Error fetching referred by:', err);
-                                    });
-                            }
-                        }
-                    } else if (c.referred_by && !c.referred_by_id) {
-                        // Legacy support: if referred_by is a string, populate it but clear type/ID
-                        if (referredByTypeInput) referredByTypeInput.value = '';
-                        if (referredByIdInput) referredByIdInput.value = '';
-                        if (referredBySearchInput) {
-                            referredBySearchInput.value = c.referred_by;
-                            selectedReferredByName = c.referred_by;
-                        }
-                    } else {
-                        // Clear referred by fields if not present
-                        if (referredByTypeInput) referredByTypeInput.value = '';
-                        if (referredByIdInput) referredByIdInput.value = '';
-                        if (referredBySearchInput) {
-                            referredBySearchInput.value = '';
-                            selectedReferredByName = '';
+                    const input = document.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        if (key.includes('date') && c[key]) {
+                            input.value = c[key].split('T')[0];
+                        } else if ((key === 'admission_time' || key === 'discharge_time') && c[key]) {
+                            // Handle time field - could be in format "HH:MM:SS" or "HH:MM"
+                            const timeValue = typeof c[key] === 'string' ? c[key].substring(0, 5) : c[key];
+                            input.value = timeValue || '';
+                        } else if (key === 'status') {
+                            input.value = (c[key] || 'open').toLowerCase();
+                        } else {
+                            input.value = c[key] || '';
                         }
                     }
                 });
-        }
+
+                // Populate patient search field
+                if (c.patient_id) {
+                    const patientIdInput = document.getElementById('casePatientIdInput');
+                    const patientSearchInput = document.getElementById('casePatientSearchInput');
+                    if (patientIdInput) patientIdInput.value = c.patient_id;
+                    if (patientSearchInput && c.patient) {
+                        patientSearchInput.value = c.patient.name || '';
+                        selectedPatientNameCase = c.patient.name || '';
+                    } else if (patientSearchInput && c.patient_id) {
+                        // Fetch patient name
+                        fetch(`${API_BASE}/patients/${c.patient_id}`)
+                            .then(r => r.json())
+                            .then(patient => {
+                                if (patientSearchInput) {
+                                    patientSearchInput.value = patient.name || '';
+                                    selectedPatientNameCase = patient.name || '';
+                                }
+                            });
+                    }
+                }
+
+                // Populate referred by search field
+                const referredByTypeInput = document.getElementById('caseReferredByTypeInput');
+                const referredByIdInput = document.getElementById('caseReferredByIdInput');
+                const referredBySearchInput = document.getElementById('caseReferredBySearchInput');
+
+                if (c.referred_by_id && c.referred_by_type) {
+                    // New format: has type and ID
+                    if (referredByTypeInput) referredByTypeInput.value = c.referred_by_type;
+                    if (referredByIdInput) referredByIdInput.value = c.referred_by_id;
+
+                    if (referredBySearchInput) {
+                        // Use stored name if available, otherwise fetch
+                        if (c.referred_by_name) {
+                            referredBySearchInput.value = c.referred_by_name;
+                            selectedReferredByName = c.referred_by_name;
+                        } else {
+                            // Fetch the name based on type
+                            const apiUrl = c.referred_by_type === 'patient'
+                                ? `${API_BASE}/patients/${c.referred_by_id}`
+                                : `${API_BASE}/doctors/${c.referred_by_id}`;
+
+                            fetch(apiUrl)
+                                .then(r => r.json())
+                                .then(item => {
+                                    if (referredBySearchInput && item.name) {
+                                        referredBySearchInput.value = item.name;
+                                        selectedReferredByName = item.name;
+                                    }
+                                })
+                                .catch(err => {
+                                    console.error('Error fetching referred by:', err);
+                                });
+                        }
+                    }
+                } else if (c.referred_by && !c.referred_by_id) {
+                    // Legacy support: if referred_by is a string, populate it but clear type/ID
+                    if (referredByTypeInput) referredByTypeInput.value = '';
+                    if (referredByIdInput) referredByIdInput.value = '';
+                    if (referredBySearchInput) {
+                        referredBySearchInput.value = c.referred_by;
+                        selectedReferredByName = c.referred_by;
+                    }
+                } else {
+                    // Clear referred by fields if not present
+                    if (referredByTypeInput) referredByTypeInput.value = '';
+                    if (referredByIdInput) referredByIdInput.value = '';
+                    if (referredBySearchInput) {
+                        referredBySearchInput.value = '';
+                        selectedReferredByName = '';
+                    }
+                }
+            });
+    }
 }
 
 function searchPatientsForCase(event) {
     const searchInput = document.getElementById('casePatientSearchInput');
     const resultsDiv = document.getElementById('casePatientSearchResults');
     const patientIdInput = document.getElementById('casePatientIdInput');
-    
+
     if (!searchInput || !resultsDiv) return;
-    
+
     const query = searchInput.value.trim();
-    
+
     // Clear previous timeout
     if (patientSearchTimeoutCase) {
         clearTimeout(patientSearchTimeoutCase);
     }
-    
+
     // If query is empty, hide results and clear selection
     if (!query) {
         resultsDiv.style.display = 'none';
@@ -1239,26 +1269,26 @@ function searchPatientsForCase(event) {
         selectedPatientNameCase = '';
         return;
     }
-    
+
     // If query matches selected patient, don't search
     if (query === selectedPatientNameCase) {
         resultsDiv.style.display = 'none';
         return;
     }
-    
+
     // Debounce search
     patientSearchTimeoutCase = setTimeout(() => {
         fetch(`${API_BASE}/patients?search=${encodeURIComponent(query)}&limit=20`)
             .then(res => res.json())
             .then(data => {
                 const patients = Array.isArray(data) ? data : (data.patients || []);
-                
+
                 if (patients.length === 0) {
                     resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No patients found</div>';
                     resultsDiv.style.display = 'block';
                     return;
                 }
-                
+
                 resultsDiv.innerHTML = patients.map(patient => `
                     <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
                          onmouseover="this.style.backgroundColor='#f0f0f0'" 
@@ -1283,7 +1313,7 @@ function selectPatientForCase(patientId, patientName) {
     const patientIdInput = document.getElementById('casePatientIdInput');
     const patientSearchInput = document.getElementById('casePatientSearchInput');
     const resultsDiv = document.getElementById('casePatientSearchResults');
-    
+
     if (patientIdInput) patientIdInput.value = patientId;
     if (patientSearchInput) {
         patientSearchInput.value = patientName;
@@ -1293,7 +1323,7 @@ function selectPatientForCase(patientId, patientName) {
         resultsDiv.style.display = 'none';
         resultsDiv.innerHTML = '';
     }
-    
+
     // Clear search timeout
     if (patientSearchTimeoutCase) {
         clearTimeout(patientSearchTimeoutCase);
@@ -1306,16 +1336,16 @@ function searchReferredBy(event) {
     const resultsDiv = document.getElementById('caseReferredBySearchResults');
     const referredByTypeInput = document.getElementById('caseReferredByTypeInput');
     const referredByIdInput = document.getElementById('caseReferredByIdInput');
-    
+
     if (!searchInput || !resultsDiv) return;
-    
+
     const query = searchInput.value.trim();
-    
+
     // Clear previous timeout
     if (referredBySearchTimeout) {
         clearTimeout(referredBySearchTimeout);
     }
-    
+
     // If query is empty, hide results and clear selection
     if (!query) {
         resultsDiv.style.display = 'none';
@@ -1325,13 +1355,13 @@ function searchReferredBy(event) {
         selectedReferredByName = '';
         return;
     }
-    
+
     // If query matches selected referrer, don't search
     if (query === selectedReferredByName) {
         resultsDiv.style.display = 'none';
         return;
     }
-    
+
     // Debounce search
     referredBySearchTimeout = setTimeout(() => {
         // Search both patients and doctors in parallel
@@ -1342,9 +1372,9 @@ function searchReferredBy(event) {
             .then(([patientsResponse, doctorsResponse]) => {
                 const patients = Array.isArray(patientsResponse) ? patientsResponse : (patientsResponse.patients || []);
                 const doctors = Array.isArray(doctorsResponse) ? doctorsResponse : (doctorsResponse.doctors || []);
-                
+
                 const allResults = [];
-                
+
                 // Add patients with type indicator
                 patients.forEach(patient => {
                     allResults.push({
@@ -1355,7 +1385,7 @@ function searchReferredBy(event) {
                         email: patient.email || ''
                     });
                 });
-                
+
                 // Add doctors with type indicator
                 doctors.forEach(doctor => {
                     allResults.push({
@@ -1366,22 +1396,22 @@ function searchReferredBy(event) {
                         phone: doctor.phone || ''
                     });
                 });
-                
+
                 if (allResults.length === 0) {
                     resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No patients or doctors found</div>';
                     resultsDiv.style.display = 'block';
                     return;
                 }
-                
+
                 resultsDiv.innerHTML = allResults.map(item => {
-                    const typeBadge = item.type === 'patient' 
+                    const typeBadge = item.type === 'patient'
                         ? '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px;">PATIENT</span>'
                         : '<span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 8px;">DOCTOR</span>';
-                    
+
                     const details = item.type === 'patient'
                         ? `${item.phone ? `<br/><small style="color: #666;">${item.phone}</small>` : ''}${item.email ? `<br/><small style="color: #666;">${item.email}</small>` : ''}`
                         : `${item.specialization ? `<br/><small style="color: #666;">${item.specialization}</small>` : ''}${item.phone ? `<br/><small style="color: #666;">${item.phone}</small>` : ''}`;
-                    
+
                     return `
                         <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
                              onmouseover="this.style.backgroundColor='#f0f0f0'" 
@@ -1408,7 +1438,7 @@ function selectReferredBy(id, name, type) {
     const referredByIdInput = document.getElementById('caseReferredByIdInput');
     const referredBySearchInput = document.getElementById('caseReferredBySearchInput');
     const resultsDiv = document.getElementById('caseReferredBySearchResults');
-    
+
     if (referredByTypeInput) referredByTypeInput.value = type;
     if (referredByIdInput) referredByIdInput.value = id;
     if (referredBySearchInput) {
@@ -1419,7 +1449,7 @@ function selectReferredBy(id, name, type) {
         resultsDiv.style.display = 'none';
         resultsDiv.innerHTML = '';
     }
-    
+
     // Clear search timeout
     if (referredBySearchTimeout) {
         clearTimeout(referredBySearchTimeout);
@@ -1431,17 +1461,29 @@ function saveCase(event, caseId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     const url = caseId ? `${API_BASE}/cases/${caseId}` : `${API_BASE}/cases`;
     const method = caseId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => loadCases(currentCasesPage))
-    .catch(err => alert('Error saving case: ' + err));
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw new Error(err.error || 'Failed to save case'); });
+            }
+            return res.json();
+        })
+        .then(() => {
+            alert('Case saved successfully');
+            loadCases(currentCasesPage);
+        })
+        .catch(err => {
+            console.error('Error saving case:', err);
+            alert(err.message);
+        });
 }
 
 function viewCaseDetails(caseId) {
@@ -1451,9 +1493,9 @@ function viewCaseDetails(caseId) {
             const patientCharges = caseData.charges || [];
             const appointments = caseData.appointments || [];
             const isClosed = caseData.status === 'closed';
-            
+
             const patientChargesTotal = patientCharges.reduce((sum, c) => sum + (c.total_amount || 0), 0);
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
@@ -1522,14 +1564,14 @@ function viewCaseDetails(caseId) {
                                     </thead>
                                     <tbody>
                                         ${patientCharges.length > 0 ? patientCharges.map(c => {
-                                            const chargeName = (c.charge_name || '').toUpperCase();
-                                            const showDoctor = chargeName.includes('OPD CHARGE') || 
-                                                              chargeName.includes('IPD VISIT CHARGE') ||
-                                                              chargeName === 'SURGERY' ||
-                                                              chargeName.includes('SURGERY');
-                                            const doctorName = showDoctor ? (c.doctor_name || '') : '';
-                                            const chargeDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
-                                            return `
+                const chargeName = (c.charge_name || '').toUpperCase();
+                const showDoctor = chargeName.includes('OPD CHARGE') ||
+                    chargeName.includes('IPD VISIT CHARGE') ||
+                    chargeName === 'SURGERY' ||
+                    chargeName.includes('SURGERY');
+                const doctorName = showDoctor ? (c.doctor_name || '') : '';
+                const chargeDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+                return `
                                             <tr>
                                                 <td>${chargeDate}</td>
                                                 <td>${c.charge_name || ''}</td>
@@ -1542,7 +1584,7 @@ function viewCaseDetails(caseId) {
                                                 </td>
                                             </tr>
                                         `;
-                                        }).join('') : '<tr><td colspan="7" style="text-align: center;">No patient charges found</td></tr>'}
+            }).join('') : '<tr><td colspan="7" style="text-align: center;">No patient charges found</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>
@@ -1565,8 +1607,8 @@ function viewCaseDetails(caseId) {
                                     </thead>
                                     <tbody>
                                         ${(caseData.prescriptions || []).length > 0 ? caseData.prescriptions.map(pres => {
-                                            const presDate = pres.prescription_date ? new Date(pres.prescription_date).toLocaleDateString() : '';
-                                            return `
+                const presDate = pres.prescription_date ? new Date(pres.prescription_date).toLocaleDateString() : '';
+                return `
                                             <tr>
                                                 <td>${presDate}</td>
                                                 <td>${pres.file_name || 'N/A'}</td>
@@ -1577,7 +1619,7 @@ function viewCaseDetails(caseId) {
                                                 </td>
                                             </tr>
                                         `;
-                                        }).join('') : '<tr><td colspan="5" style="text-align: center;">No prescriptions found</td></tr>'}
+            }).join('') : '<tr><td colspan="5" style="text-align: center;">No prescriptions found</td></tr>'}
                                     </tbody>
                                 </table>
                             </div>
@@ -1604,17 +1646,17 @@ function showCaseChargeForm(caseId, chargeId = null) {
                 alert('This case is closed. No charges can be added or modified.');
                 return Promise.reject(new Error('Case is closed'));
             }
-            
+
             return Promise.all([
                 fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
             ]);
         })
         .then(([chargeMasterResponse]) => {
             // Handle response format - API returns {charges: [...], total: ...} or array
-            const chargeMaster = Array.isArray(chargeMasterResponse) 
-                ? chargeMasterResponse 
+            const chargeMaster = Array.isArray(chargeMasterResponse)
+                ? chargeMasterResponse
                 : (chargeMasterResponse.charges || []);
-            
+
             const title = chargeId ? 'Edit Patient Charge' : 'Add Patient Charge';
             const html = `
                 <div class="modal">
@@ -1656,7 +1698,7 @@ function showCaseChargeForm(caseId, chargeId = null) {
                 </div>
             `;
             document.getElementById('content-area').innerHTML = html;
-            
+
             if (chargeId) {
                 Promise.all([
                     fetch(`${API_BASE}/case-charges/${chargeId}`).then(r => r.json()),
@@ -1674,13 +1716,13 @@ function showCaseChargeForm(caseId, chargeId = null) {
                             }
                         }
                     });
-                    
+
                     // Set charge master and trigger update
                     const chargeMasterSelect = document.getElementById('chargeMasterSelect');
                     if (chargeMasterSelect && charge.charge_master_id) {
                         chargeMasterSelect.value = charge.charge_master_id;
                         updateChargeAmount();
-                        
+
                         // After doctors are loaded, set the selected doctor
                         setTimeout(() => {
                             const doctorSelect = document.getElementById('doctorSelect');
@@ -1707,22 +1749,22 @@ function updateChargeAmount() {
     const unitAmountInput = document.getElementById('unitAmountInput');
     const doctorGroup = document.getElementById('doctorSelectGroup');
     const doctorSelect = document.getElementById('doctorSelect');
-    
+
     if (select && unitAmountInput && select.selectedIndex > 0) {
         const amount = select.options[select.selectedIndex].getAttribute('data-amount');
         const chargeName = select.options[select.selectedIndex].text.trim().toUpperCase();
         const chargeId = select.value;
-        
+
         unitAmountInput.value = amount;
         calculateTotal();
-        
+
         // Check if charge is OPD Charge, IPD DOCTOR VISIT, or SURGERY (case-insensitive)
         const chargeNameUpper = chargeName.toUpperCase();
-        const showDoctorSelect = chargeNameUpper.includes('OPD CHARGE') || 
-                                 chargeNameUpper.includes('IPD DOCTOR VISIT') ||
-                                 chargeNameUpper === 'SURGERY' ||
-                                 chargeNameUpper.includes('SURGERY');
-        
+        const showDoctorSelect = chargeNameUpper.includes('OPD CHARGE') ||
+            chargeNameUpper.includes('IPD DOCTOR VISIT') ||
+            chargeNameUpper === 'SURGERY' ||
+            chargeNameUpper.includes('SURGERY');
+
         if (showDoctorSelect && chargeId) {
             // Show doctor select and fetch doctors
             if (doctorGroup) {
@@ -1730,7 +1772,7 @@ function updateChargeAmount() {
                 if (doctorSelect) {
                     doctorSelect.innerHTML = '<option value="">Loading doctors...</option>';
                 }
-                
+
                 // Fetch doctors for this charge
                 fetch(`${API_BASE}/doctors-by-charge?charge_master_id=${chargeId}`)
                     .then(res => res.json())
@@ -1785,7 +1827,7 @@ function saveCaseCharge(event, caseId, chargeId) {
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
     data.case_id = caseId;
-    
+
     // Convert quantity and amounts to numbers
     if (data.quantity) {
         data.quantity = parseInt(data.quantity);
@@ -1796,34 +1838,34 @@ function saveCaseCharge(event, caseId, chargeId) {
     if (data.total_amount) {
         data.total_amount = parseFloat(data.total_amount);
     }
-    
+
     // Remove empty doctor_id if not required
     if (data.doctor_id === '' || !data.doctor_id) {
         delete data.doctor_id;
     }
-    
+
     const url = chargeId ? `${API_BASE}/case-charges/${chargeId}` : `${API_BASE}/case-charges`;
     const method = chargeId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(res => {
-        if (!res.ok) {
-            return res.json().then(err => { throw new Error(err.error || 'Failed to save charge'); });
-        }
-        return res.json();
-    })
-    .then(() => {
-        alert('Case charge saved successfully');
-        viewCaseDetails(caseId);
-    })
-    .catch(err => {
-        console.error('Error saving case charge:', err);
-        alert('Error saving case charge: ' + (err.message || err));
-    });
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw new Error(err.error || 'Failed to save charge'); });
+            }
+            return res.json();
+        })
+        .then(() => {
+            alert('Case charge saved successfully');
+            viewCaseDetails(caseId);
+        })
+        .catch(err => {
+            console.error('Error saving case charge:', err);
+            alert('Error saving case charge: ' + (err.message || err));
+        });
 }
 
 function editCaseCharge(id, caseId) {
@@ -1832,14 +1874,15 @@ function editCaseCharge(id, caseId) {
 
 function deleteCaseCharge(id, caseId) {
     if (confirm('Are you sure you want to delete this charge?')) {
-        fetch(`${API_BASE}/case-charges/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/case-charges/${id}`, { method: 'DELETE' })
             .then(() => viewCaseDetails(caseId))
             .catch(err => alert('Error deleting charge: ' + err));
     }
 }
 
 function showCaseDoctorChargeForm(caseId, chargeId = null) {
-    fetch(`${API_BASE}/doctors`).then(r => r.json()).then(doctors => {
+    fetch(`${API_BASE}/doctors`).then(r => r.json()).then(data => {
+        const doctors = data.doctors || data;
         const title = chargeId ? 'Edit Doctor Charge' : 'Add Doctor Charge';
         const html = `
             <div class="modal">
@@ -1875,7 +1918,7 @@ function showCaseDoctorChargeForm(caseId, chargeId = null) {
             </div>
         `;
         document.getElementById('content-area').innerHTML = html;
-        
+
         if (chargeId) {
             fetch(`${API_BASE}/case-doctor-charges/${chargeId}`)
                 .then(res => res.json())
@@ -1900,17 +1943,17 @@ function saveCaseDoctorCharge(event, caseId, chargeId) {
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
     data.case_id = caseId;
-    
+
     const url = chargeId ? `${API_BASE}/case-doctor-charges/${chargeId}` : `${API_BASE}/case-doctor-charges`;
     const method = chargeId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => viewCaseDetails(caseId))
-    .catch(err => alert('Error saving doctor charge: ' + err));
+        .then(() => viewCaseDetails(caseId))
+        .catch(err => alert('Error saving doctor charge: ' + err));
 }
 
 function editCaseDoctorCharge(id, caseId) {
@@ -1919,7 +1962,7 @@ function editCaseDoctorCharge(id, caseId) {
 
 function deleteCaseDoctorCharge(id, caseId) {
     if (confirm('Are you sure you want to delete this doctor charge?')) {
-        fetch(`${API_BASE}/case-doctor-charges/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/case-doctor-charges/${id}`, { method: 'DELETE' })
             .then(() => viewCaseDetails(caseId))
             .catch(err => alert('Error deleting doctor charge: ' + err));
     }
@@ -1931,7 +1974,7 @@ function editCase(id) {
 
 function deleteCase(id) {
     if (confirm('Are you sure you want to delete this case?')) {
-        fetch(`${API_BASE}/cases/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/cases/${id}`, { method: 'DELETE' })
             .then(() => loadCases(currentCasesPage))
             .catch(err => alert('Error deleting case: ' + err));
     }
@@ -1944,18 +1987,21 @@ const appointmentsPageLimit = 10;
 
 function loadAppointments(page = 1) {
     currentAppointmentsPage = page;
-    
+
     fetch(`${API_BASE}/appointments?page=${page}&limit=${appointmentsPageLimit}`)
         .then(res => res.json())
         .then(data => {
             const appointments = data.appointments || data;
             const total = data.total !== undefined ? data.total : (Array.isArray(appointments) ? appointments.length : 0);
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
                         <h1>Appointments</h1>
-                        <button class="btn btn-primary" onclick="showAppointmentForm()">Add Appointment</button>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn btn-info" onclick="loadCalendar()">📅 Calendar View</button>
+                            <button class="btn btn-primary" onclick="showAppointmentForm()">Add Appointment</button>
+                        </div>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -2008,7 +2054,7 @@ function showAppointmentForm(appointmentId = null) {
         fetch(`${API_BASE}/doctors?limit=1000`).then(r => r.json())
     ]).then(([doctorsResponse]) => {
         const doctors = Array.isArray(doctorsResponse) ? doctorsResponse : (doctorsResponse.doctors || []);
-        
+
         const title = appointmentId ? 'Edit Appointment' : 'Add Appointment';
         const html = `
             <div class="modal">
@@ -2066,14 +2112,14 @@ function showAppointmentForm(appointmentId = null) {
             </div>
         `;
         document.getElementById('content-area').innerHTML = html;
-        
+
         if (appointmentId) {
             Promise.all([
                 fetch(`${API_BASE}/appointments/${appointmentId}`).then(r => r.json()),
                 fetch(`${API_BASE}/cases?limit=1000`).then(r => r.json())
             ]).then(([apt, casesResponse]) => {
                 const cases = Array.isArray(casesResponse) ? casesResponse : (casesResponse.cases || []);
-                
+
                 // Populate form fields
                 Object.keys(apt).forEach(key => {
                     const input = document.querySelector(`[name="${key}"]`);
@@ -2087,7 +2133,7 @@ function showAppointmentForm(appointmentId = null) {
                         }
                     }
                 });
-                
+
                 // Populate patient search field
                 if (apt.patient_id) {
                     const patientIdInput = document.getElementById('patientIdInput');
@@ -2118,16 +2164,16 @@ function searchPatientsForAppointment(event) {
     const searchInput = document.getElementById('patientSearchInput');
     const resultsDiv = document.getElementById('patientSearchResults');
     const patientIdInput = document.getElementById('patientIdInput');
-    
+
     if (!searchInput || !resultsDiv) return;
-    
+
     const searchTerm = searchInput.value.trim();
-    
+
     // Clear previous timeout
     if (patientSearchTimeout) {
         clearTimeout(patientSearchTimeout);
     }
-    
+
     // If search is empty, clear results and selected patient
     if (searchTerm === '') {
         resultsDiv.innerHTML = '';
@@ -2141,19 +2187,19 @@ function searchPatientsForAppointment(event) {
         }
         return;
     }
-    
+
     // Debounce API call
     patientSearchTimeout = setTimeout(() => {
         fetch(`${API_BASE}/patients?search=${encodeURIComponent(searchTerm)}&limit=20`)
             .then(r => r.json())
             .then(data => {
                 const patients = Array.isArray(data) ? data : (data.patients || []);
-                
+
                 if (patients.length === 0) {
                     resultsDiv.innerHTML = '<div style="border: 1px solid #ddd; border-top: none; background: white; padding: 8px; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto;"><div style="padding: 8px; color: #666;">No patients found</div></div>';
                     return;
                 }
-                
+
                 const html = `
                     <div style="position: absolute; width: 100%; border: 1px solid #ddd; border-top: none; background: white; z-index: 1000; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         ${patients.map(p => `
@@ -2180,32 +2226,32 @@ function selectPatientForAppointment(patientId, patientName) {
     const searchInput = document.getElementById('patientSearchInput');
     const resultsDiv = document.getElementById('patientSearchResults');
     const patientIdInput = document.getElementById('patientIdInput');
-    
+
     if (searchInput) searchInput.value = patientName;
     if (patientIdInput) patientIdInput.value = patientId;
     if (resultsDiv) resultsDiv.innerHTML = '';
     selectedPatientName = patientName;
-    
+
     // Clear search timeout
     if (patientSearchTimeout) {
         clearTimeout(patientSearchTimeout);
         patientSearchTimeout = null;
     }
-    
+
     // Load cases for selected patient
     loadCasesForPatient(patientId);
 }
 
 // Close patient search results when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     const searchInput = document.getElementById('patientSearchInput');
     const resultsDiv = document.getElementById('patientSearchResults');
     const caseSearchInput = document.getElementById('casePatientSearchInput');
     const caseResultsDiv = document.getElementById('casePatientSearchResults');
-    
+
     // Close appointment patient search results
-    if (searchInput && resultsDiv && 
-        !searchInput.contains(event.target) && 
+    if (searchInput && resultsDiv &&
+        !searchInput.contains(event.target) &&
         !resultsDiv.contains(event.target)) {
         // Small delay to allow click events on results to fire first
         setTimeout(() => {
@@ -2222,10 +2268,10 @@ document.addEventListener('click', function(event) {
             }
         }, 200);
     }
-    
+
     // Close case patient search results
-    if (caseSearchInput && caseResultsDiv && 
-        !caseSearchInput.contains(event.target) && 
+    if (caseSearchInput && caseResultsDiv &&
+        !caseSearchInput.contains(event.target) &&
         !caseResultsDiv.contains(event.target)) {
         setTimeout(() => {
             if (caseResultsDiv) {
@@ -2233,12 +2279,12 @@ document.addEventListener('click', function(event) {
             }
         }, 200);
     }
-    
+
     // Close referred by search results
     const caseReferredBySearchInput = document.getElementById('caseReferredBySearchInput');
     const caseReferredBySearchResults = document.getElementById('caseReferredBySearchResults');
-    if (caseReferredBySearchInput && caseReferredBySearchResults && 
-        !caseReferredBySearchInput.contains(event.target) && 
+    if (caseReferredBySearchInput && caseReferredBySearchResults &&
+        !caseReferredBySearchInput.contains(event.target) &&
         !caseReferredBySearchResults.contains(event.target)) {
         setTimeout(() => {
             if (caseReferredBySearchResults) {
@@ -2246,12 +2292,12 @@ document.addEventListener('click', function(event) {
             }
         }, 200);
     }
-    
+
     // Close billing patient search results
     const billingPatientSearchInput = document.getElementById('billingPatientSearchInput');
     const billingPatientSearchResults = document.getElementById('billingPatientSearchResults');
-    if (billingPatientSearchInput && billingPatientSearchResults && 
-        !billingPatientSearchInput.contains(event.target) && 
+    if (billingPatientSearchInput && billingPatientSearchResults &&
+        !billingPatientSearchInput.contains(event.target) &&
         !billingPatientSearchResults.contains(event.target)) {
         setTimeout(() => {
             if (billingPatientSearchResults) {
@@ -2265,9 +2311,9 @@ function loadCasesForPatient(selectedPatientId = null, selectedCaseId = null, al
     const caseSelect = document.getElementById('caseSelect');
     const caseSearchInput = document.getElementById('caseSearchInput');
     const patientIdInput = document.getElementById('patientIdInput');
-    
+
     if (!caseSelect) return;
-    
+
     const patientId = selectedPatientId || patientIdInput?.value;
     if (!patientId) {
         caseSelect.innerHTML = '<option value="">Select Case</option>';
@@ -2275,20 +2321,20 @@ function loadCasesForPatient(selectedPatientId = null, selectedCaseId = null, al
         if (caseSearchInput) caseSearchInput.value = '';
         return;
     }
-    
+
     // Load cases for this patient
     const loadCases = (casesList) => {
         const cases = Array.isArray(casesList) ? casesList : (casesList.cases || []);
         allPatientCases = cases.filter(c => c.patient_id === patientId);
         filterCases(selectedCaseId);
     };
-    
+
     // If cases were already provided, use them
     if (allCases) {
         loadCases(allCases);
         return;
     }
-    
+
     // Load cases for this patient
     fetch(`${API_BASE}/cases?limit=1000`)
         .then(r => r.json())
@@ -2305,26 +2351,26 @@ function loadCasesForPatient(selectedPatientId = null, selectedCaseId = null, al
 function filterCases(selectedCaseId = null) {
     const caseSelect = document.getElementById('caseSelect');
     const caseSearchInput = document.getElementById('caseSearchInput');
-    
+
     if (!caseSelect) return;
-    
+
     const searchTerm = caseSearchInput ? caseSearchInput.value.toLowerCase().trim() : '';
-    
+
     // Filter cases based on search term
     const filteredCases = allPatientCases.filter(c => {
         const caseNumber = (c.case_number || '').toLowerCase();
         return caseNumber.includes(searchTerm);
     });
-    
+
     // Build options HTML
     let optionsHTML = '<option value="">Select Case</option>';
     filteredCases.forEach(c => {
         const isSelected = selectedCaseId === c.id ? 'selected' : '';
         optionsHTML += `<option value="${c.id}" ${isSelected}>${c.case_number || ''}</option>`;
     });
-    
+
     caseSelect.innerHTML = optionsHTML;
-    
+
     // If there's a selected case ID, try to select it
     if (selectedCaseId) {
         const option = caseSelect.querySelector(`option[value="${selectedCaseId}"]`);
@@ -2338,7 +2384,7 @@ function saveAppointment(event, appointmentId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     // Remove empty optional fields
     if (!data.case_id || data.case_id === '') {
         delete data.case_id;
@@ -2346,17 +2392,17 @@ function saveAppointment(event, appointmentId) {
     if (!data.doctor_id || data.doctor_id === '') {
         delete data.doctor_id;
     }
-    
+
     const url = appointmentId ? `${API_BASE}/appointments/${appointmentId}` : `${API_BASE}/appointments`;
     const method = appointmentId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => loadAppointments(currentAppointmentsPage))
-    .catch(err => alert('Error saving appointment: ' + err));
+        .then(() => loadAppointments(currentAppointmentsPage))
+        .catch(err => alert('Error saving appointment: ' + err));
 }
 
 function editAppointment(id) {
@@ -2365,7 +2411,7 @@ function editAppointment(id) {
 
 function deleteAppointment(id) {
     if (confirm('Are you sure you want to delete this appointment?')) {
-        fetch(`${API_BASE}/appointments/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' })
             .then(() => loadAppointments(currentAppointmentsPage))
             .catch(err => alert('Error deleting appointment: ' + err));
     }
@@ -2378,13 +2424,13 @@ const prescriptionsPageLimit = 10;
 
 function loadPrescriptions(page = 1) {
     currentPrescriptionsPage = page;
-    
+
     fetch(`${API_BASE}/prescriptions?page=${page}&limit=${prescriptionsPageLimit}`)
         .then(res => res.json())
         .then(data => {
             const prescriptions = data.prescriptions || data;
             const total = data.total !== undefined ? data.total : (Array.isArray(prescriptions) ? prescriptions.length : 0);
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
@@ -2466,7 +2512,7 @@ function showPrescriptionForm(prescriptionId = null) {
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
-    
+
     if (prescriptionId) {
         fetch(`${API_BASE}/prescriptions/${prescriptionId}`)
             .then(res => res.json())
@@ -2489,17 +2535,17 @@ function savePrescription(event, prescriptionId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     const url = prescriptionId ? `${API_BASE}/prescriptions/${prescriptionId}` : `${API_BASE}/prescriptions`;
     const method = prescriptionId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => loadPrescriptions(currentPrescriptionsPage))
-    .catch(err => alert('Error saving prescription: ' + err));
+        .then(() => loadPrescriptions(currentPrescriptionsPage))
+        .catch(err => alert('Error saving prescription: ' + err));
 }
 
 function editPrescription(id) {
@@ -2508,7 +2554,7 @@ function editPrescription(id) {
 
 function deletePrescription(id) {
     if (confirm('Are you sure you want to delete this prescription?')) {
-        fetch(`${API_BASE}/prescriptions/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/prescriptions/${id}`, { method: 'DELETE' })
             .then(() => loadPrescriptions(currentPrescriptionsPage))
             .catch(err => alert('Error deleting prescription: ' + err));
     }
@@ -2523,10 +2569,10 @@ function showPrescriptionUploadForm(caseId) {
                 alert('This case is closed. No prescriptions can be uploaded.');
                 return;
             }
-            
+
             const patientId = caseData.patient_id || '';
             const patientName = caseData.patient?.name || '';
-            
+
             const html = `
                 <div class="modal">
                     <div class="modal-content" style="max-width: 600px;">
@@ -2566,7 +2612,7 @@ function showPrescriptionUploadForm(caseId) {
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', html);
-            
+
             // Load doctors
             fetch(`${API_BASE}/doctors?limit=1000`)
                 .then(res => res.json())
@@ -2574,7 +2620,7 @@ function showPrescriptionUploadForm(caseId) {
                     const doctors = Array.isArray(data) ? data : (data.doctors || []);
                     const doctorSelect = document.getElementById('prescriptionDoctorSelect');
                     if (doctorSelect) {
-                        doctorSelect.innerHTML = '<option value="">Select Doctor</option>' + 
+                        doctorSelect.innerHTML = '<option value="">Select Doctor</option>' +
                             doctors.map(d => `<option value="${d.id}">${d.name || ''}</option>`).join('');
                     }
                 });
@@ -2589,25 +2635,25 @@ function uploadPrescriptionForCase(event, caseId) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
-    
+
     fetch(`${API_BASE}/prescriptions`, {
         method: 'POST',
         body: formData
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.message || data.id) {
-            alert('Prescription uploaded successfully');
-            closePrescriptionUploadModal();
-            viewCaseDetails(caseId);
-        } else {
-            alert('Error uploading prescription: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(err => {
-        console.error('Error uploading prescription:', err);
-        alert('Error uploading prescription: ' + err);
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.message || data.id) {
+                alert('Prescription uploaded successfully');
+                closePrescriptionUploadModal();
+                viewCaseDetails(caseId);
+            } else {
+                alert('Error uploading prescription: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error uploading prescription:', err);
+            alert('Error uploading prescription: ' + err);
+        });
 }
 
 function closePrescriptionUploadModal() {
@@ -2619,7 +2665,7 @@ function closePrescriptionUploadModal() {
 
 function deleteCasePrescription(prescriptionId, caseId) {
     if (confirm('Are you sure you want to delete this prescription?')) {
-        fetch(`${API_BASE}/prescriptions/${prescriptionId}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/prescriptions/${prescriptionId}`, { method: 'DELETE' })
             .then(res => res.json())
             .then(data => {
                 if (data.message) {
@@ -2644,7 +2690,7 @@ function viewPrescriptionInLightbox(filePath, fileName) {
     prescriptionZoomLevel = 1;
     const isPDF = filePath.toLowerCase().endsWith('.pdf');
     const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filePath);
-    
+
     const lightboxHTML = `
         <div class="prescription-lightbox-overlay" id="prescriptionLightbox" onclick="closePrescriptionLightbox(event)">
             <div class="prescription-lightbox-container" onclick="event.stopPropagation()">
@@ -2683,11 +2729,11 @@ function viewPrescriptionInLightbox(filePath, fileName) {
             </div>
         </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', lightboxHTML);
     prescriptionLightboxImage = document.getElementById('prescriptionLightboxImage');
     document.body.style.overflow = 'hidden';
-    
+
     // Close on Escape key
     document.addEventListener('keydown', handlePrescriptionLightboxKeydown);
 }
@@ -2714,13 +2760,13 @@ function closePrescriptionLightbox(event) {
 
 function zoomPrescription(direction) {
     if (!prescriptionLightboxImage) return;
-    
+
     if (direction === 'in') {
         prescriptionZoomLevel = Math.min(prescriptionZoomLevel + 0.25, 3); // Max 300%
     } else if (direction === 'out') {
         prescriptionZoomLevel = Math.max(prescriptionZoomLevel - 0.25, 0.5); // Min 50%
     }
-    
+
     prescriptionLightboxImage.style.transform = `scale(${prescriptionZoomLevel})`;
     const zoomLevelElement = document.getElementById('prescriptionZoomLevel');
     if (zoomLevelElement) {
@@ -2746,7 +2792,7 @@ let billingPatientSearchTimeout = null;
 function loadBillingPayments() {
     selectedBillingPatientId = null;
     selectedBillingCaseId = null;
-    
+
     const html = `
         <div class="module-content">
             <div class="module-header">
@@ -2778,36 +2824,36 @@ function loadBillingPayments() {
 function searchPatientsForBilling(event) {
     const searchInput = document.getElementById('billingPatientSearchInput');
     const resultsDiv = document.getElementById('billingPatientSearchResults');
-    
+
     if (!searchInput || !resultsDiv) return;
-    
+
     const query = searchInput.value.trim();
-    
+
     // Clear previous timeout
     if (billingPatientSearchTimeout) {
         clearTimeout(billingPatientSearchTimeout);
     }
-    
+
     // If query is empty, hide results
     if (!query || query.length < 2) {
         resultsDiv.style.display = 'none';
         resultsDiv.innerHTML = '';
         return;
     }
-    
+
     // Debounce search
     billingPatientSearchTimeout = setTimeout(() => {
         fetch(`${API_BASE}/patients?search=${encodeURIComponent(query)}&limit=20`)
             .then(res => res.json())
             .then(data => {
                 const patients = Array.isArray(data) ? data : (data.patients || []);
-                
+
                 if (patients.length === 0) {
                     resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No patients found</div>';
                     resultsDiv.style.display = 'block';
                     return;
                 }
-                
+
                 resultsDiv.innerHTML = patients.map(patient => `
                     <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
                          onmouseover="this.style.backgroundColor='#f0f0f0'" 
@@ -2832,28 +2878,28 @@ function selectBillingPatient(patientId, patientName) {
     selectedBillingPatientId = patientId;
     const searchInput = document.getElementById('billingPatientSearchInput');
     const resultsDiv = document.getElementById('billingPatientSearchResults');
-    
+
     if (searchInput) searchInput.value = patientName;
     if (resultsDiv) {
         resultsDiv.style.display = 'none';
         resultsDiv.innerHTML = '';
     }
-    
+
     // Show loading state
     document.getElementById('billingCasesList').innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading cases...</p>';
     document.getElementById('billingCaseSelection').style.display = 'block';
-    
+
     // Load cases for this patient - use patient_id filter for faster query
     fetch(`${API_BASE}/cases?page=1&limit=100&patient_id=${patientId}`)
         .then(res => res.json())
         .then(data => {
             const cases = data.cases || [];
-            
+
             if (cases.length === 0) {
                 document.getElementById('billingCasesList').innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No cases found for this patient.</p>';
                 return;
             }
-            
+
             const html = `
                 <div class="table-scroll-container" style="max-height: 400px; overflow-y: auto;">
                     <table class="data-table">
@@ -2868,9 +2914,9 @@ function selectBillingPatient(patientId, patientName) {
                         </thead>
                         <tbody>
                             ${cases.map(c => {
-                                const status = c.status || 'open';
-                                const statusColor = status === 'closed' ? '#10b981' : '#f59e0b';
-                                return `
+                const status = c.status || 'open';
+                const statusColor = status === 'closed' ? '#10b981' : '#f59e0b';
+                return `
                                 <tr>
                                     <td>${c.case_number || ''}</td>
                                     <td>${c.case_type || ''}</td>
@@ -2879,7 +2925,7 @@ function selectBillingPatient(patientId, patientName) {
                                     <td><button class="btn btn-primary" onclick="loadCaseBilling('${c.id}')">View Bill</button></td>
                                 </tr>
                             `;
-                            }).join('')}
+            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -2890,7 +2936,7 @@ function selectBillingPatient(patientId, patientName) {
             console.error('Error loading cases:', err);
             document.getElementById('billingCasesList').innerHTML = '<p style="color: #d32f2f; text-align: center; padding: 20px;">Error loading cases. Please try again.</p>';
         });
-    
+
     // Clear search timeout
     if (billingPatientSearchTimeout) {
         clearTimeout(billingPatientSearchTimeout);
@@ -2900,7 +2946,7 @@ function selectBillingPatient(patientId, patientName) {
 
 function loadCaseBilling(caseId) {
     selectedBillingCaseId = caseId;
-    
+
     fetch(`${API_BASE}/billing/case/${caseId}`)
         .then(res => res.json())
         .then(data => {
@@ -2912,66 +2958,101 @@ function loadCaseBilling(caseId) {
             const totalAfterDiscount = data.total_after_discount || totalCharges;
             const totalPaid = data.total_paid || 0;
             const balance = data.balance || 0;
-            
+
             const html = `
                 <div style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                        <h2 style="margin: 0;">Bill for Case: ${caseData.case_number || ''}</h2>
-                        <button class="btn btn-success" onclick="generateBillPDF('${caseId}')">
-                            Generate Bill
-                        </button>
-                        ${caseData.status === 'closed' ? '<span style="color: #10b981; font-size: 14px; margin-left: 12px; font-weight: 600;">✓ Case Closed</span>' : ''}
+                        <div>
+                            <h2 style="margin: 0;">Bill for Case: ${caseData.case_number || ''}</h2>
+                            ${caseData.status === 'closed' ? `
+                                <div style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 20px; color: #065f46; font-weight: 600; font-size: 13px;">
+                                    <span>🔒 Finalized & Locked</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn btn-secondary" onclick="generateBillPDF('${caseId}')">
+                                📄 Generate Draft
+                            </button>
+                            ${caseData.status !== 'closed' && balance <= 0.01 ? `
+                                <button class="btn btn-success" onclick="closeCaseAndBill('${caseId}')" style="background: #059669; border: none; font-weight: 700; padding: 10px 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                                    💰 Finalize Bill & Lock Case
+                                </button>
+                            ` : ''}
+                            ${caseData.status === 'closed' ? `
+                                <button class="btn btn-primary" onclick="generateBillPDF('${caseId}')" style="background: #2563eb; border: none; font-weight: 700; padding: 10px 20px;">
+                                    🖨️ Print Final Bill
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                     
-                    <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 4px;">
-                        <h3 style="margin-bottom: 12px;">Patient Information</h3>
-                        <p><strong>Name:</strong> ${caseData.patient?.name || ''}</p>
-                        <p><strong>Phone:</strong> ${caseData.patient?.phone || ''}</p>
-                        <p><strong>Email:</strong> ${caseData.patient?.email || ''}</p>
-                        <p><strong>Case Type:</strong> ${caseData.case_type || ''}</p>
-                        <p><strong>Admission Date:</strong> ${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString() : ''}${caseData.admission_time ? ' ' + caseData.admission_time : ''}</p>
-                        ${caseData.discharge_date ? `<p><strong>Discharge Date:</strong> ${new Date(caseData.discharge_date).toLocaleDateString()}${caseData.discharge_time ? ' ' + caseData.discharge_time : ''}</p>` : ''}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                        <div style="padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h3 style="margin-top: 0; margin-bottom: 12px; color: #475569; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                👤 Patient Info
+                            </h3>
+                            <p style="margin: 4px 0;"><strong>Name:</strong> ${caseData.patient?.name || ''}</p>
+                            <p style="margin: 4px 0;"><strong>Phone:</strong> ${caseData.patient?.phone || ''}</p>
+                            <p style="margin: 4px 0;"><strong>Case Type:</strong> ${caseData.case_type || ''}</p>
+                            <p style="margin: 4px 0;"><strong>Admission:</strong> ${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString() : 'N/A'}</p>
+                        </div>
+                        <div style="padding: 16px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+                            <h3 style="margin-top: 0; margin-bottom: 12px; color: #0369a1; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                💰 Financial Summary
+                            </h3>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="color: #64748b;">Gross Total:</span>
+                                <strong>₹${totalCharges.toLocaleString('en-IN')}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="color: #64748b;">Discount:</span>
+                                <span style="color: #dc2626; font-weight: 600;">-₹${discount.toLocaleString('en-IN')}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+                                <span style="color: #64748b;">Net Payable:</span>
+                                <strong>₹${totalAfterDiscount.toLocaleString('en-IN')}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; color: #059669;">
+                                <span>Paid Amount:</span>
+                                <strong>₹${totalPaid.toLocaleString('en-IN')}</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 2px solid #bae6fd; font-size: 1.1em;">
+                                <strong style="color: #1e293b;">Balance Due:</strong>
+                                <strong style="color: ${balance > 0.01 ? '#dc2626' : '#059669'};">₹${balance.toLocaleString('en-IN')}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="billing-sections">
+                        <!-- Grouped Charges -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Hospital Charges</h3>
+                            ${renderBillingGroupTable(charges.filter(c => !c.is_doctor_charge && (!c.charge_type || c.charge_type === 'hospital')), 'hospital')}
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Doctor Fees</h3>
+                            ${renderBillingGroupTable(charges.filter(c => c.is_doctor_charge), 'doctor')}
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Pathology Charges</h3>
+                            ${renderBillingGroupTable(charges.filter(c => c.charge_type === 'pathology'), 'pathology')}
+                        </div>
+
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Pharmacy Charges</h3>
+                            ${renderBillingGroupTable(charges.filter(c => c.charge_type === 'pharmacy'), 'pharmacy')}
+                        </div>
                     </div>
                     
                     <div style="margin-bottom: 24px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3>Charges</h3>
-                        </div>
-                        <div class="table-scroll-container" style="max-height: 300px; overflow-y: auto;">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Charge Name</th>
-                                        <th>Doctor</th>
-                                        <th>Quantity</th>
-                                        <th>Unit Amount</th>
-                                        <th>Total Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${charges.length > 0 ? charges.map(c => {
-                                        const chargeDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
-                                        return `
-                                        <tr>
-                                            <td>${chargeDate}</td>
-                                            <td>${c.charge_name || ''}</td>
-                                            <td>${c.doctor_name || ''}</td>
-                                            <td>${c.quantity || 1}</td>
-                                            <td>₹ ${(c.unit_amount || 0).toFixed(2)}</td>
-                                            <td>₹ ${(c.total_amount || 0).toFixed(2)}</td>
-                                        </tr>
-                                    `;
-                                    }).join('') : '<tr><td colspan="6" style="text-align: center;">No charges found</td></tr>'}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 24px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3>Payments</h3>
-                            <button class="btn btn-primary" onclick="showBillingPaymentForm('${caseId}')">Add Payment</button>
+                            <h3>Payments History</h3>
+                            ${caseData.status !== 'closed' ? `
+                                <button class="btn btn-primary" onclick="showBillingPaymentForm('${caseId}')">Record Payment</button>
+                            ` : ''}
                         </div>
                         <div class="table-scroll-container" style="max-height: 300px; overflow-y: auto;">
                             <table class="data-table">
@@ -2987,8 +3068,8 @@ function loadCaseBilling(caseId) {
                                 </thead>
                                 <tbody>
                                     ${payments.length > 0 ? payments.map(p => {
-                                        const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '';
-                                        return `
+                const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '';
+                return `
                                         <tr>
                                             <td>${paymentDate}</td>
                                             <td>${(p.amount || 0).toFixed(2)}</td>
@@ -3001,47 +3082,45 @@ function loadCaseBilling(caseId) {
                                             </td>
                                         </tr>
                                     `;
-                                    }).join('') : '<tr><td colspan="6" style="text-align: center;">No payments found</td></tr>'}
+            }).join('') : '<tr><td colspan="6" style="text-align: center;">No payments found</td></tr>'}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     
-                    <div style="margin-top: 24px; padding: 20px; background: #fef3c7; border-radius: 4px; border: 2px solid #f59e0b;">
-                        <h3 style="margin-bottom: 16px;">Discount</h3>
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                            <label style="font-weight: 600; min-width: 120px;">Discount Amount:</label>
-                            <input type="number" id="discountAmount" step="0.01" min="0" max="${totalCharges}" 
-                                   value="${discount}" 
-                                   onchange="updateDiscount('${caseId}', this.value)"
-                                   ${caseData.status === 'closed' ? 'disabled style="opacity: 0.5; cursor: not-allowed; background-color: #f0f0f0;"' : 'style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 150px; font-size: 14px;"'}
-                                   placeholder="0.00">
-                            <span style="color: #666; font-size: 14px;">₹</span>
-                            ${caseData.status === 'closed' ? '<span style="color: #666; font-size: 14px; font-style: italic;">(Case is closed)</span>' : ''}
+                    <div style="margin-top: 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: #fffbeb; border-radius: 8px; border: 1px solid #fef3c7;">
+                            <h3 style="margin-top: 0; margin-bottom: 12px; color: #92400e; font-size: 16px;">Applied Discount</h3>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="position: relative; flex: 1;">
+                                    <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b;">₹</span>
+                                    <input type="number" id="discountAmount" step="0.01" min="0" max="${totalCharges}" 
+                                           value="${discount}" 
+                                           onchange="updateDiscount('${caseId}', this.value)"
+                                           ${caseData.status === 'closed' ? 'disabled style="padding: 10px 10px 10px 25px; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%; opacity: 0.6; background-color: #f8fafc;"' : 'style="padding: 10px 10px 10px 25px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; font-size: 16px; font-weight: 600;"'}
+                                           placeholder="0.00">
+                                </div>
+                                <button class="btn btn-warning" onclick="updateDiscount('${caseId}', document.getElementById('discountAmount').value)" ${caseData.status === 'closed' ? 'disabled' : ''}>
+                                    Apply
+                                </button>
+                            </div>
+                            <small style="color: #b45309; display: block; margin-top: 8px;">* Discount reduces the total payable amount.</small>
                         </div>
-                    </div>
-                    
-                    <div style="margin-top: 24px; padding: 20px; background: #f0f9ff; border-radius: 4px; border: 2px solid #0ea5e9;">
-                        <h3 style="margin-bottom: 16px;">Bill Summary</h3>
-                        <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 600;">
-                            <div>
-                                <p style="margin: 8px 0;"><strong>Total Charges:</strong> ₹ ${totalCharges.toFixed(2)}</p>
-                                ${discount > 0 ? `<p style="margin: 8px 0; color: #f59e0b;"><strong>Discount:</strong> -₹ ${discount.toFixed(2)}</p>` : ''}
-                                <p style="margin: 8px 0;"><strong>Total After Discount:</strong> ₹ ${totalAfterDiscount.toFixed(2)}</p>
-                                <p style="margin: 8px 0;"><strong>Total Paid:</strong> ₹ ${totalPaid.toFixed(2)}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="margin: 8px 0; color: ${balance > 0 ? '#dc2626' : '#10b981'};">
-                                    <strong>Balance:</strong> ₹ ${balance.toFixed(2)}
-                                </p>
-                            </div>
+
+                        <div style="padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                            <p style="color: #64748b; margin-bottom: 8px;">Current Payment Status</p>
+                            ${balance > 0.01 ? `
+                                <span style="display: inline-block; padding: 8px 16px; background: #fee2e2; color: #991b1b; border-radius: 20px; font-weight: 700;">PENDING: ₹${balance.toLocaleString('en-IN')}</span>
+                            ` : `
+                                <span style="display: inline-block; padding: 8px 16px; background: #dcfce7; color: #166534; border-radius: 20px; font-weight: 700;">✓ PAID IN FULL</span>
+                            `}
                         </div>
                     </div>
                 </div>
             `;
             document.getElementById('caseBillingContent').innerHTML = html;
             document.getElementById('billingDetails').style.display = 'block';
-            
+
             // Scroll to billing details section to ensure it's visible
             setTimeout(() => {
                 const billingDetails = document.getElementById('billingDetails');
@@ -3061,14 +3140,14 @@ function showBillingPaymentForm(caseId) {
     // Remove any existing modals first
     const existingModals = document.querySelectorAll('.modal');
     existingModals.forEach(modal => modal.remove());
-    
+
     // Fetch current balance to show in form
     fetch(`${API_BASE}/billing/case/${caseId}`)
         .then(res => res.json())
         .then(data => {
             const balance = data.balance || 0;
             const totalAfterDiscount = data.total_after_discount || 0;
-            
+
             const html = `
                 <div class="modal" id="billingPaymentModal">
                     <div class="modal-content">
@@ -3156,33 +3235,33 @@ function saveBillingPayment(event, caseId) {
         event.stopPropagation();
         event.stopImmediatePropagation();
     }
-    
+
     // Get the form element
     const form = event ? event.target : document.getElementById('billingPaymentForm');
     if (!form) {
         alert('Payment form not found');
         return false;
     }
-    
+
     // Verify this is the billing payment form, not the payout payment form
     if (form.id !== 'billingPaymentForm' && form.id !== 'billingPaymentEditForm') {
         console.error('Wrong form submitted:', form.id);
         return false;
     }
-    
+
     const formData = new FormData(form);
     const data = {};
-    
+
     // Collect all form fields
     for (let [key, value] of formData.entries()) {
         if (value && value.trim() !== '') {
             data[key] = value.trim();
         }
     }
-    
+
     // Add case_id
     data.case_id = caseId;
-    
+
     // Convert amount to float
     if (data.amount) {
         data.amount = parseFloat(data.amount);
@@ -3194,7 +3273,7 @@ function saveBillingPayment(event, caseId) {
         alert('Payment amount is required');
         return false;
     }
-    
+
     // Convert payment_date to ISO string format (YYYY-MM-DD)
     // Keep it as string, backend will handle conversion
     if (data.payment_date) {
@@ -3206,49 +3285,49 @@ function saveBillingPayment(event, caseId) {
         // Use current date if not provided
         data.payment_date = new Date().toISOString();
     }
-    
+
     // Ensure payment_mode is provided
     if (!data.payment_mode) {
         alert('Payment mode is required');
         return false;
     }
-    
+
     console.log('Saving billing payment to /api/payments:', data);
     console.log('Case ID:', caseId);
     console.log('Form ID:', form.id);
-    
+
     // IMPORTANT: Use /api/payments endpoint, NOT /api/payouts
     fetch(`${API_BASE}/payments`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(res => {
-        console.log('Payment response status:', res.status);
-        console.log('Response URL:', res.url);
-        if (!res.ok) {
-            return res.json().then(err => {
-                console.error('Payment error response:', err);
-                throw new Error(err.error || 'Failed to save payment');
-            });
-        }
-        return res.json();
-    })
-    .then(responseData => {
-        console.log('Payment success response:', responseData);
-        if (responseData.message || responseData.id) {
-            alert('Payment saved successfully!');
-            closeBillingModal();
-            loadCaseBilling(caseId);
-        } else {
-            alert('Error saving payment: ' + (responseData.error || 'Unknown error'));
-        }
-    })
-    .catch(err => {
-        console.error('Error saving payment:', err);
-        alert('Error saving payment: ' + (err.message || err));
-    });
-    
+        .then(res => {
+            console.log('Payment response status:', res.status);
+            console.log('Response URL:', res.url);
+            if (!res.ok) {
+                return res.json().then(err => {
+                    console.error('Payment error response:', err);
+                    throw new Error(err.error || 'Failed to save payment');
+                });
+            }
+            return res.json();
+        })
+        .then(responseData => {
+            console.log('Payment success response:', responseData);
+            if (responseData.message || responseData.id) {
+                alert('Payment saved successfully!');
+                closeBillingModal();
+                loadCaseBilling(caseId);
+            } else {
+                alert('Error saving payment: ' + (responseData.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error saving payment:', err);
+            alert('Error saving payment: ' + (err.message || err));
+        });
+
     return false;
 }
 
@@ -3258,7 +3337,7 @@ function editBillingPayment(paymentId, caseId) {
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     fetch(`${API_BASE}/payments/${paymentId}`)
         .then(res => res.json())
         .then(payment => {
@@ -3314,43 +3393,43 @@ function updateBillingPayment(event, paymentId, caseId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     // Convert amount to float
     if (data.amount) {
         data.amount = parseFloat(data.amount);
     }
-    
+
     // Convert payment_date to datetime
     if (data.payment_date) {
         data.payment_date = new Date(data.payment_date);
     }
-    
+
     fetch(`${API_BASE}/payments/${paymentId}`, {
         method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.message) {
-            closeBillingModal();
-            loadCaseBilling(caseId);
-        } else {
-            alert('Error updating payment: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(err => {
-        console.error('Error updating payment:', err);
-        alert('Error updating payment: ' + err);
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                closeBillingModal();
+                loadCaseBilling(caseId);
+            } else {
+                alert('Error updating payment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error updating payment:', err);
+            alert('Error updating payment: ' + err);
+        });
 }
 
 function deleteBillingPayment(paymentId, caseId) {
     if (!confirm('Are you sure you want to delete this payment?')) {
         return;
     }
-    
-    fetch(`${API_BASE}/payments/${paymentId}`, {method: 'DELETE'})
+
+    fetch(`${API_BASE}/payments/${paymentId}`, { method: 'DELETE' })
         .then(res => res.json())
         .then(data => {
             if (data.message) {
@@ -3367,47 +3446,47 @@ function deleteBillingPayment(paymentId, caseId) {
 
 function updateDiscount(caseId, discountAmount) {
     const discount = parseFloat(discountAmount) || 0;
-    
+
     // Get current total charges to validate discount
     fetch(`${API_BASE}/billing/case/${caseId}`)
         .then(res => res.json())
         .then(billingData => {
             const totalCharges = billingData.total_charges || 0;
-            
+
             if (discount < 0) {
                 alert('Discount cannot be negative');
                 document.getElementById('discountAmount').value = 0;
                 return;
             }
-            
+
             if (discount > totalCharges) {
                 alert(`Discount cannot exceed total charges (₹ ${totalCharges.toFixed(2)})`);
                 document.getElementById('discountAmount').value = Math.min(discount, totalCharges);
                 return;
             }
-            
+
             fetch(`${API_BASE}/billing/discount/${caseId}`, {
                 method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({discount: discount})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discount: discount })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.message || data.discount !== undefined) {
-                    // Reload billing details to show updated calculations
-                    loadCaseBilling(caseId);
-                } else {
-                    alert('Error updating discount: ' + (data.error || 'Unknown error'));
+                .then(res => res.json())
+                .then(data => {
+                    if (data.message || data.discount !== undefined) {
+                        // Reload billing details to show updated calculations
+                        loadCaseBilling(caseId);
+                    } else {
+                        alert('Error updating discount: ' + (data.error || 'Unknown error'));
+                        // Reload to reset the value
+                        loadCaseBilling(caseId);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error updating discount:', err);
+                    alert('Error updating discount: ' + err);
                     // Reload to reset the value
                     loadCaseBilling(caseId);
-                }
-            })
-            .catch(err => {
-                console.error('Error updating discount:', err);
-                alert('Error updating discount: ' + err);
-                // Reload to reset the value
-                loadCaseBilling(caseId);
-            });
+                });
         })
         .catch(err => {
             console.error('Error fetching billing data:', err);
@@ -3428,10 +3507,10 @@ function generateBillPDF(caseId) {
             const totalAfterDiscount = data.total_after_discount || totalCharges;
             const totalPaid = data.total_paid || 0;
             const balance = data.balance || 0;
-            
+
             // Generate HTML bill
             const billHTML = generateBillHTML(caseData, charges, payments, totalCharges, discount, totalAfterDiscount, totalPaid, balance);
-            
+
             // Create lightbox to display bill
             const lightboxHTML = `
                 <div class="prescription-lightbox-overlay" id="billLightbox" onclick="closeBillLightbox(event)">
@@ -3459,16 +3538,16 @@ function generateBillPDF(caseId) {
                     </div>
                 </div>
             `;
-            
+
             // Remove any existing lightbox
             const existingLightbox = document.getElementById('billLightbox');
             if (existingLightbox) {
                 existingLightbox.remove();
             }
-            
+
             document.body.insertAdjacentHTML('beforeend', lightboxHTML);
             document.body.style.overflow = 'hidden';
-            
+
             // Close on Escape key
             document.addEventListener('keydown', handleBillLightboxKeydown);
         })
@@ -3481,193 +3560,161 @@ function generateBillPDF(caseId) {
 function generateBillHTML(caseData, charges, payments, totalCharges, discount, totalAfterDiscount, totalPaid, balance) {
     const billDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const billTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    
-    // Determine watermark text based on payment status
-    let watermarkText = '';
-    let watermarkColor = '';
-    if (Math.abs(balance) < 0.01) { // Fully paid (balance is 0 or very close to 0)
-        watermarkText = 'BILL PAID';
-        watermarkColor = '#10b981'; // Green
-    } else if (totalPaid > 0) { // Partial payment
-        watermarkText = 'PARTIAL BILL PAID';
-        watermarkColor = '#f59e0b'; // Orange/Amber
-    } else { // No payment
-        watermarkText = 'BILL NOT PAID';
-        watermarkColor = '#dc2626'; // Red
+
+    // Generate an invoice number: INV-CASE_NUM-DATE
+    const dateSlug = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    const invoiceNumber = `INV-${caseData.case_number || 'N/A'}-${dateSlug}`;
+
+    // Determine watermark text and theme color
+    let statusText = 'DRAFT';
+    let themeColor = '#64748b'; // Slate
+
+    if (caseData.status === 'closed') {
+        statusText = 'FINAL BILL';
+        themeColor = '#1e40af'; // Navy Blue
+    } else if (Math.abs(balance) < 0.01) {
+        statusText = 'PAID';
+        themeColor = '#059669'; // Emerald
+    } else if (totalPaid > 0) {
+        statusText = 'PARTIAL';
+        themeColor = '#f59e0b'; // Amber
     }
-    
+
     return `
-        <div class="bill-container" style="max-width: 210mm; margin: 0 auto; background: white; padding: 0; font-family: Arial, sans-serif; position: relative;">
-            <!-- Watermark (only visible in print) -->
-            <div class="bill-watermark" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 72px; font-weight: 900; color: ${watermarkColor}; opacity: 0.15; z-index: 1; pointer-events: none; white-space: nowrap; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); display: none;">
-                ${watermarkText}
+        <div class="bill-container" style="max-width: 210mm; margin: 0 auto; background: white; padding: 40px; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #1e293b; position: relative; border: 1px solid #e2e8f0; border-top: 10px solid ${themeColor}; box-sizing: border-box;">
+            
+            <!-- Background Watermark for Print -->
+            <div class="bill-watermark" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 120px; font-weight: 900; color: ${themeColor}; opacity: 0.03; z-index: 1; pointer-events: none; white-space: nowrap; display: none;">
+                ${statusText}
             </div>
-            <!-- Bill Header (minimal for letterhead) -->
-            <div class="bill-header" style="text-align: center; margin-top: 0; margin-bottom: 30px; padding-top: 80mm; position: relative; z-index: 2;">
-                <h1 style="color: #2563eb; margin: 0 0 15px 0; font-size: 28px; font-weight: 700; text-transform: uppercase;">INVOICE / BILL</h1>
-                ${caseData.patient?.name ? `
-                <div style="margin: 15px 0 20px 0; padding: 10px; background: #f0f9ff; border-radius: 4px; border: 1px solid #0ea5e9; display: inline-block;">
-                    <p style="color: #1f2937; margin: 0; font-size: 16px; font-weight: 600;">
-                        Patient: <span style="color: #2563eb;">${caseData.patient.name}</span>
+
+            <!-- Top Header Section: Hospital Info & Invoice Status -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; position: relative; z-index: 2;">
+                <div>
+                    <div style="margin-bottom: 5px;">
+                        <img src="https://lifeplushospital.in/img/logo-1.jpg" alt="Life Plus Hospital" style="height: 60px; width: auto; object-fit: contain;">
+                    </div>
+                    <p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px; line-height: 1.5;">
+                        Row House no: 44, Green Park Society, <br>
+                        Lodha Casa Rio Gold Road, Dombivli, Thane 421204<br>
+                        PH: +91 93726 74711 | URL: lifeplushospital.in<br>
+                        Email: billing@lifeplushospital.com | GSTIN: 07AAALH0000Z1Z5
                     </p>
                 </div>
-                ` : ''}
-                <div style="margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
-                    <p style="color: #666; margin: 0; font-size: 14px;">Bill Date: ${billDate} ${billTime}</p>
-                    <!-- Payment Status Badge -->
-                    <span style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; background-color: ${watermarkColor === '#10b981' ? '#d1fae5' : watermarkColor === '#f59e0b' ? '#fef3c7' : '#fee2e2'}; color: ${watermarkColor}; border: 2px solid ${watermarkColor};">
-                        ${watermarkText}
-                    </span>
+                <div style="text-align: right;">
+                    <div style="background: ${themeColor}10; color: ${themeColor}; padding: 6px 16px; border-radius: 6px; display: inline-block; font-weight: 800; font-size: 14px; margin-bottom: 12px; border: 1px solid ${themeColor}30;">
+                        ${statusText}
+                    </div>
+                    <p style="margin: 0; font-size: 24px; font-weight: 800; color: #1e293b;">INVOICE</p>
+                    <p style="margin: 4px 0; color: #64748b; font-weight: 600; font-size: 14px;"># ${invoiceNumber}</p>
                 </div>
             </div>
-            
-            <!-- Patient & Case Info -->
-            <div style="margin-bottom: 30px; position: relative; z-index: 2;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb; width: 30%;">Patient Name:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient?.name || ''}</td>
-                    </tr>
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Phone:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient?.phone || ''}</td>
-                    </tr>
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Email:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient?.email || ''}</td>
-                    </tr>
-                    ${caseData.patient?.address ? `
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Address:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.patient.address}</td>
-                    </tr>
-                    ` : ''}
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Case Number:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.case_number || ''}</td>
-                    </tr>
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Case Type:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${caseData.case_type || ''}</td>
-                    </tr>
-                    ${caseData.admission_date ? `
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Admission Date:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(caseData.admission_date).toLocaleDateString('en-IN')}${caseData.admission_time ? ' ' + caseData.admission_time : ''}</td>
-                    </tr>
-                    ` : ''}
+
+            <hr style="border: 0; border-top: 2px solid #f1f5f9; margin-bottom: 30px;">
+
+            <!-- 2-Column Patient & Bill Metadata -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; position: relative; z-index: 2;">
+                <div>
+                    <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; margin-bottom: 12px;">Bill To / Patient</p>
+                    <p style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">${caseData.patient?.name || ''}</p>
+                    <p style="margin: 4px 0; color: #475569; font-size: 14px;">Phone: ${caseData.patient?.phone || 'N/A'}</p>
+                    ${caseData.patient?.email ? `<p style="margin: 2px 0; color: #475569; font-size: 14px;">Email: ${caseData.patient.email}</p>` : ''}
+                    ${caseData.patient?.address ? `<p style="margin: 8px 0 0 0; color: #64748b; font-size: 13px; line-height: 1.4; max-width: 250px;">${caseData.patient.address}</p>` : ''}
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Invoiced On</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #334155;">${billDate}</p>
+                    </div>
+                    <div>
+                        <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Case ID</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #334155;">${caseData.case_number || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Admission</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #334155;">${caseData.admission_date ? new Date(caseData.admission_date).toLocaleDateString('en-IN') : 'N/A'}</p>
+                    </div>
                     ${caseData.discharge_date ? `
-                    <tr>
-                        <td style="background: #f3f4f6; padding: 12px; font-weight: 600; border: 1px solid #e5e7eb;">Discharge Date:</td>
-                        <td style="padding: 12px; border: 1px solid #e5e7eb;">${new Date(caseData.discharge_date).toLocaleDateString('en-IN')}${caseData.discharge_time ? ' ' + caseData.discharge_time : ''}</td>
-                    </tr>
-                    ` : ''}
-                </table>
+                    <div>
+                        <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Discharge</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #334155;">${new Date(caseData.discharge_date).toLocaleDateString('en-IN')}</p>
+                    </div>` : ''}
+                    ${caseData.billed_at ? `
+                    <div style="grid-column: span 2;">
+                        <p style="text-transform: uppercase; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Billed At</p>
+                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #059669;">${new Date(caseData.billed_at).toLocaleString('en-IN')}</p>
+                    </div>` : ''}
+                </div>
             </div>
-            
-            <!-- Charges Table -->
-            <div style="margin-bottom: 30px; position: relative; z-index: 2;">
-                <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 8px;">Charges Details</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="background: #2563eb; color: white;">
-                            <th style="padding: 12px; text-align: left; border: 1px solid #1d4ed8;">Date</th>
-                            <th style="padding: 12px; text-align: left; border: 1px solid #1d4ed8;">Charge Name</th>
-                            <th style="padding: 12px; text-align: left; border: 1px solid #1d4ed8;">Doctor</th>
-                            <th style="padding: 12px; text-align: center; border: 1px solid #1d4ed8;">Qty</th>
-                            <th style="padding: 12px; text-align: right; border: 1px solid #1d4ed8;">Unit Amount</th>
-                            <th style="padding: 12px; text-align: right; border: 1px solid #1d4ed8;">Total Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${charges.length > 0 ? charges.map((c, idx) => {
-                            const chargeDate = c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '';
-                            const rowBg = idx % 2 === 0 ? '#ffffff' : '#f9fafb';
-                            return `
-                            <tr style="background: ${rowBg};">
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${chargeDate}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${c.charge_name || ''}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${c.doctor_name || ''}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: center;">${c.quantity || 1}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: right;">₹ ${(c.unit_amount || 0).toFixed(2)}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: right; font-weight: 600;">₹ ${(c.total_amount || 0).toFixed(2)}</td>
+
+            <!-- Charge Details Section -->
+            <div style="position: relative; z-index: 2; margin-bottom: 40px;">
+                <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px;">
+                    Itemized Breakdown
+                </h3>
+                
+                <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🏥 Standard Hospital Charges</p>
+                ${renderInvoiceCategoryTable(charges.filter(c => !c.is_doctor_charge && (!c.charge_type || c.charge_type === 'hospital')))}
+
+                <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">👨‍⚕️ Professional Doctor Fees</p>
+                ${renderInvoiceCategoryTable(charges.filter(c => c.is_doctor_charge))}
+
+                <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🧪 Pathology Investigations</p>
+                ${renderInvoiceCategoryTable(charges.filter(c => c.charge_type === 'pathology'))}
+
+                <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">💊 Pharmacy & Supplies</p>
+                ${renderInvoiceCategoryTable(charges.filter(c => c.charge_type === 'pharmacy'))}
+            </div>
+
+            <!-- Financials Summary & Official Footer Block -->
+            <div style="display: flex; justify-content: flex-end; margin-top: 40px; position: relative; z-index: 2;">
+                <!-- Summary Table -->
+                <div style="width: 350px;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 12px 20px; color: #475569; font-size: 14px;">Total Gross Amount</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #1e293b; font-weight: 700; font-size: 14px;">₹ ${totalCharges.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                             </tr>
-                            `;
-                        }).join('') : `
-                        <tr>
-                            <td colspan="6" style="padding: 20px; text-align: center; border: 1px solid #e5e7eb; color: #666;">No charges found</td>
-                        </tr>
-                        `}
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Payments Table -->
-            ${payments.length > 0 ? `
-            <div style="margin-bottom: 30px; position: relative; z-index: 2;">
-                <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #10b981; padding-bottom: 8px;">Payment History</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #10b981; color: white;">
-                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Date</th>
-                            <th style="padding: 12px; text-align: right; border: 1px solid #059669;">Amount</th>
-                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Mode</th>
-                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Reference</th>
-                            <th style="padding: 12px; text-align: left; border: 1px solid #059669;">Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${payments.map((p, idx) => {
-                            const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString('en-IN') : '';
-                            const rowBg = idx % 2 === 0 ? '#ffffff' : '#f0fdf4';
-                            return `
-                            <tr style="background: ${rowBg};">
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${paymentDate}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb; text-align: right; font-weight: 600;">₹ ${(p.amount || 0).toFixed(2)}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${p.payment_mode || ''}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${p.payment_reference_number || ''}</td>
-                                <td style="padding: 10px; border: 1px solid #e5e7eb;">${p.notes || ''}</td>
+                            ${discount > 0 ? `
+                            <tr>
+                                <td style="padding: 12px 20px; color: #dc2626; font-size: 14px;">Discount Applied</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #dc2626; font-weight: 700; font-size: 14px;">-₹ ${discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                             </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
+                            <tr style="background: #f1f5f9;">
+                                <td style="padding: 12px 20px; color: #1e293b; font-size: 14px; font-weight: 700;">Net Payable</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #1e293b; font-weight: 800; font-size: 15px;">₹ ${totalAfterDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            ` : ''}
+                            <tr>
+                                <td style="padding: 12px 20px; color: #059669; font-size: 14px;">Total Amount Paid</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #059669; font-weight: 700; font-size: 14px;">₹ ${totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr style="background: ${themeColor}; color: white;">
+                                <td style="padding: 18px 20px; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Outstanding Balance</td>
+                                <td style="padding: 18px 20px; text-align: right; font-weight: 900; font-size: 18px;">₹ ${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
             </div>
-            ` : ''}
-            
-            <!-- Bill Summary -->
-            <div style="margin-top: 40px; padding: 20px; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; position: relative; z-index: 2;">
-                <h3 style="color: #1f2937; margin-bottom: 20px; font-size: 20px; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">Bill Summary</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb; width: 50%;">Total Charges:</td>
-                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb;">₹ ${totalCharges.toFixed(2)}</td>
-                    </tr>
-                    ${discount > 0 ? `
-                    <tr>
-                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb; color: #f59e0b;">Discount:</td>
-                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb; color: #f59e0b;">-₹ ${discount.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb;">Total After Discount:</td>
-                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb;">₹ ${totalAfterDiscount.toFixed(2)}</td>
-                    </tr>
-                    ` : ''}
-                    <tr>
-                        <td style="padding: 12px; background: #f3f4f6; font-weight: 600; border: 1px solid #e5e7eb;">Total Paid:</td>
-                        <td style="padding: 12px; text-align: right; font-weight: 600; border: 1px solid #e5e7eb;">₹ ${totalPaid.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 15px; background: #fef3c7; font-weight: 700; border: 1px solid #e5e7eb; font-size: 16px; color: ${balance > 0 ? '#dc2626' : '#10b981'};">Balance Amount:</td>
-                        <td style="padding: 15px; text-align: right; font-weight: 700; border: 1px solid #e5e7eb; font-size: 16px; color: ${balance > 0 ? '#dc2626' : '#10b981'};">₹ ${balance.toFixed(2)}</td>
-                    </tr>
-                </table>
+
+            <!-- Footer & Signature -->
+            <div style="margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 2;">
+                <div style="color: #94a3b8; font-size: 11px;">
+                    <p style="margin: 0;">&nbsp;</p>
+                    <p style="margin: 4px 0;">Generated on ${billDate} at ${billTime}</p>
+                    <p style="margin: 4px 0;">System Auth Code: LP-BILL-SYS-9941</p>
+                </div>
+                <div style="text-align: center; border-top: 1px solid #cbd5e1; width: 220px; padding-top: 10px;">
+                    <p style="margin: 0; font-size: 12px; font-weight: 700; color: #475569;">Authorized Signatory</p>
+                    <p style="margin: 2px 0; font-size: 10px; color: #94a3b8;">(Digital Seal Attached)</p>
+                </div>
             </div>
-            
-            <!-- Footer -->
-            <div style="margin-top: 40px; text-align: center; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #666; font-size: 12px; position: relative; z-index: 2;">
-                <p>This is a computer-generated bill. No signature required.</p>
-                <p style="margin-top: 10px;">Thank you for choosing Life Plus Hospital</p>
+
+            <div style="margin-top: 40px; text-align: center; color: #64748b; font-size: 11px; font-style: italic; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                This is a computer-authorized document and does not require a physical signature.<br>
+                Thank you for trusting Life Plus Hospital with your healthcare needs. Wishing you a speedy recovery!
             </div>
         </div>
     `;
@@ -3774,35 +3821,35 @@ function closeCaseAndBill(caseId) {
         .then(res => res.json())
         .then(data => {
             const balance = data.balance || 0;
-            
+
             // Check if balance is zero (fully paid)
             if (Math.abs(balance) > 0.01) {
                 alert(`Cannot close case. Outstanding balance: ₹ ${balance.toFixed(2)}\n\nPlease ensure all payments are completed before closing the case.`);
                 return;
             }
-            
+
             if (!confirm('Close this case? This action cannot be undone. The case will be marked as closed and no further modifications will be allowed.')) {
                 return;
             }
-            
+
             fetch(`${API_BASE}/billing/close-case/${caseId}`, {
                 method: 'PUT'
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.message) {
-                    alert('Case closed successfully!');
-                    closeBillLightbox();
-                    // Reload billing details
-                    loadCaseBilling(caseId);
-                } else {
-                    alert('Error closing case: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(err => {
-                console.error('Error closing case:', err);
-                alert('Error closing case: ' + err);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.message) {
+                        alert('Case closed successfully!');
+                        closeBillLightbox();
+                        // Reload billing details
+                        loadCaseBilling(caseId);
+                    } else {
+                        alert('Error closing case: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error closing case:', err);
+                    alert('Error closing case: ' + err);
+                });
         })
         .catch(err => {
             console.error('Error checking case balance:', err);
@@ -3824,13 +3871,13 @@ const chargeMasterPageLimit = 10;
 
 function loadChargeMaster(page = 1) {
     currentChargeMasterPage = page;
-    
+
     fetch(`${API_BASE}/charge-master?page=${page}&limit=${chargeMasterPageLimit}`)
         .then(res => res.json())
         .then(data => {
             const charges = data.charges || data;
             const total = data.total !== undefined ? data.total : (Array.isArray(charges) ? charges.length : 0);
-            
+
             const html = `
                 <div class="module-content">
                     <div class="module-header">
@@ -3904,7 +3951,7 @@ function showChargeMasterForm(chargeId = null) {
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
-    
+
     if (chargeId) {
         fetch(`${API_BASE}/charge-master/${chargeId}`)
             .then(res => res.json())
@@ -3921,17 +3968,17 @@ function saveChargeMaster(event, chargeId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
-    
+
     const url = chargeId ? `${API_BASE}/charge-master/${chargeId}` : `${API_BASE}/charge-master`;
     const method = chargeId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(() => loadChargeMaster(currentChargeMasterPage))
-    .catch(err => alert('Error saving charge: ' + err));
+        .then(() => loadChargeMaster(currentChargeMasterPage))
+        .catch(err => alert('Error saving charge: ' + err));
 }
 
 function editChargeMaster(id) {
@@ -3940,7 +3987,7 @@ function editChargeMaster(id) {
 
 function deleteChargeMaster(id) {
     if (confirm('Are you sure you want to delete this charge?')) {
-        fetch(`${API_BASE}/charge-master/${id}`, {method: 'DELETE'})
+        fetch(`${API_BASE}/charge-master/${id}`, { method: 'DELETE' })
             .then(() => loadChargeMaster(currentChargeMasterPage))
             .catch(err => alert('Error deleting charge: ' + err));
     }
@@ -3953,7 +4000,7 @@ const payoutPageLimit = 10;
 
 function loadPayouts(page = 1) {
     currentPayoutPage = page;
-    
+
     const html = `
         <div class="module-content">
             <div class="module-header">
@@ -3995,19 +4042,19 @@ function loadPayoutRecords(page = 1) {
     const startDate = document.getElementById('payoutStartDate')?.value || '';
     const endDate = document.getElementById('payoutEndDate')?.value || '';
     const status = document.getElementById('payoutStatusFilter')?.value || '';
-    
+
     let url = `${API_BASE}/payouts?page=${page}&limit=${payoutPageLimit}`;
     if (startDate) url += `&start_date=${startDate}`;
     if (endDate) url += `&end_date=${endDate}`;
     if (status) url += `&payment_status=${status}`;
-    
+
     fetch(url)
         .then(res => res.json())
         .then(data => {
             const payouts = data.payouts || [];
             const total = data.total || 0;
             const totalPages = Math.max(1, Math.ceil(total / payoutPageLimit));
-            
+
             const html = `
                 <div class="table-scroll-container" style="max-height: calc(100vh - 350px); overflow-y: auto;">
                     <table class="data-table">
@@ -4027,10 +4074,10 @@ function loadPayoutRecords(page = 1) {
                         </thead>
                         <tbody>
                             ${payouts.length > 0 ? payouts.map(p => {
-                            const dateTime = p.date_time ? new Date(p.date_time).toLocaleString() : '';
-                            const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '';
-                            const isPaidOrPartial = p.payment_status === 'paid' || p.payment_status === 'partial_paid';
-                            const paymentDetails = isPaidOrPartial ? `
+                const dateTime = p.date_time ? new Date(p.date_time).toLocaleString() : '';
+                const paymentDate = p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '';
+                const isPaidOrPartial = p.payment_status === 'paid' || p.payment_status === 'partial_paid';
+                const paymentDetails = isPaidOrPartial ? `
                                 <div style="font-size: 11px;">
                                     ${paymentDate ? `<div><strong>Date:</strong> ${paymentDate}</div>` : ''}
                                     ${p.payment_mode ? `<div><strong>Mode:</strong> ${p.payment_mode}</div>` : ''}
@@ -4039,23 +4086,23 @@ function loadPayoutRecords(page = 1) {
                                     ${p.payment_comment ? `<div><strong>Comment:</strong> ${p.payment_comment}</div>` : ''}
                                 </div>
                             ` : '-';
-                            
-                            // Set row background color based on payment status
-                            let rowColor = '#fff3cd'; // Yellow for pending/cancelled (default)
-                            if (p.payment_status === 'paid') {
-                                rowColor = '#d4edda'; // Green for paid
-                            } else if (p.payment_status === 'partial_paid') {
-                                rowColor = '#cfe2ff'; // Blue for partial paid
-                            }
-                            
-                            const doctorChargeAmount = p.doctor_charge_amount || 0;
-                            const partialAmount = p.partial_payment_amount || 0;
-                            const remainingAmount = doctorChargeAmount - partialAmount;
-                            const displayAmount = p.payment_status === 'partial_paid' 
-                                ? `<span style="color: #0d6efd;">${partialAmount.toFixed(2)}</span> / ${doctorChargeAmount.toFixed(2)}<br/><small style="color: #666;">Remaining: ${remainingAmount.toFixed(2)}</small>`
-                                : doctorChargeAmount.toFixed(2);
-                            
-                            return `
+
+                // Set row background color based on payment status
+                let rowColor = '#fff3cd'; // Yellow for pending/cancelled (default)
+                if (p.payment_status === 'paid') {
+                    rowColor = '#d4edda'; // Green for paid
+                } else if (p.payment_status === 'partial_paid') {
+                    rowColor = '#cfe2ff'; // Blue for partial paid
+                }
+
+                const doctorChargeAmount = p.doctor_charge_amount || 0;
+                const partialAmount = p.partial_payment_amount || 0;
+                const remainingAmount = doctorChargeAmount - partialAmount;
+                const displayAmount = p.payment_status === 'partial_paid'
+                    ? `<span style="color: #0d6efd;">${partialAmount.toFixed(2)}</span> / ${doctorChargeAmount.toFixed(2)}<br/><small style="color: #666;">Remaining: ${remainingAmount.toFixed(2)}</small>`
+                    : doctorChargeAmount.toFixed(2);
+
+                return `
                                 <tr style="background-color: ${rowColor};">
                                     <td>${dateTime}</td>
                                     <td>${p.case_number || ''}</td>
@@ -4079,7 +4126,7 @@ function loadPayoutRecords(page = 1) {
                                     </td>
                                 </tr>
                             `;
-                            }).join('') : '<tr><td colspan="10" style="text-align: center;">No payout records found</td></tr>'}
+            }).join('') : '<tr><td colspan="10" style="text-align: center;">No payout records found</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -4120,22 +4167,22 @@ function updatePayoutStatus(payoutId, status) {
         // For pending or cancelled, just update status
         fetch(`${API_BASE}/payouts/${payoutId}`, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({payment_status: status})
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_status: status })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.message) {
-                alert('Payment status updated successfully');
-                loadPayoutRecords(currentPayoutPage);
-            } else {
-                alert('Error updating payment status: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(err => {
-            console.error('Error updating payout status:', err);
-            alert('Error updating payment status: ' + err);
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    alert('Payment status updated successfully');
+                    loadPayoutRecords(currentPayoutPage);
+                } else {
+                    alert('Error updating payment status: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Error updating payout status:', err);
+                alert('Error updating payment status: ' + err);
+            });
     }
 }
 
@@ -4143,7 +4190,7 @@ function showPaymentForm(payoutId, doctorChargeAmount = 0, currentStatus = 'pend
     const isPartialPayment = targetStatus === 'partial_paid';
     const existingPartialAmount = currentStatus === 'partial_paid' ? parseFloat(document.querySelector(`[data-payout-id="${payoutId}"]`)?.dataset?.partialAmount || 0) : 0;
     const remainingAmount = doctorChargeAmount - existingPartialAmount;
-    
+
     const html = `
         <div class="modal">
             <div class="modal-content">
@@ -4226,14 +4273,14 @@ function savePayment(event, payoutId, doctorChargeAmount, targetStatus) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
-    
+
     const paymentData = {
         payment_status: targetStatus || 'paid',
         payment_mode: formData.get('payment_mode'),
         payment_reference_number: formData.get('payment_reference_number') || '',
         payment_comment: formData.get('payment_comment') || ''
     };
-    
+
     // Handle partial payment
     if (targetStatus === 'partial_paid') {
         const partialAmount = parseFloat(formData.get('partial_payment_amount')) || 0;
@@ -4241,7 +4288,7 @@ function savePayment(event, payoutId, doctorChargeAmount, targetStatus) {
             alert('Please enter a valid partial payment amount');
             return;
         }
-        
+
         // Get existing partial amount from the payout record
         fetch(`${API_BASE}/payouts?case_id=&doctor_id=&payment_status=&page=1&limit=1000`)
             .then(res => res.json())
@@ -4249,20 +4296,20 @@ function savePayment(event, payoutId, doctorChargeAmount, targetStatus) {
                 const payout = data.payouts?.find(p => p.id === payoutId);
                 const existingPartial = payout?.partial_payment_amount || 0;
                 const newPartialTotal = existingPartial + partialAmount;
-                
+
                 if (newPartialTotal > doctorChargeAmount) {
                     alert(`Total partial payment (${newPartialTotal.toFixed(2)}) cannot exceed doctor charge amount (${doctorChargeAmount.toFixed(2)})`);
                     return;
                 }
-                
+
                 paymentData.partial_payment_amount = newPartialTotal;
-                
+
                 // If partial payment equals full amount, mark as paid
                 if (Math.abs(newPartialTotal - doctorChargeAmount) < 0.01) {
                     paymentData.payment_status = 'paid';
                     paymentData.partial_payment_amount = doctorChargeAmount;
                 }
-                
+
                 savePaymentData(payoutId, paymentData);
             })
             .catch(err => {
@@ -4281,27 +4328,27 @@ function savePaymentData(payoutId, paymentData) {
     if (paymentDate) {
         paymentData.payment_date = paymentDate + 'T00:00:00';
     }
-    
+
     fetch(`${API_BASE}/payouts/${payoutId}`, {
         method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paymentData)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.message) {
-            const statusMsg = paymentData.payment_status === 'partial_paid' ? 'Partial payment added successfully' : 'Payment marked as done successfully';
-            alert(statusMsg);
-            closePaymentModal();
-            loadPayoutRecords(currentPayoutPage);
-        } else {
-            alert('Error saving payment: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(err => {
-        console.error('Error saving payment:', err);
-        alert('Error saving payment: ' + err);
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                const statusMsg = paymentData.payment_status === 'partial_paid' ? 'Partial payment added successfully' : 'Payment marked as done successfully';
+                alert(statusMsg);
+                closePaymentModal();
+                loadPayoutRecords(currentPayoutPage);
+            } else {
+                alert('Error saving payment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error saving payment:', err);
+            alert('Error saving payment: ' + err);
+        });
 }
 
 function viewPayoutCase(caseId) {
@@ -4320,7 +4367,7 @@ function showPayoutForm(payoutId = null) {
     ]).then(([casesResponse, doctorsResponse]) => {
         const cases = Array.isArray(casesResponse) ? casesResponse : (casesResponse.cases || []);
         const doctors = Array.isArray(doctorsResponse) ? doctorsResponse : (doctorsResponse.doctors || []);
-        
+
         const title = payoutId ? 'Edit Payout' : 'Create Payout';
         const html = `
             <div class="modal">
@@ -4383,12 +4430,12 @@ function showPayoutForm(payoutId = null) {
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', html);
-        
+
         // Set default date time to now
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('payoutDateTime').value = now.toISOString().slice(0, 16);
-        
+
         if (payoutId) {
             // Load payout data for editing
             fetch(`${API_BASE}/payouts?case_id=&doctor_id=&payment_status=&page=1&limit=1000`)
@@ -4421,14 +4468,14 @@ function showPayoutForm(payoutId = null) {
 
 function loadCaseDetailsForPayout(caseId) {
     if (!caseId) return;
-    
+
     fetch(`${API_BASE}/cases/${caseId}`)
         .then(res => res.json())
         .then(caseData => {
             const caseNumberInput = document.getElementById('payoutCaseNumber');
             const patientNameInput = document.getElementById('payoutPatientName');
             const caseTypeInput = document.getElementById('payoutCaseType');
-            
+
             if (caseNumberInput) caseNumberInput.value = caseData.case_number || '';
             if (patientNameInput) patientNameInput.value = caseData.patient?.name || '';
             if (caseTypeInput) caseTypeInput.value = caseData.case_type || '';
@@ -4443,34 +4490,34 @@ function savePayout(event, payoutId) {
     const form = event.target;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
-    
+
     // Convert date_time to proper format
     if (data.date_time) {
         data.date_time = new Date(data.date_time).toISOString();
     }
-    
+
     const url = payoutId ? `${API_BASE}/payouts/${payoutId}` : `${API_BASE}/payouts`;
     const method = payoutId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.message || data.id) {
-            alert(payoutId ? 'Payout updated successfully' : 'Payout created successfully');
-            closePayoutModal();
-            loadPayoutRecords(currentPayoutPage);
-        } else {
-            alert('Error saving payout: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(err => {
-        console.error('Error saving payout:', err);
-        alert('Error saving payout: ' + err);
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.message || data.id) {
+                alert(payoutId ? 'Payout updated successfully' : 'Payout created successfully');
+                closePayoutModal();
+                loadPayoutRecords(currentPayoutPage);
+            } else {
+                alert('Error saving payout: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error saving payout:', err);
+            alert('Error saving payout: ' + err);
+        });
 }
 
 function closePayoutModal() {
@@ -4484,7 +4531,7 @@ function generatePayoutReport() {
     const startDate = document.getElementById('payoutStartDate')?.value || '';
     const endDate = document.getElementById('payoutEndDate')?.value || '';
     const status = document.getElementById('payoutStatusFilter')?.value || '';
-    
+
     // Build URL with filters
     let url = `${API_BASE}/payouts/export-excel?`;
     const params = [];
@@ -4492,14 +4539,14 @@ function generatePayoutReport() {
     if (endDate) params.push(`end_date=${endDate}`);
     if (status) params.push(`payment_status=${status}`);
     url += params.join('&');
-    
+
     // Show loading message
     const originalText = event?.target?.textContent || 'Generate Report';
     if (event?.target) {
         event.target.textContent = 'Generating...';
         event.target.disabled = true;
     }
-    
+
     // Fetch and download Excel file
     fetch(url)
         .then(res => {
@@ -4513,7 +4560,7 @@ function generatePayoutReport() {
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            
+
             // Generate filename with date range
             let filename = 'payouts_report';
             if (startDate && endDate) {
@@ -4524,25 +4571,25 @@ function generatePayoutReport() {
                 filename += `_until_${endDate}`;
             }
             filename += '.xlsx';
-            
+
             link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
-            
+
             // Reset button
             if (event?.target) {
                 event.target.textContent = originalText;
                 event.target.disabled = false;
             }
-            
+
             alert('Report downloaded successfully!');
         })
         .catch(err => {
             console.error('Error generating report:', err);
             alert('Error generating report: ' + (err.message || err));
-            
+
             // Reset button
             if (event?.target) {
                 event.target.textContent = originalText;
@@ -4600,14 +4647,14 @@ function loadUsers() {
     fetch(`${API_BASE}/users`, {
         headers: getAuthHeaders()
     })
-    .then(res => res.json())
-    .then(users => {
-        if (users.error) {
-            alert('Error: ' + users.error);
-            return;
-        }
-        
-        const html = `
+        .then(res => res.json())
+        .then(users => {
+            if (users.error) {
+                alert('Error: ' + users.error);
+                return;
+            }
+
+            const html = `
             <div class="module-content">
                 <div class="module-header">
                     <h1>User Management</h1>
@@ -4644,18 +4691,18 @@ function loadUsers() {
                 </div>
             </div>
         `;
-        document.getElementById('content-area').innerHTML = html;
-    })
-    .catch(err => {
-        console.error('Error loading users:', err);
-        alert('Error loading users: ' + err);
-    });
+            document.getElementById('content-area').innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Error loading users:', err);
+            alert('Error loading users: ' + err);
+        });
 }
 
 function showUserForm(userId = null) {
     const title = userId ? 'Edit User' : 'Add User';
     const modules = ['doctors', 'doctor-charges', 'patients', 'cases', 'appointments', 'billing-payments', 'charge-master', 'payouts', 'reports'];
-    
+
     let formHTML = `
         <div class="modal">
             <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
@@ -4723,53 +4770,53 @@ function showUserForm(userId = null) {
             </div>
         </div>
     `;
-    
+
     document.getElementById('content-area').innerHTML = formHTML;
-    
+
     if (userId) {
         fetch(`${API_BASE}/users`, {
             headers: getAuthHeaders()
         })
-        .then(res => res.json())
-        .then(users => {
-            const user = users.find(u => u.id === userId);
-            if (user) {
-                document.getElementById('userUsername').value = user.username || '';
-                document.getElementById('userFullName').value = user.full_name || '';
-                document.getElementById('userEmail').value = user.email || '';
-                document.getElementById('userIsActive').value = user.is_active ? 'true' : 'false';
-                
-                // Set permissions
-                const permissions = user.permissions || {};
-                modules.forEach(module => {
-                    const modulePerms = permissions[module] || {};
-                    document.getElementById(`perm_${module}_view`).checked = modulePerms.view || false;
-                    document.getElementById(`perm_${module}_edit`).checked = modulePerms.edit || false;
-                    document.getElementById(`perm_${module}_delete`).checked = modulePerms.delete || false;
-                });
-            }
-        });
+            .then(res => res.json())
+            .then(users => {
+                const user = users.find(u => u.id === userId);
+                if (user) {
+                    document.getElementById('userUsername').value = user.username || '';
+                    document.getElementById('userFullName').value = user.full_name || '';
+                    document.getElementById('userEmail').value = user.email || '';
+                    document.getElementById('userIsActive').value = user.is_active ? 'true' : 'false';
+
+                    // Set permissions
+                    const permissions = user.permissions || {};
+                    modules.forEach(module => {
+                        const modulePerms = permissions[module] || {};
+                        document.getElementById(`perm_${module}_view`).checked = modulePerms.view || false;
+                        document.getElementById(`perm_${module}_edit`).checked = modulePerms.edit || false;
+                        document.getElementById(`perm_${module}_delete`).checked = modulePerms.delete || false;
+                    });
+                }
+            });
     }
 }
 
 function saveUser(event, userId) {
     event.preventDefault();
     const formData = new FormData(event.target);
-    
+
     // Build permissions object
     const permissions = {};
     const modules = ['doctors', 'doctor-charges', 'patients', 'cases', 'appointments', 'billing-payments', 'charge-master', 'payouts', 'reports'];
-    
+
     modules.forEach(module => {
         const view = formData.get(`permissions[${module}][view]`) === 'on';
         const edit = formData.get(`permissions[${module}][edit]`) === 'on';
         const del = formData.get(`permissions[${module}][delete]`) === 'on';
-        
+
         if (view || edit || del) {
-            permissions[module] = {view, edit, delete: del};
+            permissions[module] = { view, edit, delete: del };
         }
     });
-    
+
     const data = {
         username: formData.get('username'),
         full_name: formData.get('full_name'),
@@ -4777,56 +4824,56 @@ function saveUser(event, userId) {
         is_active: formData.get('is_active') === 'true',
         permissions: permissions
     };
-    
+
     if (formData.get('password')) {
         data.password = formData.get('password');
     }
-    
+
     const url = userId ? `${API_BASE}/users/${userId}` : `${API_BASE}/users`;
     const method = userId ? 'PUT' : 'POST';
-    
+
     fetch(url, {
         method: method,
         headers: getAuthHeaders(),
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert('Error: ' + data.error);
-        } else {
-            alert(data.message || 'User saved successfully');
-            loadUsers();
-        }
-    })
-    .catch(err => {
-        console.error('Error saving user:', err);
-        alert('Error saving user: ' + err);
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                alert(data.message || 'User saved successfully');
+                loadUsers();
+            }
+        })
+        .catch(err => {
+            console.error('Error saving user:', err);
+            alert('Error saving user: ' + err);
+        });
 }
 
 function deleteUser(userId) {
     if (!confirm('Are you sure you want to delete this user?')) {
         return;
     }
-    
+
     fetch(`${API_BASE}/users/${userId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert('Error: ' + data.error);
-        } else {
-            alert('User deleted successfully');
-            loadUsers();
-        }
-    })
-    .catch(err => {
-        console.error('Error deleting user:', err);
-        alert('Error deleting user: ' + err);
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                alert('User deleted successfully');
+                loadUsers();
+            }
+        })
+        .catch(err => {
+            console.error('Error deleting user:', err);
+            alert('Error deleting user: ' + err);
+        });
 }
 
 // ==================== ACTIVITY LOGS MODULE ====================
@@ -4836,31 +4883,31 @@ const activityLogsPageLimit = 50;
 
 function loadActivityLogs(page = 1) {
     currentActivityLogsPage = page;
-    
+
     const usernameFilter = document.getElementById('activityUsernameFilter')?.value || '';
     const moduleFilter = document.getElementById('activityModuleFilter')?.value || '';
     const actionFilter = document.getElementById('activityActionFilter')?.value || '';
-    
+
     let url = `${API_BASE}/activity-logs?page=${page}&limit=${activityLogsPageLimit}`;
     if (usernameFilter) url += `&username=${encodeURIComponent(usernameFilter)}`;
     if (moduleFilter) url += `&module=${encodeURIComponent(moduleFilter)}`;
     if (actionFilter) url += `&action=${encodeURIComponent(actionFilter)}`;
-    
+
     fetch(url, {
         headers: getAuthHeaders()
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert('Error: ' + data.error);
-            return;
-        }
-        
-        const logs = data.logs || [];
-        const total = data.total || 0;
-        const totalPages = Math.max(1, Math.ceil(total / activityLogsPageLimit));
-        
-        const html = `
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+
+            const logs = data.logs || [];
+            const total = data.total || 0;
+            const totalPages = Math.max(1, Math.ceil(total / activityLogsPageLimit));
+
+            const html = `
             <div class="module-content">
                 <div class="module-header">
                     <h1>Activity Logs</h1>
@@ -4922,9 +4969,9 @@ function loadActivityLogs(page = 1) {
                         </thead>
                         <tbody>
                             ${logs.length > 0 ? logs.map(log => {
-                                const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
-                                const details = log.details ? JSON.stringify(log.details) : '';
-                                return `
+                const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+                const details = log.details ? JSON.stringify(log.details) : '';
+                return `
                                 <tr>
                                     <td>${timestamp}</td>
                                     <td>${log.username || ''}</td>
@@ -4934,7 +4981,7 @@ function loadActivityLogs(page = 1) {
                                     <td>${log.ip_address || '-'}</td>
                                 </tr>
                             `;
-                            }).join('') : '<tr><td colspan="6" style="text-align: center;">No activity logs found</td></tr>'}
+            }).join('') : '<tr><td colspan="6" style="text-align: center;">No activity logs found</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -4948,21 +4995,21 @@ function loadActivityLogs(page = 1) {
                 </div>
             </div>
         `;
-        
-        document.getElementById('content-area').innerHTML = html;
-        
-        // Set filter values
-        if (document.getElementById('activityModuleFilter')) {
-            document.getElementById('activityModuleFilter').value = moduleFilter;
-        }
-        if (document.getElementById('activityActionFilter')) {
-            document.getElementById('activityActionFilter').value = actionFilter;
-        }
-    })
-    .catch(err => {
-        console.error('Error loading activity logs:', err);
-        alert('Error loading activity logs: ' + err);
-    });
+
+            document.getElementById('content-area').innerHTML = html;
+
+            // Set filter values
+            if (document.getElementById('activityModuleFilter')) {
+                document.getElementById('activityModuleFilter').value = moduleFilter;
+            }
+            if (document.getElementById('activityActionFilter')) {
+                document.getElementById('activityActionFilter').value = actionFilter;
+            }
+        })
+        .catch(err => {
+            console.error('Error loading activity logs:', err);
+            alert('Error loading activity logs: ' + err);
+        });
 }
 
 function getActionColor(action) {
@@ -4976,3 +5023,165 @@ function getActionColor(action) {
     };
     return colors[action] || '#6b7280';
 }
+
+// Helper to render grouped charges in Billing view
+function renderBillingGroupTable(charges, type) {
+    if (!charges || charges.length === 0) {
+        return `<p style="color: #94a3b8; font-style: italic; padding: 10px; background: #f8fafc; border-radius: 4px; border: 1px dashed #e2e8f0; margin-bottom: 20px;">No ${type} charges found.</p>`;
+    }
+
+    return `
+        <div class="table-scroll-container" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1;">
+                    <tr style="border-bottom: 2px solid #e2e8f0;">
+                        <th style="text-align: left; padding: 12px;">Date</th>
+                        <th style="text-align: left; padding: 12px;">Details</th>
+                        ${type === 'hospital' || type === 'doctor' ? '<th style="text-align: left; padding: 12px;">Doctor</th>' : ''}
+                        <th style="text-align: center; padding: 12px;">Qty</th>
+                        <th style="text-align: right; padding: 12px;">Amount</th>
+                        <th style="text-align: right; padding: 12px;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${charges.map(c => `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 10px;">${c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '')}</td>
+                            <td style="padding: 10px;">${c.charge_name || c.description || 'N/A'}</td>
+                            ${type === 'hospital' || type === 'doctor' ? `<td style="padding: 10px;">${c.doctor_name || '-'}</td>` : ''}
+                            <td style="padding: 10px; text-align: center;">${c.quantity || 1}</td>
+                            <td style="padding: 10px; text-align: right;">₹${(c.unit_amount || 0).toLocaleString('en-IN')}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600;">₹${(c.total_amount || 0).toLocaleString('en-IN')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+// Helper to render payments history in Billing view
+function renderPaymentsHistoryTable(payments) {
+    if (!payments || payments.length === 0) {
+        return '<p style="color: #9a6e3a; font-style: italic;">No payments recorded for this case yet.</p>';
+    }
+
+    return `
+        <div class="table-scroll-container" style="max-height: 200px; overflow-y: auto;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead style="background: #fffaf0; color: #9a6e3a;">
+                    <tr style="border-bottom: 1px solid #feebc8;">
+                        <th style="text-align: left; padding: 10px;">Date</th>
+                        <th style="text-align: left; padding: 10px;">Mode</th>
+                        <th style="text-align: left; padding: 10px;">Reference</th>
+                        <th style="text-align: right; padding: 10px;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${payments.map(p => `
+                        <tr style="border-bottom: 1px solid #fff5f5;">
+                            <td style="padding: 10px;">${p.payment_date ? new Date(p.payment_date).toLocaleDateString() : ''}</td>
+                            <td style="padding: 10px;">
+                                <span style="display: inline-block; padding: 2px 8px; background: #feebc8; border-radius: 12px; font-size: 11px; font-weight: 600; color: #9a6e3a;">
+                                    ${p.payment_mode || 'Cash'}
+                                </span>
+                            </td>
+                            <td style="padding: 10px; font-size: 0.9em; color: #64748b;">${p.payment_reference_number || '-'}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 700; color: #166534;">₹${(p.amount || 0).toLocaleString('en-IN')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+// Show/Add Payment modal in Billing Module
+function showBillingAddPaymentModal(caseId, currentBalance) {
+    const html = `
+        <div class="modal" id="billingPaymentModal">
+            <div class="modal-content" style="max-width: 450px;">
+                <h2 style="margin-top: 0; color: #2d3748; display: flex; align-items: center; gap: 10px;">
+                    💰 Record Payment
+                </h2>
+                <div style="margin-bottom: 20px; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+                    <span style="color: #166534;">Outstanding Balance:</span>
+                    <strong style="color: #15803d; font-size: 1.2em; display: block;">₹${currentBalance.toLocaleString('en-IN')}</strong>
+                </div>
+                <form id="billingPaymentForm" onsubmit="saveBillingPayment(event, '${caseId}')">
+                    <div class="form-group">
+                        <label>Amount to Pay *</label>
+                        <input type="number" name="amount" step="0.01" min="1" max="${currentBalance + 1.1}" value="${currentBalance.toFixed(2)}" required style="font-size: 1.1em; font-weight: 600;">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Mode *</label>
+                        <select name="payment_mode" required>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI / QR Code">UPI / QR Code</option>
+                            <option value="Debit / Credit Card">Debit / Credit Card</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reference No. / Transaction ID</label>
+                        <input type="text" name="payment_reference_number" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label>Remarks</label>
+                        <textarea name="notes" placeholder="Any additional notes..." rows="2"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 24px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">Save Payment</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('billingPaymentModal').remove()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// Global exposure for billing functions
+window.loadBillingPayments = loadBillingPayments;
+window.searchPatientsForBilling = searchPatientsForBilling;
+window.selectBillingPatient = selectBillingPatient;
+window.loadCaseBilling = loadCaseBilling;
+window.showBillingAddPaymentModal = showBillingAddPaymentModal;
+window.renderBillingGroupTable = renderBillingGroupTable;
+window.renderPaymentsHistoryTable = renderPaymentsHistoryTable;
+
+// Helper to render simple table for invoice PDF
+function renderInvoiceCategoryTable(charges) {
+    if (!charges || charges.length === 0) {
+        return '<p style="color: #94a3b8; font-style: italic; font-size: 12px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #f1f5f9;">No charges recorded in this category.</p>';
+    }
+
+    return `
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; border-radius: 6px; overflow: hidden; border: 1px solid #f1f5f9; position: relative;">
+            <thead>
+                <tr style="background: #f1f5f9; color: #475569;">
+                    <th style="padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 14%;">Date</th>
+                    <th style="padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 44%;">Description</th>
+                    <th style="padding: 10px; text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 10%;">Qty</th>
+                    <th style="padding: 10px; text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 16%;">Rate</th>
+                    <th style="padding: 10px; text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 16%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${charges.map((c, idx) => `
+                    <tr style="background: ${idx % 2 === 0 ? '#fff' : '#fcfcfd'};">
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #64748b;">${c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '')}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; font-weight: 600; color: #1e293b;">${c.charge_name || c.description || 'N/A'}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: center; color: #475569;">${c.quantity || 1}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: right; color: #64748b;">₹${(c.unit_amount || 0).toLocaleString('en-IN')}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: right; font-weight: 700; color: #1e293b;">₹${(c.total_amount || 0).toLocaleString('en-IN')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+window.renderInvoiceCategoryTable = renderInvoiceCategoryTable;
+
