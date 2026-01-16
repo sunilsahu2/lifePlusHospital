@@ -81,6 +81,7 @@ function renderCaseDetailView(caseData) {
                     </span>
                     <button class="btn btn-secondary" onclick="loadCases()">← Back</button>
                     <button class="btn btn-primary" onclick="editCase('${caseData.id}')" ${caseData.status === 'closed' ? 'disabled title="Case is finalized and locked"' : ''}>Edit Case</button>
+                    ${typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin' ? `<button class="btn btn-danger" onclick="deleteCase('${caseData.id}')">Delete Case</button>` : ''}
                 </div>
             </div>
             

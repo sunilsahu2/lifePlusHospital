@@ -483,6 +483,10 @@ function showDoctorForm(doctorId = null) {
                         <label>Qualification</label>
                         <input type="text" name="qualification">
                     </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="isInhouse" id="isInhouse" style="width: auto;">
+                        <label for="isInhouse" style="margin-bottom: 0;">Inhouse Doctor</label>
+                    </div>
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Save</button>
                         <button type="button" class="btn btn-secondary" onclick="loadDoctors()">Cancel</button>
@@ -507,7 +511,9 @@ function showDoctorForm(doctorId = null) {
                 Object.keys(doctor).forEach(key => {
                     const input = document.querySelector(`[name="${key}"]`);
                     if (input) {
-                        if (input.type === 'number') {
+                        if (input.type === 'checkbox') {
+                            input.checked = !!doctor[key];
+                        } else if (input.type === 'number') {
                             input.value = doctor[key] || '';
                         } else {
                             input.value = doctor[key] || '';
@@ -533,9 +539,15 @@ function saveDoctor(event, doctorId) {
         data[key] = value || null;
     }
 
-    // Remove null/empty values for cleaner data
+    // Handle checkboxes (not included in FormData if unchecked)
+    const checkboxes = event.target.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        data[cb.name] = cb.checked;
+    });
+
+    // Remove null/empty values for cleaner data (except for booleans)
     Object.keys(data).forEach(key => {
-        if (data[key] === '' || data[key] === null) {
+        if (typeof data[key] !== 'boolean' && (data[key] === '' || data[key] === null)) {
             delete data[key];
         }
     });
@@ -653,7 +665,10 @@ function loadDoctorCharges(page = 1) {
 
 function showDoctorChargeForm(chargeId = null) {
     const title = chargeId ? 'Edit Doctor Charge' : 'Add Doctor Charge';
-    const doctors = window.doctorsList || [];
+    // Filter out Inhouse doctors
+    const allDoctors = window.doctorsList || [];
+    const doctors = allDoctors.filter(d => !d.isInhouse);
+
     const chargeMaster = window.chargeMasterList || [];
 
     const html = `
@@ -1024,6 +1039,7 @@ function loadCases(page = 1) {
                                         <td>
                                             <button class="btn btn-success" onclick="viewCaseDetails('${c.id}')">View</button>
                                             <button class="btn btn-primary" onclick="editCase('${c.id}')" ${status === 'closed' ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>Edit</button>
+                                            ${currentUser && currentUser.role === 'admin' ? `<button class="btn btn-danger" onclick="deleteCase('${c.id}')">Delete</button>` : ''}
                                         </td>
                                     </tr>
                                 `;
@@ -1881,15 +1897,27 @@ function deleteCaseCharge(id, caseId) {
 }
 
 function showCaseDoctorChargeForm(caseId, chargeId = null) {
-    fetch(`${API_BASE}/doctors`).then(r => r.json()).then(data => {
-        const doctors = data.doctors || data;
+    Promise.all([
+        fetch(`${API_BASE}/doctors?limit=1000`).then(r => r.json()),
+        fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
+    ]).then(([doctorsData, chargeMasterData]) => {
+        const doctors = doctorsData.doctors || doctorsData;
+        const chargeMaster = chargeMasterData.charges || chargeMasterData;
         const title = chargeId ? 'Edit Doctor Charge' : 'Add Doctor Charge';
+
         const html = `
             <div class="modal">
                 <div class="modal-content">
                     <h2>${title}</h2>
                     <form id="caseDoctorChargeForm" onsubmit="saveCaseDoctorCharge(event, '${caseId}', '${chargeId || ''}')">
                         <input type="hidden" name="case_id" value="${caseId}">
+                        <div class="form-group">
+                            <label>Category (Charge Master)</label>
+                            <select name="charge_master_id" id="doctorChargeMasterSelect" onchange="updateCaseDoctorChargeAmount()">
+                                <option value="">Select Category</option>
+                                ${chargeMaster.map(c => `<option value="${c.id}" data-amount="${c.amount || 0}">${c.name}</option>`).join('')}
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label>Doctor</label>
                             <select name="doctor_id" required>
@@ -1899,11 +1927,11 @@ function showCaseDoctorChargeForm(caseId, chargeId = null) {
                         </div>
                         <div class="form-group">
                             <label>Amount</label>
-                            <input type="number" name="amount" step="0.01" required>
+                            <input type="number" name="amount" id="doctorChargeAmountInput" step="0.01" required>
                         </div>
                         <div class="form-group">
                             <label>Charge Date</label>
-                            <input type="date" name="charge_date">
+                            <input type="date" name="charge_date" value="${new Date().toISOString().split('T')[0]}">
                         </div>
                         <div class="form-group">
                             <label>Notes</label>
@@ -1928,6 +1956,10 @@ function showCaseDoctorChargeForm(caseId, chargeId = null) {
                         if (input) {
                             if (key.includes('date') && charge[key]) {
                                 input.value = charge[key].split('T')[0];
+                            } else if (key === 'charge_master_id' && charge[key]) {
+                                input.value = charge[key];
+                            } else if (key === 'rate' || key === 'amount') {
+                                document.getElementById('doctorChargeAmountInput').value = charge[key] || '';
                             } else {
                                 input.value = charge[key] || '';
                             }
@@ -1936,6 +1968,15 @@ function showCaseDoctorChargeForm(caseId, chargeId = null) {
                 });
         }
     });
+}
+
+function updateCaseDoctorChargeAmount() {
+    const select = document.getElementById('doctorChargeMasterSelect');
+    const amountInput = document.getElementById('doctorChargeAmountInput');
+    if (select && amountInput && select.selectedIndex > 0) {
+        const amount = select.options[select.selectedIndex].getAttribute('data-amount');
+        amountInput.value = amount;
+    }
 }
 
 function saveCaseDoctorCharge(event, caseId, chargeId) {
@@ -1974,9 +2015,30 @@ function editCase(id) {
 
 function deleteCase(id) {
     if (confirm('Are you sure you want to delete this case?')) {
-        fetch(`${API_BASE}/cases/${id}`, { method: 'DELETE' })
-            .then(() => loadCases(currentCasesPage))
-            .catch(err => alert('Error deleting case: ' + err));
+        const userId = localStorage.getItem('userId');
+        const username = localStorage.getItem('username');
+
+        fetch(`${API_BASE}/cases/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-User-Id': userId,
+                'X-Username': username
+            }
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { throw new Error(err.error || 'Failed to delete case'); });
+                }
+                return res.json();
+            })
+            .then(() => {
+                alert('Case deleted successfully');
+                loadCases(currentCasesPage);
+            })
+            .catch(err => {
+                console.error('Error deleting case:', err);
+                alert('Error deleting case: ' + err.message);
+            });
     }
 }
 

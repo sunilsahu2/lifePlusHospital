@@ -49,6 +49,17 @@ function loadDashboard() {
                     </div>
                 </div>
                 
+                <div class="stat-card stat-card-collections">
+                    <div class="stat-icon">📥</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Today's Collections</div>
+                        <div class="stat-value" id="stat-collections">-</div>
+                        <div class="stat-trend" id="trend-collections">
+                            <span class="trend-indicator">-</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="stat-card stat-card-revenue">
                     <div class="stat-icon">💰</div>
                     <div class="stat-content">
@@ -118,6 +129,12 @@ function loadDashboardStats() {
             // Update revenue stat
             animateValue('stat-revenue', 0, data.revenue_this_month, 1000, true);
             updateTrend('trend-revenue', data.revenue_trend, 'this month');
+
+            // Update today's collections stat
+            animateValue('stat-collections', 0, data.today_collections, 1000, true);
+            // Hide trend if not available or needed
+            const trendCol = document.getElementById('trend-collections');
+            if (trendCol) trendCol.style.display = 'none';
         })
         .catch(err => {
             console.error('Error loading dashboard stats:', err);

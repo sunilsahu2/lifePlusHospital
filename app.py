@@ -178,6 +178,14 @@ def create_doctor():
         if 'isActive' not in data:
             data['isActive'] = True  # Set as active by default
         
+        # Handle isInhouse flag
+        if 'isInhouse' not in data:
+            data['isInhouse'] = False
+        else:
+            # Ensure it's boolean if sent as string from some source
+            if isinstance(data['isInhouse'], str):
+                data['isInhouse'] = data['isInhouse'].lower() == 'true'
+        
         result = db.doctors.insert_one(data)
         return jsonify({'id': str(result.inserted_id), 'message': 'Doctor created successfully'}), 201
     except Exception as e:
@@ -198,6 +206,11 @@ def update_doctor(id):
         # Don't allow updating isActive through PUT (use DELETE endpoint for deactivation)
         if 'isActive' in data:
             del data['isActive']
+        
+        # Handle isInhouse flag if present
+        if 'isInhouse' in data:
+            if isinstance(data['isInhouse'], str):
+                data['isInhouse'] = data['isInhouse'].lower() == 'true'
         
         data['updated_at'] = datetime.now()
         result = db.doctors.update_one({'_id': doctor_id}, {'$set': data})
@@ -606,12 +619,35 @@ def create_case():
         # Generate case number
         if 'case_number' not in data or not data['case_number']:
             year = datetime.now().year
-            last_case = db.cases.find_one({'case_number': {'$regex': f'CASE-{year}-'}}, sort=[('case_number', -1)])
-            if last_case:
-                last_num = int(last_case['case_number'].split('-')[-1])
-                data['case_number'] = f'CASE-{year}-{last_num + 1:04d}'
-            else:
-                data['case_number'] = f'CASE-{year}-1000'
+            counter_id = f'case_number_{year}'
+            
+            # Check if counter exists for this year
+            counter = db.counters.find_one({'_id': counter_id})
+            if not counter:
+                # Initialize counter from existing cases if any, otherwise start at 999
+                last_case = db.cases.find_one({'case_number': {'$regex': f'CASE-{year}-'}}, sort=[('case_number', -1)])
+                if last_case:
+                    try:
+                        last_num = int(last_case['case_number'].split('-')[-1])
+                        initial_seq = last_num
+                    except (ValueError, IndexError):
+                        initial_seq = 999
+                else:
+                    initial_seq = 999
+                
+                db.counters.update_one(
+                    {'_id': counter_id},
+                    {'$setOnInsert': {'seq': initial_seq}},
+                    upsert=True
+                )
+            
+            # Atomic increment
+            counter = db.counters.find_one_and_update(
+                {'_id': counter_id},
+                {'$inc': {'seq': 1}},
+                return_document=True
+            )
+            data['case_number'] = f'CASE-{year}-{counter["seq"]:04d}'
         
         data['created_at'] = datetime.now()
         result = db.cases.insert_one(data)
@@ -674,6 +710,15 @@ def update_case(id):
 @app.route('/api/cases/<id>', methods=['DELETE'])
 def delete_case(id):
     try:
+        # Role check
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        user = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not user or user.get('role') != 'admin':
+            return jsonify({'error': 'Forbidden: Only admin can delete cases'}), 403
+
         result = db.cases.delete_one({'_id': parse_object_id(id)})
         if result.deleted_count:
             return jsonify({'message': 'Case deleted successfully'})
@@ -1218,21 +1263,18 @@ def get_doctors_by_charge():
         if not charge_master_id:
             return jsonify({'error': 'charge_master_id parameter is required'}), 400
         
-        # Find all doctor_charges for this charge_master_id
-        doctor_charges = list(db.doctor_charges.find({'charge_master_id': parse_object_id(charge_master_id)}))
+        # Find all doctor_ids who have a specialized rate for this charge
+        specialized_doctor_ids = [charge['doctor_id'] for charge in db.doctor_charges.find({'charge_master_id': parse_object_id(charge_master_id)}) if 'doctor_id' in charge]
         
-        # Get unique doctor IDs
-        doctor_ids = list(set([charge['doctor_id'] for charge in doctor_charges if 'doctor_id' in charge]))
+        # Get all active doctors
+        all_active_doctors = list(db.doctors.find({'isActive': {'$ne': False}}))
         
-        # Get doctor details - only show active doctors
         doctors = []
-        for doctor_id in doctor_ids:
-            doctor = db.doctors.find_one({'_id': doctor_id})
-            if doctor:
-                # Check if doctor is active (isActive is True or doesn't exist)
-                is_active = doctor.get('isActive', True)
-                if is_active:
-                    doctors.append(serialize_doc(doctor))
+        for doctor in all_active_doctors:
+            doc_data = serialize_doc(doctor)
+            # Add a flag if they have a specialized rate, might be useful for UI
+            doc_data['has_specialized_rate'] = doctor['_id'] in specialized_doctor_ids
+            doctors.append(doc_data)
         
         return jsonify(doctors)
     except Exception as e:
@@ -1268,7 +1310,14 @@ def create_doctor_charge():
         
         # Convert doctor_id and charge_master_id to ObjectId if present
         if 'doctor_id' in data and data['doctor_id']:
-            data['doctor_id'] = parse_object_id(data['doctor_id'])
+            doctor_id = parse_object_id(data['doctor_id'])
+            data['doctor_id'] = doctor_id
+            
+            # Check if doctor is Inhouse
+            doctor = db.doctors.find_one({'_id': doctor_id})
+            if doctor and doctor.get('isInhouse'):
+                return jsonify({'error': 'Cannot configure charges for Inhouse doctors'}), 400
+                
         if 'charge_master_id' in data and data['charge_master_id']:
             data['charge_master_id'] = parse_object_id(data['charge_master_id'])
         
@@ -1337,7 +1386,12 @@ def get_case_doctor_charges():
 @app.route('/api/case-doctor-charges/<id>', methods=['GET'])
 def get_case_doctor_charge(id):
     try:
-        charge = db.case_doctor_charges.find_one({'_id': parse_object_id(id)})
+        # Try finding in case_charges first
+        charge = db.case_charges.find_one({'_id': parse_object_id(id)})
+        if not charge:
+            # Fallback to legacy collection
+            charge = db.case_doctor_charges.find_one({'_id': parse_object_id(id)})
+            
         if not charge:
             return jsonify({'error': 'Case doctor charge not found'}), 404
         
@@ -1360,15 +1414,27 @@ def create_case_doctor_charge():
         # Parse fields for case_charges schema
         case_id = data.get('case_id')
         doctor_id = data.get('doctor_id')
+        charge_master_id = data.get('charge_master_id')
         amount = float(data.get('amount', 0))
         date = data.get('charge_date')
         notes = data.get('notes', '')
         
+        charge_name = 'Doctor Charge'
+        charge_type = 'Consultation'
+        
+        if charge_master_id:
+            cm = db.charge_master.find_one({'_id': parse_object_id(charge_master_id)})
+            if cm:
+                charge_name = cm.get('name', 'Doctor Charge')
+                charge_type = cm.get('category', 'Consultation')
+
         # Create record for case_charges
         charge_record = {
             'case_id': parse_object_id(case_id) if case_id else None,
             'doctor_id': parse_object_id(doctor_id) if doctor_id else None,
-            'charge_name': 'Doctor Charge',
+            'charge_master_id': parse_object_id(charge_master_id) if charge_master_id else None,
+            'charge_name': charge_name,
+            'charge_type': charge_type,
             'quantity': 1,
             'rate': amount,
             'total_amount': amount,
@@ -1388,11 +1454,36 @@ def create_case_doctor_charge():
 def update_case_doctor_charge(id):
     try:
         data = request.get_json()
-        data['updated_at'] = datetime.now()
-        result = db.case_doctor_charges.update_one({'_id': parse_object_id(id)}, {'$set': data})
-        if result.modified_count:
-            return jsonify({'message': 'Case doctor charge updated successfully'})
-        return jsonify({'error': 'Case doctor charge not found'}), 404
+        
+        # Check if it's in case_charges or case_doctor_charges
+        target_id = parse_object_id(id)
+        is_new_collection = db.case_charges.find_one({'_id': target_id}) is not None
+        collection = db.case_charges if is_new_collection else db.case_doctor_charges
+        
+        # Fields to update
+        update_fields = {}
+        if 'doctor_id' in data: update_fields['doctor_id'] = parse_object_id(data['doctor_id'])
+        if 'charge_master_id' in data: 
+            cm_id = data['charge_master_id']
+            update_fields['charge_master_id'] = parse_object_id(cm_id)
+            cm = db.charge_master.find_one({'_id': parse_object_id(cm_id)})
+            if cm:
+                update_fields['charge_name'] = cm.get('name', 'Doctor Charge')
+                update_fields['charge_type'] = cm.get('category', 'Consultation')
+        
+        if 'amount' in data:
+            if is_new_collection:
+                update_fields['rate'] = float(data['amount'])
+                update_fields['total_amount'] = float(data['amount'])
+            else:
+                update_fields['amount'] = float(data['amount'])
+        
+        if 'charge_date' in data: update_fields['charge_date'] = data['charge_date']
+        if 'notes' in data: update_fields['notes'] = data['notes']
+        update_fields['updated_at'] = datetime.now()
+        
+        collection.update_one({'_id': target_id}, {'$set': update_fields})
+        return jsonify({'message': 'Doctor charge updated successfully'})
     except Exception as e:
         logging.error(f"Error updating case doctor charge: {e}")
         return jsonify({'error': str(e)}), 500
@@ -2867,6 +2958,15 @@ def get_dashboard_stats():
         revenue_last_month = sum(payment.get('amount', 0) for payment in payments_last_month)
         revenue_trend = round(((revenue_this_month - revenue_last_month) / max(revenue_last_month, 1)) * 100, 1) if revenue_last_month > 0 else 0
         
+        # Today's Collections
+        payments_today = list(db.payments.find({
+            'payment_date': {
+                '$gte': today_start,
+                '$lt': today_start + timedelta(days=1)
+            }
+        }))
+        today_collections = sum(payment.get('amount', 0) for payment in payments_today)
+
         return jsonify({
             'total_patients': total_patients,
             'patients_trend': patients_trend,
@@ -2875,7 +2975,8 @@ def get_dashboard_stats():
             'today_appointments': today_appointments,
             'appointments_trend': appointments_trend,
             'revenue_this_month': revenue_this_month,
-            'revenue_trend': revenue_trend
+            'revenue_trend': revenue_trend,
+            'today_collections': today_collections
         })
     except Exception as e:
         logging.error(f"Error getting dashboard stats: {e}")

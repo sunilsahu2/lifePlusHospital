@@ -54,6 +54,10 @@
     background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
 }
 
+.stat-card-collections::before {
+    background: linear-gradient(90deg, #ec4899 0%, #f472b6 100%);
+}
+
 .stat-icon {
     font-size: 48px;
     line-height: 1;
@@ -286,7 +290,7 @@
     .dashboard-stats {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .dashboard-row {
         grid-template-columns: 1fr;
     }
@@ -297,23 +301,23 @@
         grid-template-columns: 1fr;
         gap: 16px;
     }
-    
+
     .stat-card {
         padding: 20px;
     }
-    
+
     .stat-icon {
         font-size: 40px;
     }
-    
+
     .stat-value {
         font-size: 28px;
     }
-    
+
     .dashboard-section {
         padding: 20px;
     }
-    
+
     .activity-timeline,
     .appointments-widget {
         max-height: 300px;
@@ -325,23 +329,23 @@
         flex-direction: column;
         text-align: center;
     }
-    
+
     .stat-icon {
         font-size: 36px;
     }
-    
+
     .stat-value {
         font-size: 24px;
     }
-    
+
     .appointments-table {
         font-size: 12px;
     }
-    
+
     .appointments-table thead {
         display: none;
     }
-    
+
     .appointments-table tbody tr {
         display: block;
         margin-bottom: 12px;
@@ -349,14 +353,14 @@
         border-radius: var(--border-radius);
         padding: 12px;
     }
-    
+
     .appointments-table td {
         display: block;
         text-align: left;
         padding: 6px 0;
         border-bottom: none;
     }
-    
+
     .appointments-table td::before {
         content: attr(data-label);
         font-weight: 600;
