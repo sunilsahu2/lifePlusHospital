@@ -3090,22 +3090,22 @@ function loadCaseBilling(caseId) {
                         <!-- Grouped Charges -->
                         <div style="margin-bottom: 30px;">
                             <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Hospital Charges</h3>
-                            ${renderBillingGroupTable(charges.filter(c => !c.is_doctor_charge && (!c.charge_type || c.charge_type === 'hospital')), 'hospital')}
+                            ${renderBillingGroupTable(charges.filter(c => !c.is_doctor_charge && (!c.charge_type || c.charge_type === 'hospital')), 'hospital', caseId)}
                         </div>
 
                         <div style="margin-bottom: 30px;">
                             <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Doctor Fees</h3>
-                            ${renderBillingGroupTable(charges.filter(c => c.is_doctor_charge), 'doctor')}
+                            ${renderBillingGroupTable(charges.filter(c => c.is_doctor_charge), 'doctor', caseId)}
                         </div>
 
                         <div style="margin-bottom: 30px;">
                             <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Pathology Charges</h3>
-                            ${renderBillingGroupTable(charges.filter(c => c.charge_type === 'pathology'), 'pathology')}
+                            ${renderBillingGroupTable(charges.filter(c => c.charge_type === 'pathology'), 'pathology', caseId)}
                         </div>
 
                         <div style="margin-bottom: 30px;">
                             <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; color: #334155;">Pharmacy Charges</h3>
-                            ${renderBillingGroupTable(charges.filter(c => c.charge_type === 'pharmacy'), 'pharmacy')}
+                            ${renderBillingGroupTable(charges.filter(c => c.charge_type === 'pharmacy'), 'pharmacy', caseId)}
                         </div>
                     </div>
                     
@@ -4018,8 +4018,9 @@ function showChargeMasterForm(chargeId = null) {
         fetch(`${API_BASE}/charge-master/${chargeId}`)
             .then(res => res.json())
             .then(charge => {
+                const form = document.getElementById('chargeMasterForm');
                 Object.keys(charge).forEach(key => {
-                    const input = document.querySelector(`[name="${key}"]`);
+                    const input = form.querySelector(`[name="${key}"]`);
                     if (input) input.value = charge[key] || '';
                 });
             });
@@ -5087,10 +5088,12 @@ function getActionColor(action) {
 }
 
 // Helper to render grouped charges in Billing view
-function renderBillingGroupTable(charges, type) {
+function renderBillingGroupTable(charges, type, caseId) {
     if (!charges || charges.length === 0) {
         return `<p style="color: #94a3b8; font-style: italic; padding: 10px; background: #f8fafc; border-radius: 4px; border: 1px dashed #e2e8f0; margin-bottom: 20px;">No ${type} charges found.</p>`;
     }
+
+    const isAdmin = currentUser && currentUser.role === 'admin';
 
     return `
         <div class="table-scroll-container" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px;">
@@ -5103,6 +5106,7 @@ function renderBillingGroupTable(charges, type) {
                         <th style="text-align: center; padding: 12px;">Qty</th>
                         <th style="text-align: right; padding: 12px;">Amount</th>
                         <th style="text-align: right; padding: 12px;">Total</th>
+                        ${isAdmin ? '<th style="text-align: center; padding: 12px;">Actions</th>' : ''}
                     </tr>
                 </thead>
                 <tbody>
@@ -5114,12 +5118,44 @@ function renderBillingGroupTable(charges, type) {
                             <td style="padding: 10px; text-align: center;">${c.quantity || 1}</td>
                             <td style="padding: 10px; text-align: right;">₹${(c.unit_amount || 0).toLocaleString('en-IN')}</td>
                             <td style="padding: 10px; text-align: right; font-weight: 600;">₹${(c.total_amount || 0).toLocaleString('en-IN')}</td>
+                            ${isAdmin ? `
+                                <td style="padding: 10px; text-align: center;">
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCaseCharge('${c.id}', '${caseId}')" title="Delete Charge">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            ` : ''}
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         </div>
     `;
+}
+
+function deleteCaseCharge(chargeId, caseId) {
+    if (!confirm('Are you sure you want to delete this charge? This action cannot be undone.')) {
+        return;
+    }
+
+    fetch(`${API_BASE}/case-charges/${chargeId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                alert('Charge deleted successfully!');
+                // Reload billing details
+                loadCaseBilling(caseId);
+            } else {
+                alert('Error deleting charge: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error deleting charge:', err);
+            alert('Error deleting charge: ' + err);
+        });
 }
 
 // Helper to render payments history in Billing view

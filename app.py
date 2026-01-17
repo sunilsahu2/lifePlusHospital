@@ -1010,6 +1010,17 @@ def get_charge_master():
         logging.error(f"Error getting charge master: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/charge-master/<id>', methods=['GET'])
+def get_charge_master_item(id):
+    try:
+        charge = db.charge_master.find_one({'_id': parse_object_id(id)})
+        if not charge:
+            return jsonify({'error': 'Charge not found'}), 404
+        return jsonify(serialize_doc(charge))
+    except Exception as e:
+        logging.error(f"Error getting charge: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/charge-master', methods=['POST'])
 def create_charge_master():
     try:
@@ -1202,6 +1213,15 @@ def update_case_charge(id):
 @app.route('/api/case-charges/<id>', methods=['DELETE'])
 def delete_case_charge(id):
     try:
+        # Role check
+        user_id = request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        user = db.users.find_one({'_id': parse_object_id(user_id)})
+        if not user or user.get('role') != 'admin':
+            return jsonify({'error': 'Forbidden: Only admin can delete charges'}), 403
+
         charge_id = parse_object_id(id)
         charge = db.case_charges.find_one({'_id': charge_id})
         if charge and is_case_closed(charge.get('case_id')):
