@@ -37,15 +37,21 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 CORS(app, supports_credentials=True)
 
 # MongoDB Connection Configuration
-MONGODB_USERNAME = 'sunilsahu'
-MONGODB_PASSWORD = 'sokwer-pubgux-poxxE3'
-MONGODB_CLUSTER = 'cluster0.qufitms.mongodb.net'
-MONGODB_DB_NAME = 'hospital_management'
+MONGODB_URI = os.getenv('MONGODB_URI')
+
+if not MONGODB_URI:
+    MONGODB_USERNAME = 'sunilsahu'
+    MONGODB_PASSWORD = 'sokwer-pubgux-poxxE3'
+    MONGODB_CLUSTER = 'cluster0.qufitms.mongodb.net'
+    MONGODB_DB_NAME = 'hospital_management'
+    encoded_password = urllib.parse.quote_plus(MONGODB_PASSWORD)
+    MONGODB_URI = f'mongodb+srv://{MONGODB_USERNAME}:{encoded_password}@{MONGODB_CLUSTER}/{MONGODB_DB_NAME}?retryWrites=true&w=majority'
+else:
+    # Extract DB name from URI if possible, or use default
+    MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'hospital_management')
 
 # Connect to MongoDB
 try:
-    encoded_password = urllib.parse.quote_plus(MONGODB_PASSWORD)
-    MONGODB_URI = f'mongodb+srv://{MONGODB_USERNAME}:{encoded_password}@{MONGODB_CLUSTER}/{MONGODB_DB_NAME}?retryWrites=true&w=majority'
     client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=10000)
     client.server_info()  # Test connection
     db = client[MONGODB_DB_NAME]
@@ -332,10 +338,26 @@ def get_cases():
         # Build query
         query = {}
         
-        # Filter by patient_id if provided (for faster queries - applied first)
-        if patient_id:
-            query['patient_id'] = parse_object_id(patient_id)
+        # Combine filters
+        filters = []
         
+        # Filter by patient_id
+        if patient_id:
+            filters.append({'patient_id': parse_object_id(patient_id)})
+            
+        # Filter by status
+        status = request.args.get('status')
+        if status:
+            if status.lower() == 'open':
+                filters.append({'$or': [
+                    {'status': 'open'},
+                    {'status': {'$exists': False}},
+                    {'status': None}
+                ]})
+            else:
+                filters.append({'status': status.lower()})
+        
+        # Filter by search
         if search:
             # Search by case_number (exact match preferred)
             cases_by_number = list(db.cases.find({'case_number': {'$regex': search, '$options': 'i'}}))
@@ -351,18 +373,27 @@ def get_cases():
             }))
             patient_ids = [patient['_id'] for patient in patients]
             
-            # Combine search conditions
             search_conditions = []
             if case_ids:
                 search_conditions.append({'_id': {'$in': case_ids}})
             if patient_ids:
                 search_conditions.append({'patient_id': {'$in': patient_ids}})
+            
             if search_conditions:
-                # If patient_id filter exists, combine with search
-                if 'patient_id' in query:
-                    query = {'$and': [{'patient_id': query['patient_id']}, {'$or': search_conditions}]}
-                else:
-                    query = {'$or': search_conditions}
+                filters.append({'$or': search_conditions})
+            else:
+                # Search provided but no matches found -> return empty result
+                # We can force this by matching a non-existent ID or simply return empty list
+                # Adding a condition that is always false
+                filters.append({'_id': {'$exists': False}})
+
+        # Construct final query
+        if len(filters) > 1:
+            query = {'$and': filters}
+        elif len(filters) == 1:
+            query = filters[0]
+        else:
+            query = {}
         
         # Get total count for pagination
         total = db.cases.count_documents(query)
@@ -651,6 +682,35 @@ def create_case():
         
         data['created_at'] = datetime.now()
         result = db.cases.insert_one(data)
+        
+        # Auto-add default IPD charges
+        if data.get('case_type') == 'IPD':
+            default_charges = list(db.charge_master.find({
+                '$or': [
+                    {'category': 'DEFAULT_CATEGORY_IPD'},
+                    {'charge_category': 'DEFAULT_CATEGORY_IPD'}
+                ]
+            }))
+            
+            if default_charges:
+                case_charges = []
+                for charge in default_charges:
+                    case_charges.append({
+                        'case_id': result.inserted_id,
+                        'charge_master_id': charge['_id'],
+                        'charge_name': charge['name'],
+                        'amount': charge.get('amount', 0),    # Stored as amount or unit_amount?
+                        'unit_amount': charge.get('amount', 0),
+                        'quantity': 1,
+                        'total_amount': charge.get('amount', 0),
+                        'charge_type': 'hospital', # Default type
+                        'created_at': datetime.now(),
+                        'updated_at': datetime.now()
+                    })
+                
+                if case_charges:
+                    db.case_charges.insert_many(case_charges)
+
         return jsonify({'id': str(result.inserted_id), 'message': 'Case created successfully'}), 201
     except Exception as e:
         logging.error(f"Error creating case: {e}")
@@ -992,13 +1052,27 @@ def get_charge_master():
     try:
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 10))
+        search = request.args.get('search', '').strip()
+        sort_by = request.args.get('sortBy', 'created_at')
+        sort_order = int(request.args.get('sortOrder', -1))
         skip = (page - 1) * limit
         
+        # Build query for search
+        query = {}
+        if search:
+            query = {
+                '$or': [
+                    {'name': {'$regex': search, '$options': 'i'}},
+                    {'category': {'$regex': search, '$options': 'i'}},
+                    {'charge_category': {'$regex': search, '$options': 'i'}}
+                ]
+            }
+            
         # Get total count for pagination
-        total = db.charge_master.count_documents({})
+        total = db.charge_master.count_documents(query)
         
         # Get paginated results
-        charges = list(db.charge_master.find().sort('created_at', -1).skip(skip).limit(limit))
+        charges = list(db.charge_master.find(query).sort(sort_by, sort_order).skip(skip).limit(limit))
         
         return jsonify({
             'charges': serialize_doc(charges),
@@ -1054,6 +1128,38 @@ def delete_charge_master(id):
         return jsonify({'error': 'Charge not found'}), 404
     except Exception as e:
         logging.error(f"Error deleting charge: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== CHARGE CATEGORY MASTER API ====================
+
+@app.route('/api/charge-category-master', methods=['GET'])
+def get_charge_categories():
+    try:
+        categories = list(db.charge_category_master.find().sort('name', 1))
+        return jsonify(serialize_doc(categories))
+    except Exception as e:
+        logging.error(f"Error getting charge categories: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/charge-category-master', methods=['POST'])
+def create_charge_category():
+    try:
+        data = request.get_json()
+        if not data.get('name'):
+            return jsonify({'error': 'Category name is required'}), 400
+            
+        # Check if already exists (case-insensitive)
+        name = data['name'].strip()
+        existing = db.charge_category_master.find_one({'name': {'$regex': f'^{name}$', '$options': 'i'}})
+        if existing:
+            return jsonify(serialize_doc(existing)), 200
+            
+        data['name'] = name
+        data['created_at'] = datetime.now()
+        result = db.charge_category_master.insert_one(data)
+        return jsonify({'id': str(result.inserted_id), 'message': 'Category created successfully'}), 201
+    except Exception as e:
+        logging.error(f"Error creating charge category: {e}")
         return jsonify({'error': str(e)}), 500
 
 # ==================== CASE CHARGES API (Patient Charges) ====================
@@ -1200,6 +1306,12 @@ def update_case_charge(id):
         elif 'quantity' in data and 'unit_amount' in data:
             # Calculate total_amount if not provided
             data['total_amount'] = float(data['quantity']) * float(data['unit_amount'])
+            
+        if 'charge_date' in data and isinstance(data['charge_date'], str):
+             try:
+                 data['charge_date'] = datetime.fromisoformat(data['charge_date'].replace('Z', '+00:00'))
+             except:
+                 pass
         
         data['updated_at'] = datetime.now()
         result = db.case_charges.update_one({'_id': parse_object_id(id)}, {'$set': data})
@@ -1210,17 +1322,24 @@ def update_case_charge(id):
         logging.error(f"Error updating case charge: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/case-charges/<id>', methods=['GET'])
+def get_case_charge(id):
+    try:
+        charge = db.case_charges.find_one({'_id': parse_object_id(id)})
+        if not charge:
+            return jsonify({'error': 'Charge not found'}), 404
+        return jsonify(serialize_doc(charge))
+    except Exception as e:
+        logging.error(f"Error getting case charge: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/case-charges/<id>', methods=['DELETE'])
 def delete_case_charge(id):
     try:
         # Role check
         user_id = request.headers.get('X-User-Id')
         if not user_id:
-            return jsonify({'error': 'Unauthorized'}), 401
-        
-        user = db.users.find_one({'_id': parse_object_id(user_id)})
-        if not user or user.get('role') != 'admin':
-            return jsonify({'error': 'Forbidden: Only admin can delete charges'}), 403
+             return jsonify({'error': 'Unauthorized'}), 401
 
         charge_id = parse_object_id(id)
         charge = db.case_charges.find_one({'_id': charge_id})
@@ -1511,9 +1630,17 @@ def update_case_doctor_charge(id):
 @app.route('/api/case-doctor-charges/<id>', methods=['DELETE'])
 def delete_case_doctor_charge(id):
     try:
-        result = db.case_doctor_charges.delete_one({'_id': parse_object_id(id)})
+        charge_id = parse_object_id(id)
+        # Try deleting from case_charges first (new schema)
+        result = db.case_charges.delete_one({'_id': charge_id})
+        if result.deleted_count:
+             return jsonify({'message': 'Case doctor charge deleted successfully'})
+             
+        # Fallback to legacy
+        result = db.case_doctor_charges.delete_one({'_id': charge_id})
         if result.deleted_count:
             return jsonify({'message': 'Case doctor charge deleted successfully'})
+            
         return jsonify({'error': 'Case doctor charge not found'}), 404
     except Exception as e:
         logging.error(f"Error deleting case doctor charge: {e}")
@@ -2226,15 +2353,16 @@ def get_case_billing_details(case_id):
                 doctor = db.doctors.find_one({'_id': charge['doctor_id']})
                 if doctor:
                     charge['doctor_name'] = doctor.get('name', '')
+                    charge['doctor_specialization'] = doctor.get('specialization', '')
         
         # Get payments
         payments = list(db.payments.find({'case_id': parse_object_id(case_id)}).sort('payment_date', -1))
         
         # Calculate totals
-        total_charges = sum(c.get('total_amount', 0) for c in case_charges)
-        discount = case.get('discount', 0) or 0
+        total_charges = sum(float(c.get('total_amount', 0) or 0) for c in case_charges)
+        discount = float(case.get('discount', 0) or 0)
         total_after_discount = max(0, total_charges - discount)  # Ensure non-negative
-        total_paid = sum(p.get('amount', 0) for p in payments)
+        total_paid = sum(float(p.get('amount', 0) or 0) for p in payments)
         balance = total_after_discount - total_paid
         
         return jsonify({
@@ -3179,3 +3307,4 @@ def get_case_study(id):
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+# Trigger reload

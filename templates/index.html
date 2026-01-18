@@ -16,6 +16,44 @@
     <link rel="stylesheet" href="/static/css/patient-detail.css">
     <link rel="stylesheet" href="/static/css/calendar.css">
     <link rel="stylesheet" href="/static/css/case-detail.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* DataTables Customization */
+        .dataTables_wrapper {
+            padding: 20px 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        table.dataTable {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            margin-top: 20px !important;
+        }
+
+        table.dataTable thead th {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            padding: 16px !important;
+            border-bottom: 2px solid #e5e7eb !important;
+        }
+
+        table.dataTable tbody td {
+            padding: 12px 16px !important;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        table.dataTable.no-footer {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+            color: white !important;
+            border: none;
+            border-radius: 4px;
+        }
+    </style>
     <link rel="manifest" href="/static/manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
@@ -61,6 +99,9 @@
         </main>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="/static/js/main.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script src="/static/js/patient-detail.js"></script>

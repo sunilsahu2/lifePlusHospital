@@ -1562,7 +1562,7 @@ function viewCaseDetails(caseId) {
                         </div>
                         ` : ''}
                         <div class="case-charges-section">
-                            <h3>Patient Charges</h3>
+                            <h3>Hospital Charges</h3>
                             ${isClosed ? '<p style="color: #666; font-size: 14px; margin-bottom: 12px;"><em>Case is closed. No new charges can be added.</em></p>' : ''}
                             <button class="btn btn-primary" onclick="showCaseChargeForm('${caseId}')" ${isClosed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>Add Patient Charge</button>
                             <div class="table-scroll-container" style="margin-top: 16px;">
@@ -1669,9 +1669,15 @@ function showCaseChargeForm(caseId, chargeId = null) {
         })
         .then(([chargeMasterResponse]) => {
             // Handle response format - API returns {charges: [...], total: ...} or array
-            const chargeMaster = Array.isArray(chargeMasterResponse)
+            let chargeMaster = Array.isArray(chargeMasterResponse)
                 ? chargeMasterResponse
                 : (chargeMasterResponse.charges || []);
+
+            // Filter for MEDICAL category and Sort by Name Ascending
+            chargeMaster = chargeMaster.filter(c =>
+                (c.category && c.category.toUpperCase() === 'MEDICAL') ||
+                (c.charge_category && c.charge_category.toUpperCase() === 'MEDICAL')
+            ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             const title = chargeId ? 'Edit Patient Charge' : 'Add Patient Charge';
             const html = `
@@ -1692,6 +1698,10 @@ function showCaseChargeForm(caseId, chargeId = null) {
                                 <select name="doctor_id" id="doctorSelect">
                                     <option value="">Select Doctor</option>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Charge Date</label>
+                                <input type="date" name="charge_date" value="${new Date().toISOString().split('T')[0]}" required>
                             </div>
                             <div class="form-group">
                                 <label>Quantity</label>
@@ -1727,6 +1737,8 @@ function showCaseChargeForm(caseId, chargeId = null) {
                             if (key === 'doctor_id' && charge.doctor_id) {
                                 // Doctor will be populated after charge master is selected
                                 input.value = charge[key] || '';
+                            } else if (key === 'charge_date' && charge[key]) {
+                                input.value = charge[key].split('T')[0];
                             } else {
                                 input.value = charge[key] || '';
                             }
@@ -1902,7 +1914,14 @@ function showCaseDoctorChargeForm(caseId, chargeId = null) {
         fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
     ]).then(([doctorsData, chargeMasterData]) => {
         const doctors = doctorsData.doctors || doctorsData;
-        const chargeMaster = chargeMasterData.charges || chargeMasterData;
+        let chargeMaster = chargeMasterData.charges || chargeMasterData;
+
+        // Filter for DOCTOR category and Sort by Name Ascending
+        chargeMaster = chargeMaster.filter(c =>
+            (c.category && c.category.toUpperCase() === 'DOCTOR') ||
+            (c.charge_category && c.charge_category.toUpperCase() === 'DOCTOR')
+        ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
         const title = chargeId ? 'Edit Doctor Charge' : 'Add Doctor Charge';
 
         const html = `
@@ -1946,6 +1965,17 @@ function showCaseDoctorChargeForm(caseId, chargeId = null) {
             </div>
         `;
         document.getElementById('content-area').innerHTML = html;
+
+        // Initialize Select2 for Doctor Search
+        setTimeout(() => {
+            if (window.jQuery && window.jQuery.fn.select2) {
+                $('#caseDoctorChargeForm select[name="doctor_id"]').select2({
+                    dropdownParent: $('.modal-content'),
+                    width: '100%',
+                    placeholder: "Select Doctor"
+                });
+            }
+        }, 100);
 
         if (chargeId) {
             fetch(`${API_BASE}/case-doctor-charges/${chargeId}`)
@@ -2860,158 +2890,134 @@ function loadBillingPayments() {
             <div class="module-header">
                 <h1>Billing & Payments</h1>
             </div>
-            <div class="billing-search" style="margin-bottom: 24px;">
-                <h3>Search Patient</h3>
-                <div style="position: relative;">
-                    <input type="text" id="billingPatientSearchInput" 
-                           placeholder="Search by patient name or phone..." 
-                           autocomplete="off" 
-                           oninput="searchPatientsForBilling(event)"
-                           style="width: 100%; max-width: 500px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                    <div id="billingPatientSearchResults" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 300px; overflow-y: auto; width: 100%; max-width: 500px; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+            
+            <!-- Full Width Layout -->
+            <div class="billing-container" style="position: relative;">
+                
+                <!-- View 1: Case List -->
+                <div id="billingListContainer" style="display: block;">
+                    <div style="margin-bottom: 20px; max-width: 800px; margin-left: auto; margin-right: auto;">
+                        <input type="text" id="billingSearchInput" 
+                               placeholder="Search by Patient Name, Phone or Case #..." 
+                               autocomplete="off" 
+                               oninput="searchBillingCases(event)"
+                               style="width: 100%; padding: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    </div>
+                    
+                    <div id="billingCasesList" class="table-scroll-container">
+                        <div style="text-align: center; padding: 40px; color: #666;">Loading cases...</div>
+                    </div>
                 </div>
-            </div>
-            <div id="billingCaseSelection" style="display: none; margin-bottom: 24px;">
-                <h3>Select Case</h3>
-                <div id="billingCasesList" class="table-scroll-container" style="max-height: 400px; overflow-y: auto; overflow-x: auto;"></div>
-            </div>
-            <div id="billingDetails" style="display: none; width: 100%;">
-                <div id="caseBillingContent" style="width: 100%;"></div>
+
+                <!-- View 2: Billing Details (Hidden by default) -->
+                <div id="billingDetailsContainer" style="display: none;">
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-secondary" onclick="showBillingList()">
+                            &larr; Back to Cases
+                        </button>
+                    </div>
+                    <div id="caseBillingContent"></div>
+                </div>
+
             </div>
         </div>
     `;
     document.getElementById('content-area').innerHTML = html;
+
+    // Load default OPEN cases
+    fetchBillingCases({ status: 'open' });
 }
 
-function searchPatientsForBilling(event) {
-    const searchInput = document.getElementById('billingPatientSearchInput');
-    const resultsDiv = document.getElementById('billingPatientSearchResults');
+function showBillingList() {
+    document.getElementById('billingDetailsContainer').style.display = 'none';
+    document.getElementById('billingListContainer').style.display = 'block';
+    selectedBillingCaseId = null;
+}
 
-    if (!searchInput || !resultsDiv) return;
+let billingSearchTimeout = null;
 
-    const query = searchInput.value.trim();
+function searchBillingCases(event) {
+    const query = event.target.value.trim();
 
-    // Clear previous timeout
-    if (billingPatientSearchTimeout) {
-        clearTimeout(billingPatientSearchTimeout);
-    }
+    if (billingSearchTimeout) clearTimeout(billingSearchTimeout);
 
-    // If query is empty, hide results
-    if (!query || query.length < 2) {
-        resultsDiv.style.display = 'none';
-        resultsDiv.innerHTML = '';
-        return;
-    }
-
-    // Debounce search
-    billingPatientSearchTimeout = setTimeout(() => {
-        fetch(`${API_BASE}/patients?search=${encodeURIComponent(query)}&limit=20`)
-            .then(res => res.json())
-            .then(data => {
-                const patients = Array.isArray(data) ? data : (data.patients || []);
-
-                if (patients.length === 0) {
-                    resultsDiv.innerHTML = '<div style="padding: 10px; color: #666;">No patients found</div>';
-                    resultsDiv.style.display = 'block';
-                    return;
-                }
-
-                resultsDiv.innerHTML = patients.map(patient => `
-                    <div style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" 
-                         onmouseover="this.style.backgroundColor='#f0f0f0'" 
-                         onmouseout="this.style.backgroundColor='white'"
-                         onclick="selectBillingPatient('${patient.id}', '${(patient.name || '').replace(/'/g, "\\'")}')">
-                        <strong>${patient.name || ''}</strong>
-                        ${patient.phone ? `<br/><small style="color: #666;">${patient.phone}</small>` : ''}
-                        ${patient.email ? `<br/><small style="color: #666;">${patient.email}</small>` : ''}
-                    </div>
-                `).join('');
-                resultsDiv.style.display = 'block';
-            })
-            .catch(err => {
-                console.error('Error searching patients:', err);
-                resultsDiv.innerHTML = '<div style="padding: 10px; color: #d32f2f;">Error searching patients</div>';
-                resultsDiv.style.display = 'block';
-            });
+    billingSearchTimeout = setTimeout(() => {
+        if (!query) {
+            fetchBillingCases({ status: 'open' });
+        } else {
+            // Search all cases (remove status filter to allow finding closed cases if needed)
+            fetchBillingCases({ search: query });
+        }
     }, 300);
 }
 
-function selectBillingPatient(patientId, patientName) {
-    selectedBillingPatientId = patientId;
-    const searchInput = document.getElementById('billingPatientSearchInput');
-    const resultsDiv = document.getElementById('billingPatientSearchResults');
+function fetchBillingCases(params = {}) {
+    const listContainer = document.getElementById('billingCasesList');
+    listContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Searching...</div>';
 
-    if (searchInput) searchInput.value = patientName;
-    if (resultsDiv) {
-        resultsDiv.style.display = 'none';
-        resultsDiv.innerHTML = '';
-    }
+    const queryParams = new URLSearchParams(params).toString();
 
-    // Show loading state
-    document.getElementById('billingCasesList').innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">Loading cases...</p>';
-    document.getElementById('billingCaseSelection').style.display = 'block';
-
-    // Load cases for this patient - use patient_id filter for faster query
-    fetch(`${API_BASE}/cases?page=1&limit=100&patient_id=${patientId}`)
+    fetch(`${API_BASE}/cases?limit=50&${queryParams}`)
         .then(res => res.json())
         .then(data => {
-            const cases = data.cases || [];
-
-            if (cases.length === 0) {
-                document.getElementById('billingCasesList').innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No cases found for this patient.</p>';
-                return;
-            }
-
-            const html = `
-                <div class="table-scroll-container" style="max-height: 400px; overflow-y: auto;">
-                    <table class="data-table">
-                        <thead style="position: sticky; top: 0; background: #f9fafb; z-index: 5;">
-                            <tr>
-                                <th>Case Number</th>
-                                <th>Case Type</th>
-                                <th>Admission Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${cases.map(c => {
-                const status = c.status || 'open';
-                const statusColor = status === 'closed' ? '#10b981' : '#f59e0b';
-                return `
-                                <tr>
-                                    <td>${c.case_number || ''}</td>
-                                    <td>${c.case_type || ''}</td>
-                                    <td>${c.admission_date ? new Date(c.admission_date).toLocaleDateString() : ''}</td>
-                                    <td><span style="color: ${statusColor}; font-weight: 600;">${status.toUpperCase()}</span></td>
-                                    <td><button class="btn btn-primary" onclick="loadCaseBilling('${c.id}')">View Bill</button></td>
-                                </tr>
-                            `;
-            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            document.getElementById('billingCasesList').innerHTML = html;
+            const cases = Array.isArray(data) ? data : (data.cases || []);
+            renderBillingCasesList(cases);
         })
         .catch(err => {
-            console.error('Error loading cases:', err);
-            document.getElementById('billingCasesList').innerHTML = '<p style="color: #d32f2f; text-align: center; padding: 20px;">Error loading cases. Please try again.</p>';
+            console.error('Error fetching billing cases:', err);
+            listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: red;">Error loading cases: ${err.message}</div>`;
         });
+}
 
-    // Clear search timeout
-    if (billingPatientSearchTimeout) {
-        clearTimeout(billingPatientSearchTimeout);
-        billingPatientSearchTimeout = null;
+function renderBillingCasesList(cases) {
+    const listContainer = document.getElementById('billingCasesList');
+
+    if (cases.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No cases found.</div>';
+        return;
     }
+
+    listContainer.innerHTML = cases.map(c => `
+        <div class="card" style="margin-bottom: 15px; cursor: pointer; border-left: 4px solid ${c.status === 'open' ? '#2ecc71' : '#95a5a6'};" 
+             onclick="selectBillingCase('${c._id || c.id}')">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h4 style="margin: 0 0 5px 0;">${c.patient_name || 'Unknown Patient'}</h4>
+                    <div style="font-size: 13px; color: #666;">Case: ${c.case_number || 'N/A'}</div>
+                    <div style="font-size: 12px; color: #999;">${new Date(c.created_at).toLocaleDateString()}</div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-${c.status === 'open' ? 'success' : 'secondary'}">${c.status ? c.status.toUpperCase() : 'OPEN'}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectBillingCase(caseId) {
+    selectedBillingCaseId = caseId;
+
+    // UI Update: Switch View
+    document.getElementById('billingListContainer').style.display = 'none';
+    document.getElementById('billingDetailsContainer').style.display = 'block';
+
+    loadCaseBilling(caseId);
 }
 
 function loadCaseBilling(caseId) {
     selectedBillingCaseId = caseId;
 
+    document.getElementById('caseBillingContent').innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Loading billing details...</div>';
+
     fetch(`${API_BASE}/billing/case/${caseId}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to load case details');
+            return res.json();
+        })
         .then(data => {
+            if (!data.case) {
+                throw new Error('Case data is missing');
+            }
             const caseData = data.case;
             const charges = data.charges || [];
             const payments = data.payments || [];
@@ -3022,7 +3028,7 @@ function loadCaseBilling(caseId) {
             const balance = data.balance || 0;
 
             const html = `
-                <div style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;">
+        < div style = "background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box;" >
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
                         <div>
                             <h2 style="margin: 0;">Bill for Case: ${caseData.case_number || ''}</h2>
@@ -3178,22 +3184,22 @@ function loadCaseBilling(caseId) {
                             `}
                         </div>
                     </div>
-                </div>
-            `;
+                </div >
+    `;
             document.getElementById('caseBillingContent').innerHTML = html;
-            document.getElementById('billingDetails').style.display = 'block';
 
-            // Scroll to billing details section to ensure it's visible
-            setTimeout(() => {
-                const billingDetails = document.getElementById('billingDetails');
-                if (billingDetails) {
-                    billingDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 100);
+            // Scroll to top for full view
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         })
         .catch(err => {
             console.error('Error loading case billing:', err);
-            alert('Error loading case billing: ' + err);
+            document.getElementById('caseBillingContent').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #dc2626;">
+                    <h3>Error Loading Bill</h3>
+                    <p style="margin-bottom: 20px;">${err.message}</p>
+                    <button class="btn btn-secondary" onclick="loadCaseBilling('${caseId}')">Retry</button>
+                </div>
+            `;
         });
 }
 
@@ -3205,65 +3211,68 @@ function showBillingPaymentForm(caseId) {
 
     // Fetch current balance to show in form
     fetch(`${API_BASE}/billing/case/${caseId}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch case details');
+            return res.json();
+        })
         .then(data => {
             const balance = data.balance || 0;
             const totalAfterDiscount = data.total_after_discount || 0;
 
             const html = `
-                <div class="modal" id="billingPaymentModal">
-                    <div class="modal-content">
-                        <h2>Add Payment</h2>
-                        <form id="billingPaymentForm" onsubmit="return saveBillingPayment(event, '${caseId}')">
-                            <div class="form-group">
-                                <label>Payment Type *</label>
-                                <div style="display: flex; gap: 20px; margin-top: 8px;">
-                                    <label style="display: flex; align-items: center; cursor: pointer;">
-                                        <input type="radio" name="payment_type" value="full" checked onchange="handlePaymentTypeChange('full', ${balance})" style="margin-right: 8px;">
-                                        <span>Full Payment (₹ ${balance.toFixed(2)})</span>
-                                    </label>
-                                    <label style="display: flex; align-items: center; cursor: pointer;">
-                                        <input type="radio" name="payment_type" value="partial" onchange="handlePaymentTypeChange('partial', ${balance})" style="margin-right: 8px;">
-                                        <span>Partial Payment</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Payment Amount *</label>
-                                <input type="number" step="0.01" name="amount" id="paymentAmountInput" value="${balance > 0 ? balance.toFixed(2) : '0.00'}" min="0.01" max="${totalAfterDiscount}" required>
-                                <small style="color: #666; display: block; margin-top: 4px;">Balance: ₹ ${balance.toFixed(2)}</small>
-                            </div>
-                            <div class="form-group">
-                                <label>Payment Date *</label>
-                                <input type="date" name="payment_date" value="${new Date().toISOString().split('T')[0]}" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Payment Mode *</label>
-                                <select name="payment_mode" required>
-                                    <option value="">Select Mode</option>
-                                    <option value="Cash">Cash</option>
-                                    <option value="Card">Card</option>
-                                    <option value="UPI">UPI</option>
-                                    <option value="Bank Transfer">Bank Transfer</option>
-                                    <option value="Cheque">Cheque</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Reference Number</label>
-                                <input type="text" name="payment_reference_number">
-                            </div>
-                            <div class="form-group">
-                                <label>Notes</label>
-                                <textarea name="notes" rows="3"></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">Save Payment</button>
-                                <button type="button" class="btn btn-secondary" onclick="closeBillingModal()">Cancel</button>
-                            </div>
-                        </form>
+    <div class="modal" id="billingPaymentModal">
+        <div class="modal-content">
+            <h2>Add Payment</h2>
+            <form id="billingPaymentForm" onsubmit="return saveBillingPayment(event, '${caseId}')">
+                <div class="form-group">
+                    <label>Payment Type *</label>
+                    <div style="display: flex; gap: 20px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="payment_type" value="full" checked onchange="handlePaymentTypeChange('full', ${balance})" style="margin-right: 8px;">
+                                <span>Full Payment (₹${balance.toFixed(2)})</span>
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="payment_type" value="partial" onchange="handlePaymentTypeChange('partial', ${balance})" style="margin-right: 8px;">
+                                <span>Partial Payment</span>
+                        </label>
                     </div>
                 </div>
-            `;
+                <div class="form-group">
+                    <label>Payment Amount *</label>
+                    <input type="number" step="0.01" name="amount" id="paymentAmountInput" value="${balance > 0 ? balance.toFixed(2) : '0.00'}" min="0.01" max="${totalAfterDiscount}" required>
+                        <small style="color: #666; display: block; margin-top: 4px;">Balance: ₹${balance.toFixed(2)}</small>
+                </div>
+                <div class="form-group">
+                    <label>Payment Date *</label>
+                    <input type="date" name="payment_date" value="${new Date().toISOString().split('T')[0]}" required>
+                </div>
+                <div class="form-group">
+                    <label>Payment Mode *</label>
+                    <select name="payment_mode" required>
+                        <option value="">Select Mode</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Reference Number</label>
+                    <input type="text" name="payment_reference_number">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Payment</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeBillingModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    `;
             document.body.insertAdjacentHTML('beforeend', html);
         })
         .catch(err => {
@@ -3716,16 +3725,16 @@ function generateBillHTML(caseData, charges, payments, totalCharges, discount, t
                 </h3>
                 
                 <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🏥 Standard Hospital Charges</p>
-                ${renderInvoiceCategoryTable(charges.filter(c => !c.is_doctor_charge && (!c.charge_type || c.charge_type === 'hospital')))}
+                ${renderInvoiceCategoryTable(charges.filter(c => !c.is_doctor_charge && (!c.charge_type || c.charge_type === 'hospital')), 'hospital')}
 
                 <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">👨‍⚕️ Professional Doctor Fees</p>
-                ${renderInvoiceCategoryTable(charges.filter(c => c.is_doctor_charge))}
+                ${renderInvoiceCategoryTable(charges.filter(c => c.is_doctor_charge), 'doctor')}
 
                 <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">🧪 Pathology Investigations</p>
-                ${renderInvoiceCategoryTable(charges.filter(c => c.charge_type === 'pathology'))}
+                ${renderInvoiceCategoryTable(charges.filter(c => c.charge_type === 'pathology'), 'pathology')}
 
                 <p style="margin: 25px 0 10px 0; font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">💊 Pharmacy & Supplies</p>
-                ${renderInvoiceCategoryTable(charges.filter(c => c.charge_type === 'pharmacy'))}
+                ${renderInvoiceCategoryTable(charges.filter(c => c.charge_type === 'pharmacy'), 'pharmacy')}
             </div>
 
             <!-- Financials Summary & Official Footer Block -->
@@ -3736,25 +3745,25 @@ function generateBillHTML(caseData, charges, payments, totalCharges, discount, t
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="padding: 12px 20px; color: #475569; font-size: 14px;">Total Gross Amount</td>
-                                <td style="padding: 12px 20px; text-align: right; color: #1e293b; font-weight: 700; font-size: 14px;">₹ ${totalCharges.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #1e293b; font-weight: 700; font-size: 14px;">₹${totalCharges.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                             ${discount > 0 ? `
                             <tr>
                                 <td style="padding: 12px 20px; color: #dc2626; font-size: 14px;">Discount Applied</td>
-                                <td style="padding: 12px 20px; text-align: right; color: #dc2626; font-weight: 700; font-size: 14px;">-₹ ${discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #dc2626; font-weight: 700; font-size: 14px;">-₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                             <tr style="background: #f1f5f9;">
                                 <td style="padding: 12px 20px; color: #1e293b; font-size: 14px; font-weight: 700;">Net Payable</td>
-                                <td style="padding: 12px 20px; text-align: right; color: #1e293b; font-weight: 800; font-size: 15px;">₹ ${totalAfterDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #1e293b; font-weight: 800; font-size: 15px;">₹${totalAfterDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                             ` : ''}
                             <tr>
                                 <td style="padding: 12px 20px; color: #059669; font-size: 14px;">Total Amount Paid</td>
-                                <td style="padding: 12px 20px; text-align: right; color: #059669; font-weight: 700; font-size: 14px;">₹ ${totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                <td style="padding: 12px 20px; text-align: right; color: #059669; font-weight: 700; font-size: 14px;">₹${totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                             <tr style="background: ${themeColor}; color: white;">
                                 <td style="padding: 18px 20px; font-weight: 800; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Outstanding Balance</td>
-                                <td style="padding: 18px 20px; text-align: right; font-weight: 900; font-size: 18px;">₹ ${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                <td style="padding: 18px 20px; text-align: right; font-weight: 900; font-size: 18px;">₹${balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                         </table>
                     </div>
@@ -3928,29 +3937,26 @@ function closeBillingModal() {
 
 // ==================== CHARGE MASTER MODULE ====================
 
-let currentChargeMasterPage = 1;
-const chargeMasterPageLimit = 10;
-
-function loadChargeMaster(page = 1) {
-    currentChargeMasterPage = page;
-
-    fetch(`${API_BASE}/charge-master?page=${page}&limit=${chargeMasterPageLimit}`)
+function loadChargeMaster() {
+    // Fetch a larger limit or handle server-side if needed, but for now client-side with high limit
+    fetch(`${API_BASE}/charge-master?limit=1000`)
         .then(res => res.json())
         .then(data => {
             const charges = data.charges || data;
-            const total = data.total !== undefined ? data.total : (Array.isArray(charges) ? charges.length : 0);
 
             const html = `
                 <div class="module-content">
-                    <div class="module-header">
+                    <div class="module-header" style="margin-bottom: 20px;">
                         <h1>Charge Master</h1>
                         <button class="btn btn-primary" onclick="showChargeMasterForm()">Add Charge</button>
                     </div>
-                    <table class="data-table">
+                    
+                    <table id="chargeMasterTable" class="display" style="width:100%">
                         <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Category</th>
+                                <th>Charge Category</th>
                                 <th>Amount</th>
                                 <th>Actions</th>
                             </tr>
@@ -3960,87 +3966,112 @@ function loadChargeMaster(page = 1) {
                                 <tr>
                                     <td>${charge.name || ''}</td>
                                     <td>${charge.category || ''}</td>
+                                    <td>${charge.charge_category || ''}</td>
                                     <td>${charge.amount || ''}</td>
                                     <td>
                                         <button class="btn btn-success" onclick="editChargeMaster('${charge.id}')">Edit</button>
                                         <button class="btn btn-danger" onclick="deleteChargeMaster('${charge.id}')">Delete</button>
                                     </td>
                                 </tr>
-                            `).join('') : '<tr><td colspan="4" style="text-align: center;">No charges found</td></tr>'}
+                            `).join('') : ''}
                         </tbody>
                     </table>
-                    <div class="pagination" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            ${currentChargeMasterPage > 1 ? `<button class="btn btn-secondary" onclick="loadChargeMaster(${currentChargeMasterPage - 1})">Previous</button>` : ''}
-                            <span style="margin: 0 15px;">Page ${currentChargeMasterPage} of ${Math.ceil(total / chargeMasterPageLimit)}</span>
-                            ${currentChargeMasterPage < Math.ceil(total / chargeMasterPageLimit) ? `<button class="btn btn-secondary" onclick="loadChargeMaster(${currentChargeMasterPage + 1})">Next</button>` : ''}
-                        </div>
-                        <div style="color: #666;">Total: ${total} charges</div>
-                    </div>
                 </div>
             `;
             document.getElementById('content-area').innerHTML = html;
-            setTimeout(afterContentLoad, 0);
+
+            // Initialize DataTable after DOM update
+            setTimeout(() => {
+                if (window.jQuery && window.jQuery.fn.DataTable) {
+                    $('#chargeMasterTable').DataTable({
+                        pageLength: 25,
+                        order: [[0, 'asc']], // Sort by name by default
+                        columnDefs: [
+                            { orderable: false, targets: 4 } // Actions column not sortable
+                        ],
+                        responsive: true
+                    });
+                }
+                afterContentLoad();
+            }, 0);
         })
         .catch(err => console.error('Error loading charge master:', err));
 }
 
 function showChargeMasterForm(chargeId = null) {
-    const title = chargeId ? 'Edit Charge' : 'Add Charge';
-    const html = `
-        <div class="modal">
-            <div class="modal-content">
-                <h2>${title}</h2>
-                <form id="chargeMasterForm" onsubmit="saveChargeMaster(event, '${chargeId || ''}')">
-                    <div class="form-group">
-                        <label>Name</label>
-                        <input type="text" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <input type="text" name="category">
-                    </div>
-                    <div class="form-group">
-                        <label>Amount</label>
-                        <input type="number" name="amount" step="0.01" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save</button>
-                        <button type="button" class="btn btn-secondary" onclick="loadChargeMaster()">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-    document.getElementById('content-area').innerHTML = html;
+    Promise.all([
+        chargeId ? fetch(`${API_BASE}/charge-master/${chargeId}`).then(res => res.json()) : Promise.resolve(null),
+        fetch(`${API_BASE}/charge-category-master`).then(res => res.json())
+    ]).then(([charge, categories]) => {
+        const title = chargeId ? 'Edit Charge' : 'Add Charge';
+        const categoryOptions = Array.isArray(categories) ? categories.map(c => `<option value="${c.name || ''}">`).join('') : '';
 
-    if (chargeId) {
-        fetch(`${API_BASE}/charge-master/${chargeId}`)
-            .then(res => res.json())
-            .then(charge => {
-                const form = document.getElementById('chargeMasterForm');
-                Object.keys(charge).forEach(key => {
-                    const input = form.querySelector(`[name="${key}"]`);
-                    if (input) input.value = charge[key] || '';
-                });
-            });
-    }
+        const html = `
+            <div class="modal">
+                <div class="modal-content">
+                    <h2>${title}</h2>
+                    <form id="chargeMasterForm" onsubmit="saveChargeMaster(event, '${chargeId || ''}')">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" name="name" value="${charge?.name || ''}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <input type="text" name="category" value="${charge?.category || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Charge Category</label>
+                            <input type="text" name="charge_category" id="chargeCategoryInput" list="chargeCategoriesList" value="${charge?.charge_category || ''}" placeholder="Type or select category...">
+                            <datalist id="chargeCategoriesList">
+                                ${categoryOptions}
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" name="amount" step="0.01" value="${charge?.amount || ''}" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" onclick="loadChargeMaster()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.getElementById('content-area').innerHTML = html;
+        setTimeout(afterContentLoad, 0);
+    }).catch(err => {
+        console.error('Error loading charge master form:', err);
+        alert('Error loading form data');
+    });
 }
 
 function saveChargeMaster(event, chargeId) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData);
+    const chargeCategory = data.charge_category;
 
-    const url = chargeId ? `${API_BASE}/charge-master/${chargeId}` : `${API_BASE}/charge-master`;
-    const method = chargeId ? 'PUT' : 'POST';
+    // First save the charge category to master if it's new
+    const saveCategoryPromise = chargeCategory ?
+        fetch(`${API_BASE}/charge-category-master`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: chargeCategory })
+        }).then(res => res.json()) :
+        Promise.resolve();
 
-    fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+    saveCategoryPromise.then(() => {
+        const url = chargeId ? `${API_BASE}/charge-master/${chargeId}` : `${API_BASE}/charge-master`;
+        const method = chargeId ? 'PUT' : 'POST';
+
+        return fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
     })
-        .then(() => loadChargeMaster(currentChargeMasterPage))
+        .then(() => loadChargeMaster())
         .catch(err => alert('Error saving charge: ' + err));
 }
 
@@ -4051,7 +4082,7 @@ function editChargeMaster(id) {
 function deleteChargeMaster(id) {
     if (confirm('Are you sure you want to delete this charge?')) {
         fetch(`${API_BASE}/charge-master/${id}`, { method: 'DELETE' })
-            .then(() => loadChargeMaster(currentChargeMasterPage))
+            .then(() => loadChargeMaster())
             .catch(err => alert('Error deleting charge: ' + err));
     }
 }
@@ -4762,6 +4793,8 @@ function loadUsers() {
         });
 }
 
+
+
 function showUserForm(userId = null) {
     const title = userId ? 'Edit User' : 'Add User';
     const modules = ['doctors', 'doctor-charges', 'patients', 'cases', 'appointments', 'billing-payments', 'charge-master', 'payouts', 'reports'];
@@ -5095,30 +5128,68 @@ function renderBillingGroupTable(charges, type, caseId) {
 
     const isAdmin = currentUser && currentUser.role === 'admin';
 
+    // Grouping logic for Hospital and Doctor Charges
+    let displayCharges = charges;
+    if (type === 'hospital' || type === 'doctor') {
+        const groups = {};
+        charges.forEach(c => {
+            const name = c.charge_name || c.description || 'N/A';
+            const dateStr = c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A');
+
+            let key = `${name}|${dateStr}`;
+            if (type === 'doctor') {
+                const doctor = c.doctor_name || 'Unknown Doctor';
+                key += `|${doctor}`;
+            }
+
+            if (!groups[key]) {
+                groups[key] = {
+                    ...c,
+                    quantity: 0,
+                    total_amount: 0,
+                    ids: []
+                };
+            }
+            groups[key].quantity += (c.quantity || 1);
+            groups[key].total_amount += (c.total_amount || 0);
+            groups[key].ids.push(c.id);
+        });
+        displayCharges = Object.values(groups);
+
+        // Optional: Sort by date descending
+        displayCharges.sort((a, b) => {
+            const dateA = a.charge_date ? new Date(a.charge_date) : (a.created_at ? new Date(a.created_at) : new Date(0));
+            const dateB = b.charge_date ? new Date(b.charge_date) : (b.created_at ? new Date(b.created_at) : new Date(0));
+            return dateB - dateA;
+        });
+    }
+
     return `
-        <div class="table-scroll-container" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px;">
+        <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px;">
             <table class="data-table" style="width: 100%; border-collapse: collapse;">
-                <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 1;">
+                <thead style="background: #f8fafc;">
                     <tr style="border-bottom: 2px solid #e2e8f0;">
                         <th style="text-align: left; padding: 12px;">Date</th>
                         <th style="text-align: left; padding: 12px;">Details</th>
-                        ${type === 'hospital' || type === 'doctor' ? '<th style="text-align: left; padding: 12px;">Doctor</th>' : ''}
+                        ${type === 'doctor' ? '<th style="text-align: left; padding: 12px;">Doctor</th>' : ''}
                         <th style="text-align: center; padding: 12px;">Qty</th>
-                        <th style="text-align: right; padding: 12px;">Amount</th>
+                        ${type !== 'pathology' && type !== 'pharmacy' ? '<th style="text-align: right; padding: 12px;">Amount</th>' : ''}
                         <th style="text-align: right; padding: 12px;">Total</th>
-                        ${isAdmin ? '<th style="text-align: center; padding: 12px;">Actions</th>' : ''}
+                        ${isAdmin && type !== 'hospital' && type !== 'doctor' ? '<th style="text-align: center; padding: 12px;">Actions</th>' : ''}
                     </tr>
                 </thead>
                 <tbody>
-                    ${charges.map(c => `
+                    ${displayCharges.map(c => `
                         <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 10px;">${c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '')}</td>
+                            <td style="padding: 10px;">
+                                ${c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '')}
+                            </td>
                             <td style="padding: 10px;">${c.charge_name || c.description || 'N/A'}</td>
-                            ${type === 'hospital' || type === 'doctor' ? `<td style="padding: 10px;">${c.doctor_name || '-'}</td>` : ''}
+                            ${type === 'doctor' ? `<td style="padding: 10px;">${c.doctor_name || '-'}</td>` : ''}
                             <td style="padding: 10px; text-align: center;">${c.quantity || 1}</td>
-                            <td style="padding: 10px; text-align: right;">₹${(c.unit_amount || 0).toLocaleString('en-IN')}</td>
+                            ${type !== 'pathology' && type !== 'pharmacy' ? `<td style="padding: 10px; text-align: right;">₹${(c.unit_amount || c.rate || 0).toLocaleString('en-IN')}</td>` : ''}
                             <td style="padding: 10px; text-align: right; font-weight: 600;">₹${(c.total_amount || 0).toLocaleString('en-IN')}</td>
-                            ${isAdmin ? `
+                            ${isAdmin && type !== 'hospital' && type !== 'doctor' ? `
                                 <td style="padding: 10px; text-align: center;">
                                     <button class="btn btn-danger btn-sm" onclick="deleteCaseCharge('${c.id}', '${caseId}')" title="Delete Charge">
                                         <i class="fas fa-trash"></i> Delete
@@ -5250,30 +5321,71 @@ window.renderBillingGroupTable = renderBillingGroupTable;
 window.renderPaymentsHistoryTable = renderPaymentsHistoryTable;
 
 // Helper to render simple table for invoice PDF
-function renderInvoiceCategoryTable(charges) {
+function renderInvoiceCategoryTable(charges, type = 'hospital') {
     if (!charges || charges.length === 0) {
         return '<p style="color: #94a3b8; font-style: italic; font-size: 12px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #f1f5f9;">No charges recorded in this category.</p>';
     }
+
+    // Grouping Logic (Mirrors renderBillingGroupTable)
+    let displayCharges = charges;
+    if (type === 'hospital' || type === 'doctor') {
+        const groups = {};
+        charges.forEach(c => {
+            const name = c.charge_name || c.description || 'N/A';
+            const dateStr = c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A');
+
+            let key = `${name}|${dateStr}`;
+            if (type === 'doctor') {
+                const doctor = c.doctor_name || 'Unknown Doctor';
+                key += `|${doctor}`;
+            }
+
+            if (!groups[key]) {
+                groups[key] = {
+                    ...c,
+                    quantity: 0,
+                    total_amount: 0
+                };
+            }
+            groups[key].quantity += (c.quantity || 1);
+            groups[key].total_amount += (c.total_amount || 0);
+        });
+        displayCharges = Object.values(groups);
+
+        // Sort by date descending
+        displayCharges.sort((a, b) => {
+            const dateA = a.charge_date ? new Date(a.charge_date) : (a.created_at ? new Date(a.created_at) : new Date(0));
+            const dateB = b.charge_date ? new Date(b.charge_date) : (b.created_at ? new Date(b.created_at) : new Date(0));
+            return dateB - dateA;
+        });
+    }
+
+    const showAmount = type !== 'pathology' && type !== 'pharmacy';
+    const descriptionTitle = type === 'doctor' ? 'Doctor & Specialization' : 'Description';
 
     return `
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; border-radius: 6px; overflow: hidden; border: 1px solid #f1f5f9; position: relative;">
             <thead>
                 <tr style="background: #f1f5f9; color: #475569;">
                     <th style="padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 14%;">Date</th>
-                    <th style="padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 44%;">Description</th>
+                    <th style="padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: ${showAmount ? '60%' : '76%'};">${descriptionTitle}</th>
                     <th style="padding: 10px; text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 10%;">Qty</th>
-                    <th style="padding: 10px; text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 16%;">Rate</th>
+                    ${showAmount ? '<th style="padding: 10px; text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 16%;">Rate</th>' : ''}
                     <th style="padding: 10px; text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; width: 16%;">Amount</th>
                 </tr>
             </thead>
             <tbody>
-                ${charges.map((c, idx) => `
+                ${displayCharges.map((c, idx) => `
                     <tr style="background: ${idx % 2 === 0 ? '#fff' : '#fcfcfd'};">
                         <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #64748b;">${c.charge_date ? new Date(c.charge_date).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '')}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; font-weight: 600; color: #1e293b;">${c.charge_name || c.description || 'N/A'}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; font-weight: 600; color: #1e293b;">
+                            ${type === 'doctor'
+            ? `<div>${c.doctor_name || 'Unknown Doctor'}</div><div style="font-size: 11px; color: #64748b; font-weight: 400; margin-top: 2px;">${c.doctor_specialization || c.specialization || ''}</div>`
+            : (c.charge_name || c.description || 'N/A')}
+                        </td>
                         <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: center; color: #475569;">${c.quantity || 1}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: right; color: #64748b;">₹${(c.unit_amount || 0).toLocaleString('en-IN')}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: right; font-weight: 700; color: #1e293b;">₹${(c.total_amount || 0).toLocaleString('en-IN')}</td>
+                        ${showAmount ? `<td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: right; color: #64748b;">₹${(c.unit_amount || c.rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>` : ''}
+                        <td style="padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 12px; text-align: right; font-weight: 700; color: #1e293b;">₹${(c.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                 `).join('')}
             </tbody>
