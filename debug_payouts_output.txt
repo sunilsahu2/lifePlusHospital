@@ -1,0 +1,23 @@
+Payouts Count: 7
+
+--- Last 5 Payouts ---
+ID: 69690188b7db10eb4ec10010, Status: pending, Date: 2026-01-15 20:32:32.317000
+  Doctor Charge: 500
+  Partial Amount: None
+  Payment Date: None
+ID: 69687b37cd010ddb77824974, Status: paid, Date: 2026-01-15 10:59:27.735000
+  Doctor Charge: 300.0
+  Partial Amount: None
+  Payment Date: 2026-01-15T00:00:00
+ID: 69659f37d5cb3b876491cdea, Status: pending, Date: 2026-01-13 06:56:15.873000
+  Doctor Charge: 200.0
+  Partial Amount: None
+  Payment Date: None
+ID: 6964fa99ec35e7e8158cc928, Status: pending, Date: 2026-01-12 19:13:53.181000
+  Doctor Charge: 300.0
+  Partial Amount: None
+  Payment Date: None
+ID: 696491571fde922c18e707b7, Status: paid, Date: 2026-01-12 11:44:47.807000
+  Doctor Charge: 300.0
+  Partial Amount: 200.0
+  Payment Date: 2026-01-12T00:00:00

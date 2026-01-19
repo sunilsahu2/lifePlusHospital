@@ -4093,47 +4093,89 @@ let currentPayoutPage = 1;
 const payoutPageLimit = 10;
 
 function loadPayouts(page = 1) {
-    currentPayoutPage = page;
-
-    const html = `
-        <div class="module-content">
-            <div class="module-header">
-                <h1>Payouts</h1>
-                <button class="btn btn-primary" onclick="showPayoutForm()">Create Payout</button>
-            </div>
-            <div style="margin-bottom: 20px;">
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <div class="form-group" style="margin: 0;">
-                        <label>Start Date</label>
-                        <input type="date" id="payoutStartDate" value="${new Date().toISOString().split('T')[0]}">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label>End Date</label>
-                        <input type="date" id="payoutEndDate" value="${new Date().toISOString().split('T')[0]}">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label>Payment Status</label>
-                        <select id="payoutStatusFilter">
-                            <option value="">All</option>
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary" onclick="loadPayoutRecords(1)">Load Records</button>
-                    <button class="btn btn-secondary" onclick="generatePayoutReport()">Generate Report</button>
-                </div>
-            </div>
-            <div id="payoutTableContainer" class="table-scroll-container"></div>
-        </div>
-    `;
-    document.getElementById('content-area').innerHTML = html;
-    loadPayoutRecords(1);
+    // Delegate entirely to loadPayoutRecords which handles the structure
+    loadPayoutRecords(page);
 }
+
+let currentPayoutTab = 'processed'; // 'processed' or 'pending'
 
 function loadPayoutRecords(page = 1) {
     currentPayoutPage = page;
+
+    // Check if tabs structure exists, if not create it
+    const container = document.getElementById('payouts-container');
+    if (!container) {
+        // Initial Render of the Payouts Module Structure
+        const html = `
+            <div id="payouts-container" class="module-content">
+                <div class="header-container">
+                    <h2>Payouts</h2>
+                    <button class="btn btn-primary" onclick="showPayoutForm()">
+                        <i class="fas fa-plus"></i> Create Payout
+                    </button>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn ${currentPayoutTab === 'processed' ? 'active' : ''}" 
+                            onclick="switchPayoutTab('processed')">Processed Payouts</button>
+                    <button class="tab-btn ${currentPayoutTab === 'pending' ? 'active' : ''}" 
+                            onclick="switchPayoutTab('pending')">Pending Payouts</button>
+                </div>
+
+                <div id="payouts-content">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        `;
+        document.getElementById('content-area').innerHTML = html;
+    } else {
+        // Update tab styles
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(t => {
+            if (t.innerText.toLowerCase().includes(currentPayoutTab)) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
+            }
+        });
+    }
+
+    if (currentPayoutTab === 'processed') {
+        loadProcessedPayouts(page);
+    } else {
+        loadPendingPayouts();
+    }
+}
+
+function switchPayoutTab(tab) {
+    currentPayoutTab = tab;
+    loadPayoutRecords(1);
+}
+
+function loadProcessedPayouts(page = 1) {
+    // Only render filters if they don't exist or if switching tabs
+    const contentDiv = document.getElementById('payouts-content');
+    if (!document.getElementById('payoutStatusFilter')) {
+        contentDiv.innerHTML = `
+            <div class="filter-bar">
+                <input type="date" id="payoutStartDate" onchange="loadProcessedPayouts(1)" placeholder="Start Date">
+                <input type="date" id="payoutEndDate" onchange="loadProcessedPayouts(1)" placeholder="End Date">
+                <select id="payoutStatusFilter" onchange="loadProcessedPayouts(1)">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="partial_paid">Partial Paid</option>
+                    <option value="paid">Paid</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div id="processed-list-container" class="text-center p-4">
+                <p>Loading records...</p>
+            </div>
+        `;
+    }
+
     const startDate = document.getElementById('payoutStartDate')?.value || '';
+
     const endDate = document.getElementById('payoutEndDate')?.value || '';
     const status = document.getElementById('payoutStatusFilter')?.value || '';
 
@@ -4158,7 +4200,7 @@ function loadPayoutRecords(page = 1) {
                                 <th>Case Number</th>
                                 <th>Patient Name</th>
                                 <th>Doctor Name</th>
-                                <th>OPD/IPD</th>
+                                <th>Treatment Details</th>
                                 <th>Total Charge Amount</th>
                                 <th>Doctor Charge Amount</th>
                                 <th>Payment Status</th>
@@ -4189,12 +4231,17 @@ function loadPayoutRecords(page = 1) {
                     rowColor = '#cfe2ff'; // Blue for partial paid
                 }
 
-                const doctorChargeAmount = p.doctor_charge_amount || 0;
-                const partialAmount = p.partial_payment_amount || 0;
+                const doctorChargeAmount = parseFloat(p.doctor_charge_amount) || 0;
+                const partialAmount = parseFloat(p.partial_payment_amount) || 0;
                 const remainingAmount = doctorChargeAmount - partialAmount;
                 const displayAmount = p.payment_status === 'partial_paid'
                     ? `<span style="color: #0d6efd;">${partialAmount.toFixed(2)}</span> / ${doctorChargeAmount.toFixed(2)}<br/><small style="color: #666;">Remaining: ${remainingAmount.toFixed(2)}</small>`
                     : doctorChargeAmount.toFixed(2);
+
+                // Format details
+                const chargeBreakdown = (p.charge_details && p.charge_details.length > 0)
+                    ? p.charge_details.map(c => `<div>- ${c.name} (₹${parseFloat(c.amount || 0).toFixed(0)})</div>`).join('')
+                    : '<div style="color:#aaa; font-style:italic;">No details</div>';
 
                 return `
                                 <tr style="background-color: ${rowColor};">
@@ -4202,8 +4249,8 @@ function loadPayoutRecords(page = 1) {
                                     <td>${p.case_number || ''}</td>
                                     <td>${p.patient_name || ''}</td>
                                     <td>${p.doctor_name || ''}</td>
-                                    <td>${p.case_type || ''}</td>
-                                    <td>${(p.total_charge_amount || 0).toFixed(2)}</td>
+                                    <td><div class="payment-details-cell">${chargeBreakdown}</div></td>
+                                    <td>${(parseFloat(p.total_charge_amount) || 0).toFixed(2)}</td>
                                     <td style="font-size: 12px;">${displayAmount}</td>
                                     <td>
                                         <select onchange="updatePayoutStatus('${p.id}', this.value)" style="padding: 4px;">
@@ -4213,33 +4260,44 @@ function loadPayoutRecords(page = 1) {
                                             <option value="cancelled" ${p.payment_status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                                         </select>
                                     </td>
-                                    <td style="font-size: 11px;">${paymentDetails}</td>
+                                    <td><div class="payment-details-cell">${paymentDetails}</div></td>
                                     <td>
-                                        <button class="btn btn-primary" onclick="showPaymentForm('${p.id}', '${p.doctor_charge_amount || 0}', '${p.payment_status || 'pending'}')" ${p.payment_status === 'paid' ? 'disabled' : ''}>${p.payment_status === 'partial_paid' ? 'Add Payment' : 'Mark Paid'}</button>
-                                        <button class="btn btn-success" onclick="viewPayoutCase('${p.case_id}')">View Case</button>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="showPaymentForm('${p.id}', ${doctorChargeAmount}, '${p.payment_status || 'pending'}')" ${p.payment_status === 'paid' ? 'disabled' : ''}>${p.payment_status === 'partial_paid' ? 'Add Pmt' : 'Pay'}</button>
+                                            <button class="btn btn-success" style="padding: 4px 8px; font-size: 12px;" onclick="viewPayoutCase('${p.case_id}')">View</button>
+                                        </div>
                                     </td>
                                 </tr>
                             `;
-            }).join('') : '<tr><td colspan="10" style="text-align: center;">No payout records found</td></tr>'}
+            }).join('') : '<tr><td colspan="10" class="text-center p-4">No payout records found</td></tr>'}
                         </tbody>
                     </table>
                 </div>
-                <div class="pagination" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        ${page > 1 ? `<button class="btn btn-secondary" onclick="loadPayoutRecords(${page - 1})">Previous</button>` : '<span></span>'}
-                        <span style="margin: 0 15px;">Page ${page} of ${totalPages}</span>
-                        ${page < totalPages ? `<button class="btn btn-secondary" onclick="loadPayoutRecords(${page + 1})">Next</button>` : '<span></span>'}
+                <div class="pagination">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${page > 1 ? `<button class="btn btn-secondary" onclick="loadProcessedPayouts(${page - 1})">Previous</button>` : '<button class="btn btn-secondary" disabled style="opacity: 0.5">Previous</button>'}
+                        <span>Page ${page} of ${totalPages}</span>
+                        ${page < totalPages ? `<button class="btn btn-secondary" onclick="loadProcessedPayouts(${page + 1})">Next</button>` : '<button class="btn btn-secondary" disabled style="opacity: 0.5">Next</button>'}
                     </div>
-                    <div style="color: #666;">Total: ${total} payout records</div>
+                    <div style="color: var(--gray-600);">Total: ${total} records</div>
                 </div>
             `;
-            document.getElementById('payoutTableContainer').innerHTML = html;
+
+            const container = document.getElementById('processed-list-container');
+            if (container) {
+                container.innerHTML = html;
+            } else {
+                // Fallback if container not found (e.g. race condition)
+                document.getElementById('content-area').innerHTML = html;
+            }
         })
         .catch(err => {
-            console.error('Error loading payout records:', err);
-            alert('Error loading payout records: ' + err);
+            console.error('Error loading payouts:', err);
+            const container = document.getElementById('processed-list-container');
+            if (container) container.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
         });
 }
+
 
 function updatePayoutStatus(payoutId, status) {
     // If status is 'paid' or 'partial_paid', show payment form
@@ -4249,7 +4307,7 @@ function updatePayoutStatus(payoutId, status) {
             .then(res => res.json())
             .then(data => {
                 const payout = data.payouts?.find(p => p.id === payoutId);
-                const doctorChargeAmount = payout?.doctor_charge_amount || 0;
+                const doctorChargeAmount = parseFloat(payout?.doctor_charge_amount) || 0;
                 const currentStatus = payout?.payment_status || 'pending';
                 showPaymentForm(payoutId, doctorChargeAmount, currentStatus, status);
             })
@@ -4573,6 +4631,25 @@ function loadCaseDetailsForPayout(caseId) {
             if (caseNumberInput) caseNumberInput.value = caseData.case_number || '';
             if (patientNameInput) patientNameInput.value = caseData.patient?.name || '';
             if (caseTypeInput) caseTypeInput.value = caseData.case_type || '';
+
+            // Auto-populate amounts
+            fetch(`${API_BASE}/cases/${caseId}/payout-summary`)
+                .then(res => res.json())
+                .then(summary => {
+                    const totalChargeInput = document.querySelector('[name="total_charge_amount"]');
+                    const doctorChargeInput = document.querySelector('[name="doctor_charge_amount"]');
+
+                    if (totalChargeInput) {
+                        totalChargeInput.value = (summary.total_charge_amount || 0).toFixed(2);
+                        // Optional: Highlight if auto-filled
+                        totalChargeInput.style.backgroundColor = '#e8f0fe';
+                    }
+                    if (doctorChargeInput) {
+                        doctorChargeInput.value = (summary.doctor_charge_amount || 0).toFixed(2);
+                        doctorChargeInput.style.backgroundColor = '#e8f0fe';
+                    }
+                })
+                .catch(err => console.error('Error loading payout summary:', err));
         })
         .catch(err => {
             console.error('Error loading case details:', err);

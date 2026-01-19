@@ -1477,3 +1477,90 @@ body.menu-open {
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+
+/* ==================== PAYOUTS MODULE ==================== */
+.tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: var(--transition);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
+    background: var(--gray-50);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-container h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--gray-50);
+    padding: 16px;
+    border-radius: var(--border-radius);
+    margin-bottom: 24px;
+    border: 1px solid var(--gray-200);
+}
+
+.filter-bar input,
+.filter-bar select {
+    padding: 8px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    min-width: 150px;
+}
+
+/* Fix table row height */
+.data-table td {
+    vertical-align: middle;
+}
+
+/* Payment Details Column formatting */
+.payment-details-cell {
+    max-width: 200px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.payment-details-cell div {
+    margin-bottom: 2px;
+}
+
+.payment-details-cell span {
+    color: var(--gray-500);
+    font-weight: 500;
+}

@@ -72,6 +72,38 @@ function loadDashboard() {
                 </div>
             </div>
             
+            <!-- Financial Overview Section -->
+            <div class="dashboard-section financial-section" style="margin-top: 20px; margin-bottom: 20px;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Financial Overview</h3>
+                    <div class="financial-filters" style="display: flex; gap: 10px; align-items: center;">
+                        <input type="date" id="fin-start-date" class="form-control" style="width: auto;">
+                        <span style="color: #666;">to</span>
+                        <input type="date" id="fin-end-date" class="form-control" style="width: auto;">
+                        <button class="btn btn-sm btn-secondary" onclick="loadFinancialGrid()">View</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="setLast10Days()">Last 10 Days</button>
+                    </div>
+                </div>
+                <div class="financial-grid-container" style="background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <table class="table table-hover" id="financial-grid-table" style="width: 100%; margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th style="text-align: right;">Collections</th>
+                                <th style="text-align: right;">Payouts</th>
+                                <th style="text-align: right;">Net</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financial-grid-body">
+                            <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                        <tfoot id="financial-grid-foot" style="font-weight: bold; background: #f8f9fa;">
+                            <!-- Totals will go here -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
             <!-- Activity and Appointments Row -->
             <div class="dashboard-row">
                 <!-- Recent Activity -->
@@ -93,10 +125,14 @@ function loadDashboard() {
         </div>
     `;
 
+    // Initialize default dates (Last 10 Days)
+    setLast10Days(false); // false = don't load yet, will load below
+
     // Load dashboard data
     loadDashboardStats();
     loadDashboardActivity();
     loadUpcomingAppointments();
+    loadFinancialGrid();
 
     // Auto-refresh every 5 minutes
     if (window.dashboardRefreshInterval) {
@@ -106,7 +142,87 @@ function loadDashboard() {
         loadDashboardStats();
         loadDashboardActivity();
         loadUpcomingAppointments();
+        loadFinancialGrid();
     }, 300000); // 5 minutes
+}
+
+// Set dates to last 10 days
+function setLast10Days(shouldLoad = true) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 9); // 10 days including today
+
+    document.getElementById('fin-end-date').valueAsDate = end;
+    document.getElementById('fin-start-date').valueAsDate = start;
+
+    if (shouldLoad) {
+        loadFinancialGrid();
+    }
+}
+
+// Load Financial Grid
+function loadFinancialGrid() {
+    const start = document.getElementById('fin-start-date').value;
+    const end = document.getElementById('fin-end-date').value;
+    const tbody = document.getElementById('financial-grid-body');
+    const tfoot = document.getElementById('financial-grid-foot');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading...</td></tr>';
+
+    let url = `${API_BASE}/dashboard/financial-grid`;
+    if (start && end) {
+        url += `?start_date=${start}&end_date=${end}`;
+    }
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No data for selected range</td></tr>';
+                tfoot.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            let totalColl = 0;
+            let totalPay = 0;
+            let totalNet = 0;
+
+            data.forEach(day => {
+                totalColl += day.collections;
+                totalPay += day.payouts;
+                totalNet += day.net;
+
+                const netColor = day.net >= 0 ? 'text-success' : 'text-danger';
+
+                html += `
+                    <tr style="cursor: pointer;" onclick="showFinancialDetails('${day.date}')" title="Click to view details">
+                        <td>${new Date(day.date).toLocaleDateString()}</td>
+                        <td style="text-align: right;">₹${day.collections.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style="text-align: right;">₹${day.payouts.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style="text-align: right;" class="${netColor}">₹${day.net.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+
+            const netTotalColor = totalNet >= 0 ? 'text-success' : 'text-danger';
+            tfoot.innerHTML = `
+                <tr>
+                    <td>Total</td>
+                    <td style="text-align: right;">₹${totalColl.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align: right;">₹${totalPay.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align: right;" class="${netTotalColor}">₹${totalNet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+            `;
+        })
+        .catch(err => {
+            console.error('Error loading financial grid:', err);
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error loading data</td></tr>';
+        });
 }
 
 // Load dashboard statistics
@@ -239,6 +355,7 @@ function refreshDashboard() {
     loadDashboardStats();
     loadDashboardActivity();
     loadUpcomingAppointments();
+    loadFinancialGrid();
 }
 
 // Animate number counting
@@ -315,3 +432,158 @@ function getTimeAgo(timestamp) {
 // Make functions globally available
 window.loadDashboard = loadDashboard;
 window.refreshDashboard = refreshDashboard;
+window.loadFinancialGrid = loadFinancialGrid;
+window.setLast10Days = setLast10Days;
+window.showFinancialDetails = showFinancialDetails;
+window.closeFinancialModal = closeFinancialModal;
+
+// Financial Drill-down Modal
+function showFinancialDetails(date) {
+    // 1. Create Modal if not exists
+    let modal = document.getElementById('financial-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'financial-modal';
+        modal.style.cssText = `
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4);
+        `;
+        modal.innerHTML = `
+            <div style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 900px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 id="fin-modal-title">Details for [Date]</h2>
+                    <span style="color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;" onclick="closeFinancialModal()">&times;</span>
+                </div>
+                
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px;">
+                        <h4 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Collections (Payments)</h4>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table class="table" style="font-size: 0.9em;">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Case</th>
+                                        <th>Mode</th>
+                                        <th style="text-align: right;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fin-collections-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 300px;">
+                        <h4 style="color: #dc2626; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">Payouts (Doctors)</h4>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table class="table" style="font-size: 0.9em;">
+                                <thead>
+                                    <tr>
+                                        <th>Doctor</th>
+                                        <th>Type</th>
+                                        <th style="text-align: right;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fin-payouts-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeFinancialModal()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // 2. Open Modal
+    modal.style.display = "block";
+    document.getElementById('fin-modal-title').textContent = `Details for ${new Date(date).toLocaleDateString()}`;
+    document.getElementById('fin-collections-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>';
+    document.getElementById('fin-payouts-body').innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading...</td></tr>';
+
+    // 3. Fetch Data
+    fetch(`${API_BASE}/dashboard/financial-details?date=${date}`)
+        .then(res => res.json())
+        .then(data => {
+            // Render Collections
+            const collBody = document.getElementById('fin-collections-body');
+            if (data.collections && data.collections.length > 0) {
+                let html = '';
+                let total = 0;
+                data.collections.forEach(item => {
+                    total += item.amount;
+                    html += `
+                        <tr>
+                            <td>${item.patient_name}</td>
+                            <td>${item.case_number}</td>
+                            <td>${item.mode}</td>
+                            <td style="text-align: right;">₹${item.amount.toLocaleString('en-IN')}</td>
+                        </tr>
+                    `;
+                });
+                html += `
+                    <tr style="font-weight: bold; background: #f9fafb;">
+                        <td colspan="3">Total</td>
+                        <td style="text-align: right;">₹${total.toLocaleString('en-IN')}</td>
+                    </tr>
+                `;
+                collBody.innerHTML = html;
+            } else {
+                collBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No records found</td></tr>';
+            }
+
+            // Render Payouts
+            const payBody = document.getElementById('fin-payouts-body');
+            if (data.payouts && data.payouts.length > 0) {
+                let html = '';
+                let total = 0;
+                data.payouts.forEach(item => {
+                    total += item.amount;
+                    html += `
+                        <tr>
+                            <td>${item.doctor_name}</td>
+                            <td>${item.type}</td>
+                            <td style="text-align: right;">₹${item.amount.toLocaleString('en-IN')}</td>
+                        </tr>
+                    `;
+                });
+                html += `
+                    <tr style="font-weight: bold; background: #f9fafb;">
+                        <td colspan="2">Total</td>
+                        <td style="text-align: right;">₹${total.toLocaleString('en-IN')}</td>
+                    </tr>
+                `;
+                payBody.innerHTML = html;
+            } else {
+                payBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No records found</td></tr>';
+            }
+        })
+        .catch(err => {
+            console.error('Error details:', err);
+            document.getElementById('fin-collections-body').innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Error loading data</td></tr>';
+            document.getElementById('fin-payouts-body').innerHTML = '<tr><td colspan="3" style="color:red; text-align:center;">Error loading data</td></tr>';
+        });
+}
+
+function closeFinancialModal() {
+    const modal = document.getElementById('financial-modal');
+    if (modal) modal.style.display = "none";
+}
+
+// Close modal when clicking outside
+window.onclick = function (event) {
+    const modal = document.getElementById('financial-modal');
+    if (event.target == modal) {
+        closeFinancialModal();
+    }
+}

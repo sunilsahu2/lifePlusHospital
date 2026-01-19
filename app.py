@@ -99,6 +99,14 @@ def is_case_closed(case_id):
     case = db.cases.find_one({'_id': case_id}, {'status': 1})
     return case and case.get('status') == 'closed'
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'Authentication required'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 # ==================== ROUTES ====================
 
 @app.route('/')
@@ -336,9 +344,6 @@ def get_cases():
         skip = (page - 1) * limit
         
         # Build query
-        query = {}
-        
-        # Combine filters
         filters = []
         
         # Filter by patient_id
@@ -382,9 +387,6 @@ def get_cases():
             if search_conditions:
                 filters.append({'$or': search_conditions})
             else:
-                # Search provided but no matches found -> return empty result
-                # We can force this by matching a non-existent ID or simply return empty list
-                # Adding a condition that is always false
                 filters.append({'_id': {'$exists': False}})
 
         # Construct final query
@@ -398,66 +400,139 @@ def get_cases():
         # Get total count for pagination
         total = db.cases.count_documents(query)
         
-        # Get paginated results
-        cases = list(db.cases.find(query).sort('created_at', -1).skip(skip).limit(limit))
+        # Aggregation Pipeline
+        pipeline = [
+            {'$match': query},
+            {'$sort': {'created_at': -1}},
+            {'$skip': skip},
+            {'$limit': limit},
+            
+            # Lookup Patient
+            {'$lookup': {
+                'from': 'patients',
+                'localField': 'patient_id',
+                'foreignField': '_id',
+                'as': 'patient_doc'
+            }},
+            {'$addFields': {
+                'patient_name': {'$ifNull': [{'$arrayElemAt': ['$patient_doc.name', 0]}, '']}
+            }},
+            
+            # Lookup Hospital Charges
+            {'$lookup': {
+                'from': 'case_charges',
+                'localField': '_id',
+                'foreignField': 'case_id',
+                'as': 'hospital_charges_list'
+            }},
+            
+            # Lookup Doctor Charges (Legacy)
+            {'$lookup': {
+                'from': 'case_doctor_charges',
+                'localField': '_id',
+                'foreignField': 'case_id',
+                'as': 'doctor_charges_list'
+            }},
+            
+            # Lookup Payments
+            {'$lookup': {
+                'from': 'payments',
+                'localField': '_id',
+                'foreignField': 'case_id',
+                'as': 'payments_list'
+            }},
+            
+            # Lookup Appointments (with doctor info)
+            {'$lookup': {
+                'from': 'appointments',
+                'let': {'caseId': '$_id'},
+                'pipeline': [
+                    {'$match': {'$expr': {'$eq': ['$case_id', '$$caseId']}}},
+                    {'$sort': {'appointment_date': 1}},
+                    # Lookup doctor for appointment
+                    {'$lookup': {
+                        'from': 'doctors',
+                        'localField': 'doctor_id',
+                        'foreignField': '_id',
+                        'as': 'doctor_doc'
+                    }},
+                    {'$addFields': {
+                        'doctor_name': {'$arrayElemAt': ['$doctor_doc.name', 0]}
+                    }}
+                ],
+                'as': 'appointments_data'
+            }},
+            
+            # Calculate Totals
+            {'$addFields': {
+                'hospital_total': {'$sum': '$hospital_charges_list.total_amount'},
+                'hospital_count': {'$size': '$hospital_charges_list'},
+                'doctor_total': {'$sum': '$doctor_charges_list.amount'},
+                'doctor_count': {'$size': '$doctor_charges_list'},
+                'paid_amount': {'$sum': '$payments_list.amount'},
+                'discount_val': {'$ifNull': ['$discount', 0]} 
+            }},
+            
+            {'$addFields': {
+                'charges_total': {'$add': ['$hospital_total', '$doctor_total']},
+                'charges_count': {'$add': ['$hospital_count', '$doctor_count']},
+                'due_amount': {'$max': [0, {'$subtract': [
+                    {'$max': [0, {'$subtract': [{'$add': ['$hospital_total', '$doctor_total']}, '$discount_val']}]}, 
+                    '$paid_amount'
+                ]}]},
+                'appointments_count': {'$size': '$appointments_data'}
+            }},
+            
+            # Cleanup temporary fields
+            {'$project': {
+                'patient_doc': 0,
+                'hospital_charges_list': 0,
+                'doctor_charges_list': 0,
+                'payments_list': 0,
+                'hospital_total': 0,
+                'doctor_total': 0,
+                'doctor_count': 0,
+                'hospital_count': 0
+            }}
+        ]
         
-        # Populate patient names and convert patient_id to string
-        # Also get charge counts and totals for each case
+        cases = list(db.cases.aggregate(pipeline))
+        
+        # Post-process appointments (logic difficult to do purely in aggregation)
+        now_date = datetime.now().date()
+        
         for case in cases:
-            # Ensure status field exists (default to 'open' if not set)
+            # Ensure status
             if 'status' not in case:
                 case['status'] = 'open'
+                
+            # Handle Next Appointment Logic
+            appointments_data = case.pop('appointments_data', [])
             
-            if 'patient_id' in case:
-                patient_id_obj = case['patient_id']
-                # Convert patient_id to ObjectId if it's a string
-                if isinstance(patient_id_obj, str):
-                    patient_id_obj = parse_object_id(patient_id_obj)
-                case['patient_id'] = str(patient_id_obj) if patient_id_obj else ''
-                if patient_id_obj:
-                    patient = db.patients.find_one({'_id': patient_id_obj})
-                    if patient:
-                        case['patient_name'] = patient.get('name', '')
-                    else:
-                        case['patient_name'] = ''
-                else:
-                    case['patient_name'] = ''
+            # Filter for display (first 5)
+            # Original logic: "limit to 5 most recent for display" -> assumes sorted? 
+            # Original code sorted by appointment_date 1. So "recent" might mean future ones?
+            # Or just the list. Code said: case_appointments[:5]
             
-            # Get case charges count and total
-            case_id = case['_id']
+            display_apts = []
+            for apt in appointments_data[:5]:
+                apt_display = {
+                    'id': str(apt['_id']),
+                    'appointment_date': apt.get('appointment_date'),
+                    'appointment_time': apt.get('appointment_time'),
+                    'status': apt.get('status'),
+                    'doctor_name': apt.get('doctor_name', '')
+                }
+                display_apts.append(apt_display)
+            case['appointments'] = serialize_doc(display_apts)
             
-            # Hospital Charges
-            pipeline_charges = [
-                {'$match': {'case_id': case_id}},
-                {'$group': {'_id': None, 'total': {'$sum': '$total_amount'}, 'count': {'$sum': 1}}}
+            # Find next upcoming appointment
+            upcoming_appointments = [
+                apt for apt in appointments_data 
+                if apt.get('status') != 'Cancelled' and apt.get('appointment_date')
             ]
-            charges_res = list(db.case_charges.aggregate(pipeline_charges))
-            hospital_total = charges_res[0]['total'] if charges_res else 0
-            hospital_count = charges_res[0]['count'] if charges_res else 0
             
-            # Legacy Doctor Charges
-            doctor_charges_res = list(db.case_doctor_charges.find({'case_id': case_id}))
-            doctor_total = sum(c.get('amount', 0) for c in doctor_charges_res)
-            
-            case['charges_count'] = hospital_count + len(doctor_charges_res)
-            case['charges_total'] = hospital_total + doctor_total
-            
-            # Get payments and calculate due
-            pipeline_payments = [
-                {'$match': {'case_id': case_id}},
-                {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
-            ]
-            payments_res = list(db.payments.aggregate(pipeline_payments))
-            case['paid_amount'] = payments_res[0]['total'] if payments_res else 0
-            case['due_amount'] = case['charges_total'] - case['paid_amount']
-            
-            # Get appointments for this case
-            case_appointments = list(db.appointments.find({'case_id': case_id}).sort('appointment_date', 1))
-            case['appointments_count'] = len(case_appointments)
-            # Get next appointment (upcoming appointment)
-            upcoming_appointments = [apt for apt in case_appointments if apt.get('status') != 'Cancelled' and apt.get('appointment_date')]
             if upcoming_appointments:
-                now = datetime.now().date()
                 future_appointments = []
                 for apt in upcoming_appointments:
                     apt_date = apt.get('appointment_date')
@@ -470,33 +545,20 @@ def get_cases():
                             continue
                     else:
                         continue
-                    if apt_date_obj >= now:
+                        
+                    if apt_date_obj >= now_date:
                         future_appointments.append(apt)
                 
                 if future_appointments:
-                    next_apt = future_appointments[0]
+                    next_apt = future_appointments[0] # Already sorted by date in pipeline
                     case['next_appointment_date'] = next_apt.get('appointment_date')
                     case['next_appointment_time'] = next_apt.get('appointment_time')
-                    if 'doctor_id' in next_apt and next_apt['doctor_id']:
-                        doctor = db.doctors.find_one({'_id': next_apt['doctor_id']})
-                        if doctor:
-                            case['next_appointment_doctor'] = doctor.get('name', '')
-            # Populate appointment names for display
-            appointments_for_display = []
-            for apt in case_appointments[:5]:  # Limit to 5 most recent for display
-                apt_display = {
-                    'id': str(apt['_id']),
-                    'appointment_date': apt.get('appointment_date'),
-                    'appointment_time': apt.get('appointment_time'),
-                    'status': apt.get('status')
-                }
-                if 'doctor_id' in apt and apt['doctor_id']:
-                    doctor = db.doctors.find_one({'_id': apt['doctor_id']})
-                    if doctor:
-                        apt_display['doctor_name'] = doctor.get('name', '')
-                appointments_for_display.append(apt_display)
-            case['appointments'] = serialize_doc(appointments_for_display)
-        
+                    case['next_appointment_doctor'] = next_apt.get('doctor_name', '')
+
+            # Convert patient_id to string loop handled by serialize_doc later, 
+            # but we need to ensure patient_id field format matches legacy if manual handling needed.
+            # serialize_doc will handle ObjectIds.
+            
         return jsonify({
             'cases': serialize_doc(cases),
             'total': total,
@@ -680,6 +742,13 @@ def create_case():
             )
             data['case_number'] = f'CASE-{year}-{counter["seq"]:04d}'
         
+        # Parse admission_date if present
+        if 'admission_date' in data and isinstance(data['admission_date'], str):
+            try:
+                data['admission_date'] = datetime.fromisoformat(data['admission_date'].replace('Z', '+00:00'))
+            except ValueError:
+                pass  # Keep as string if parsing fails, or handle error
+
         data['created_at'] = datetime.now()
         result = db.cases.insert_one(data)
         
@@ -779,6 +848,9 @@ def delete_case(id):
         if not user or user.get('role') != 'admin':
             return jsonify({'error': 'Forbidden: Only admin can delete cases'}), 403
 
+        if is_case_closed(id):
+            return jsonify({'error': 'Cannot delete a closed case'}), 400
+
         result = db.cases.delete_one({'_id': parse_object_id(id)})
         if result.deleted_count:
             return jsonify({'message': 'Case deleted successfully'})
@@ -796,11 +868,34 @@ def get_appointments():
         limit = int(request.args.get('limit', 10))
         skip = (page - 1) * limit
         
+        # Build Query
+        query = {}
+        filters = []
+        
+        if request.args.get('patient_id'):
+            filters.append({'patient_id': parse_object_id(request.args.get('patient_id'))})
+            
+        if request.args.get('case_id'):
+            filters.append({'case_id': parse_object_id(request.args.get('case_id'))})
+
+        if request.args.get('doctor_id'):
+            filters.append({'doctor_id': parse_object_id(request.args.get('doctor_id'))})
+            
+        if request.args.get('date'):
+            # Filter by exact date string match (simple approach) or range
+            # Here assuming exact string match for 'YYYY-MM-DD'
+            filters.append({'appointment_date': request.args.get('date')})
+            
+        if len(filters) > 1:
+            query = {'$and': filters}
+        elif len(filters) == 1:
+            query = filters[0]
+        
         # Get total count for pagination
-        total = db.appointments.count_documents({})
+        total = db.appointments.count_documents(query)
         
         # Get paginated results
-        appointments = list(db.appointments.find().sort('created_at', -1).skip(skip).limit(limit))
+        appointments = list(db.appointments.find(query).sort('created_at', -1).skip(skip).limit(limit))
         
         # Populate patient names and doctor names
         for apt in appointments:
@@ -1186,20 +1281,22 @@ def get_case_charges():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/case-charges', methods=['POST'])
+@login_required
 def create_case_charge():
+    input_type = 'json'
+    if request.files:
+        input_type = 'form'
+        
     try:
         data = {}
         file_path = None
-        
-        # Handle different content types
-        if request.content_type and 'multipart/form-data' in request.content_type:
+        if input_type == 'form':
+            # Handle form data similar to cases
             data = request.form.to_dict()
             if 'file' in request.files:
                 file = request.files['file']
                 if file and file.filename:
-                    filename = secure_filename(file.filename)
-                    file_ext = os.path.splitext(filename)[1].lower()
-                    unique_filename = f"bill_{uuid.uuid4().hex}{file_ext}"
+                    unique_filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
                     upload_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                     file.save(upload_path)
                     file_path = f"/static/uploads/{unique_filename}"
@@ -1253,23 +1350,110 @@ def create_case_charge():
                  try:
                      # Try parsing ISO format
                      data['charge_date'] = datetime.fromisoformat(data['charge_date'].replace('Z', '+00:00'))
-                 except:
-                     pass # Keep as string or default to simple date
+                 except ValueError:
+                     # Attempt strict parsing or fallback
+                     pass
 
         if file_path:
             data['file_path'] = file_path
 
         result = db.case_charges.insert_one(data)
         
-        # If doctor_id exists, create payout record (Placeholder)
-        # If doctor_id exists, create payout record (Placeholder)
-        if 'doctor_id' in data and data['doctor_id'] and 'case_id' in data and data['case_id']:
-            pass
+        # Sync Payout Logic (Auto-Create/Update)
+        if 'doctor_id' in data and data['doctor_id']:
+             sync_payout_for_case(data['case_id'], data['doctor_id'])
         
-        return jsonify({'id': str(result.inserted_id), 'message': 'Case charge created successfully'}), 201
+        return jsonify({'message': 'Case charge added successfully', 'id': str(result.inserted_id)}), 201
     except Exception as e:
         logging.error(f"Error creating case charge: {e}")
         return jsonify({'error': str(e)}), 500
+
+def sync_payout_for_case(case_id, doctor_id):
+    """
+    Calculates total doctor share for a specific case and doctor.
+    Creates or updates the Payout record.
+    """
+    try:
+        # Calculate Total Doctor Share
+        pipeline = [
+            {
+                '$match': {
+                    'case_id': case_id,
+                    'doctor_id': doctor_id
+                }
+            },
+            {
+                '$group': {
+                    '_id': None,
+                    'charges': {'$push': '$$ROOT'}
+                }
+            }
+        ]
+        
+        agg = list(db.case_charges.aggregate(pipeline))
+        if not agg:
+            return 
+            
+        charges = agg[0]['charges']
+        total_doc_amount = 0
+        total_hospital_amount = 0
+        
+        for charge in charges:
+            qty = charge.get('quantity', 1)
+            total_hospital_amount += charge.get('total_amount', 0)
+            
+            doc_rate = 0
+            # Check doctor specific rate
+            dc = db.doctor_charges.find_one({
+                'doctor_id': doctor_id,
+                'charge_master_id': charge['charge_master_id']
+            })
+            
+            if dc:
+                doc_rate = dc.get('amount', 0)
+            else:
+                pass 
+                
+            total_doc_amount += doc_rate * qty
+
+        # Find Existing Payout
+        existing_payout = db.payouts.find_one({
+            'case_id': case_id,
+            'doctor_id': doctor_id
+        })
+        
+        if existing_payout:
+            update_data = {
+                'total_charge_amount': total_hospital_amount,
+                'doctor_charge_amount': total_doc_amount,
+                'updated_at': datetime.now()
+            }
+            db.payouts.update_one({'_id': existing_payout['_id']}, {'$set': update_data})
+        else:
+            case = db.cases.find_one({'_id': case_id})
+            doctor = db.doctors.find_one({'_id': doctor_id})
+            
+            new_payout = {
+                'case_id': case_id,
+                'doctor_id': doctor_id,
+                'case_number': case.get('case_number') if case else '',
+                'patient_name': case.get('patient_name') if case else '',
+                'doctor_name': doctor.get('name') if doctor else '',
+                'total_charge_amount': total_hospital_amount,
+                'doctor_charge_amount': total_doc_amount,
+                'payment_status': 'pending', 
+                'created_at': datetime.now(),
+                'updated_at': datetime.now()
+            }
+            if not new_payout['patient_name'] and case and case.get('patient_id'):
+                 pat = db.patients.find_one({'_id': case['patient_id']})
+                 if pat:
+                     new_payout['patient_name'] = pat.get('name')
+                     
+            db.payouts.insert_one(new_payout)
+            
+    except Exception as e:
+        logging.error(f"Error syncing payout for case {case_id}: {e}")
 
 @app.route('/api/case-charges/<id>', methods=['PUT'])
 def update_case_charge(id):
@@ -1556,7 +1740,11 @@ def create_case_doctor_charge():
         charge_master_id = data.get('charge_master_id')
         amount = float(data.get('amount', 0))
         date = data.get('charge_date')
+        date = data.get('charge_date')
         notes = data.get('notes', '')
+        
+        if is_case_closed(case_id):
+            return jsonify({'error': 'Cannot add doctor charges to a closed case'}), 400
         
         charge_name = 'Doctor Charge'
         charge_type = 'Consultation'
@@ -1597,7 +1785,12 @@ def update_case_doctor_charge(id):
         # Check if it's in case_charges or case_doctor_charges
         target_id = parse_object_id(id)
         is_new_collection = db.case_charges.find_one({'_id': target_id}) is not None
+        is_new_collection = db.case_charges.find_one({'_id': target_id}) is not None
         collection = db.case_charges if is_new_collection else db.case_doctor_charges
+        
+        existing = collection.find_one({'_id': target_id})
+        if existing and is_case_closed(existing.get('case_id')):
+             return jsonify({'error': 'Cannot modify doctor charges for a closed case'}), 400
         
         # Fields to update
         update_fields = {}
@@ -1631,6 +1824,12 @@ def update_case_doctor_charge(id):
 def delete_case_doctor_charge(id):
     try:
         charge_id = parse_object_id(id)
+        
+        # Check if closed (Checking both collections)
+        existing = db.case_charges.find_one({'_id': charge_id}) or db.case_doctor_charges.find_one({'_id': charge_id})
+        if existing and is_case_closed(existing.get('case_id')):
+            return jsonify({'error': 'Cannot delete doctor charges for a closed case'}), 400
+
         # Try deleting from case_charges first (new schema)
         result = db.case_charges.delete_one({'_id': charge_id})
         if result.deleted_count:
@@ -2020,6 +2219,75 @@ def get_doctor_payouts():
         logging.error(f"Error getting doctor payouts: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/cases/<id>/payout-summary', methods=['GET'])
+def get_case_payout_summary(id):
+    try:
+        case_id = parse_object_id(id)
+        case = db.cases.find_one({'_id': case_id})
+        if not case:
+            return jsonify({'error': 'Case not found'}), 404
+            
+        # Calculate totals
+        total_charge_amount = 0
+        doctor_charge_amount = 0
+        details = []
+        
+        # 1. Process case_charges
+        case_charges = list(db.case_charges.find({'case_id': case_id}))
+        for cc in case_charges:
+            qty = cc.get('quantity', 1)
+            # Hospital amount
+            total_charge_amount += cc.get('total_amount', 0)
+            
+            # Doctor amount
+            doc_amount = 0
+            charge_name = 'Unknown Charge'
+            
+            if cc.get('charge_master_id'):
+                cm = db.charge_master.find_one({'_id': cc.get('charge_master_id')})
+                if cm:
+                    charge_name = cm.get('name', 'Unknown')
+                
+                # Check for specific doctor charge config
+                if cc.get('doctor_id'):
+                    dc = db.doctor_charges.find_one({
+                        'doctor_id': cc['doctor_id'],
+                        'charge_master_id': cc['charge_master_id']
+                    })
+                    if dc:
+                        doc_amount = dc.get('amount', 0) * qty
+            
+            doctor_charge_amount += doc_amount
+            if doc_amount > 0:
+                details.append({
+                    'name': charge_name,
+                    'amount': doc_amount,
+                    'quantity': qty
+                })
+
+        # 2. Process case_doctor_charges (legacy/fallback)
+        if not case_charges:
+            case_doc_charges = list(db.case_doctor_charges.find({'case_id': case_id}))
+            for cdc in case_doc_charges:
+                amount = cdc.get('amount', 0)
+                doctor_charge_amount += amount
+                details.append({
+                    'name': cdc.get('charge_name', 'Legacy Charge'),
+                    'amount': amount,
+                    'quantity': 1
+                })
+                # Note: Legacy charges might not have contributed to total_charge_amount in the same way, 
+                # but usually they are added to case total. Checking case_charges is safer.
+        
+        return jsonify({
+            'total_charge_amount': total_charge_amount,
+            'doctor_charge_amount': doctor_charge_amount,
+            'details': details
+        })
+    except Exception as e:
+        logging.error(f"Error getting payout summary: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # ==================== PAYOUTS API ====================
 
 @app.route('/api/payouts', methods=['GET'])
@@ -2067,11 +2335,59 @@ def get_payouts():
         payouts = list(db.payouts.find(query).sort('date_time', -1).skip(skip).limit(limit))
         
         # Populate doctor names
+        # Populate doctor names and charge details
         for payout in payouts:
             if 'doctor_id' in payout and payout['doctor_id']:
                 doctor = db.doctors.find_one({'_id': payout['doctor_id']})
                 if doctor:
                     payout['doctor_name'] = doctor.get('name', '')
+            
+            # Fetch charge breakdown
+            if 'case_id' in payout and 'doctor_id' in payout:
+                charge_details = []
+                case_charges = list(db.case_charges.find({
+                    'case_id': payout['case_id'], 
+                    'doctor_id': payout['doctor_id']
+                }))
+                
+                for cc in case_charges:
+                    cm = db.charge_master.find_one({'_id': cc.get('charge_master_id')})
+                    charge_name = cm.get('name', 'Unknown') if cm else 'Unknown'
+                    
+                    # Calculate amount for doctor (qty * rate from doctor_charges)
+                    # Note: case_charges stores the HOSPITAL rate. We need doctor rate.
+                    doc_rate = 0
+                    if cc.get('doctor_id') and cc.get('charge_master_id'):
+                        dc = db.doctor_charges.find_one({
+                            'doctor_id': cc['doctor_id'],
+                            'charge_master_id': cc['charge_master_id']
+                        })
+                        if dc:
+                            doc_rate = dc.get('amount', 0)
+                    
+                    qty = cc.get('quantity', 1)
+                    total = doc_rate * qty
+                    
+                    charge_details.append({
+                        'name': charge_name,
+                        'amount': total,
+                        'quantity': qty
+                    })
+                
+                # Fallback to case_doctor_charges if no case_charges found (backward compatibility)
+                if not charge_details:
+                    cdc = list(db.case_doctor_charges.find({
+                        'case_id': payout['case_id'],
+                        'doctor_id': payout['doctor_id']
+                    }))
+                    for c in cdc:
+                        charge_details.append({
+                            'name': c.get('charge_name', 'Charge'),
+                            'amount': c.get('amount', 0),
+                            'quantity': 1
+                        })
+                        
+                payout['charge_details'] = charge_details
         
         return jsonify({
             'payouts': serialize_doc(payouts),
@@ -2113,6 +2429,106 @@ def create_payout():
         return jsonify({'id': str(result.inserted_id), 'message': 'Payout created successfully'}), 201
     except Exception as e:
         logging.error(f"Error creating payout: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/payouts/pending', methods=['GET'])
+def get_pending_payouts():
+    try:
+        # Find cases with doctor charges
+        # Method 1: Aggregate case_charges to find unique (case_id, doctor_id)
+        pipeline = [
+            {
+                '$match': {
+                    'doctor_id': {'$exists': True, '$ne': None},
+                    'charge_master_id': {'$exists': True}
+                }
+            },
+            {
+                '$group': {
+                    '_id': {
+                        'case_id': '$case_id',
+                        'doctor_id': '$doctor_id'
+                    },
+                    'charges': {'$push': '$$ROOT'}
+                }
+            }
+        ]
+        
+        pending_payouts = []
+        grouped_charges = list(db.case_charges.aggregate(pipeline))
+        
+        for group in grouped_charges:
+            case_id = group['_id']['case_id']
+            doctor_id = group['_id']['doctor_id']
+            
+            # Check if payout already exists for this case+doctor
+            existing_payout = db.payouts.find_one({
+                'case_id': case_id,
+                'doctor_id': doctor_id,
+                'payment_status': {'$ne': 'cancelled'} 
+            })
+            
+            if existing_payout:
+                continue
+                
+            # Get Context
+            case = db.cases.find_one({'_id': case_id})
+            doctor = db.doctors.find_one({'_id': doctor_id})
+            
+            if not case or not doctor:
+                continue
+                
+            # Calculate Amount
+            total_doc_amount = 0
+            try:
+                for charge in group['charges']:
+                    qty = charge.get('quantity', 1)
+                    doc_rate = 0
+                    
+                    # Check doctor specific rate
+                    dc = db.doctor_charges.find_one({
+                        'doctor_id': doctor_id,
+                        'charge_master_id': charge['charge_master_id']
+                    })
+                    
+                    if dc:
+                        doc_rate = dc.get('amount', 0)
+                    else:
+                        # Fallback logic here if needed
+                        pass 
+                        
+                    total_doc_amount += doc_rate * qty
+                
+                if total_doc_amount > 0:
+                    created_at = case.get('created_at')
+                    date_str = None
+                    if isinstance(created_at, datetime):
+                        date_str = created_at.strftime('%Y-%m-%d')
+                    elif isinstance(created_at, str):
+                        date_str = created_at
+                    
+                    patient_name = case.get('patient_name')
+                    if not patient_name and case.get('patient_id'):
+                        patient = db.patients.find_one({'_id': case.get('patient_id')})
+                        if patient:
+                            patient_name = patient.get('name')
+
+                    pending_payouts.append({
+                        'case_id': str(case_id),
+                        'doctor_id': str(doctor_id),
+                        'case_number': case.get('case_number'),
+                        'patient_name': patient_name,
+                        'doctor_name': doctor.get('name'),
+                        'amount': total_doc_amount,
+                        'date': date_str
+                    })
+            except Exception as loop_e:
+                logging.error(f"Error processing pending payout for case {case_id}: {loop_e}")
+                continue
+                
+        return jsonify(pending_payouts)
+    except Exception as e:
+        logging.error(f"Error getting pending payouts: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/payouts/<id>', methods=['PUT'])
@@ -2689,10 +3105,10 @@ def close_case(case_id):
         case_charges = list(db.case_charges.find({'case_id': parse_object_id(case_id)}))
         payments = list(db.payments.find({'case_id': parse_object_id(case_id)}))
         
-        total_charges = sum(c.get('total_amount', 0) for c in case_charges)
-        discount = case.get('discount', 0) or 0
+        total_charges = sum(float(c.get('total_amount', 0) or 0) for c in case_charges)
+        discount = float(case.get('discount', 0) or 0)
         total_after_discount = max(0, total_charges - discount)
-        total_paid = sum(p.get('amount', 0) for p in payments)
+        total_paid = sum(float(p.get('amount', 0) or 0) for p in payments)
         balance = total_after_discount - total_paid
         
         # Only allow closing if balance is zero (fully paid)
@@ -3063,30 +3479,36 @@ def get_dashboard_stats():
             ]
         })
         
-        # Cases added today
+        # Adjust for IST (UTC+5:30)
+        ist_offset = timedelta(hours=5, minutes=30)
+        # today_start is server local time 00:00, but DB has UTC.
         today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        cases_today = db.cases.count_documents({'created_at': {'$gte': today_start}})
+        
+        utc_today_start = today_start - ist_offset
+        
+        # Cases added today
+        cases_today = db.cases.count_documents({'created_at': {'$gte': utc_today_start}})
         cases_trend = round((cases_today / max(active_cases - cases_today, 1)) * 100, 1) if active_cases > 0 else 0
         
         # Today's appointments
         today_appointments = db.appointments.count_documents({
             'appointment_date': {
-                '$gte': today_start,
-                '$lt': today_start + timedelta(days=1)
+                '$gte': utc_today_start,
+                '$lt': utc_today_start + timedelta(days=1)
             }
         })
         
         # Yesterday's appointments for comparison
-        yesterday_start = today_start - timedelta(days=1)
+        utc_yesterday_start = utc_today_start - timedelta(days=1)
         yesterday_appointments = db.appointments.count_documents({
             'appointment_date': {
-                '$gte': yesterday_start,
-                '$lt': today_start
+                '$gte': utc_yesterday_start,
+                '$lt': utc_today_start
             }
         })
         appointments_trend = round(((today_appointments - yesterday_appointments) / max(yesterday_appointments, 1)) * 100, 1) if yesterday_appointments > 0 else 0
         
-        # Revenue this month
+        # Revenue this month (Keep simplified for now or adjust purely for month)
         month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         payments_this_month = list(db.payments.find({'payment_date': {'$gte': month_start}}))
         revenue_this_month = sum(payment.get('amount', 0) for payment in payments_this_month)
@@ -3109,8 +3531,8 @@ def get_dashboard_stats():
         # Today's Collections
         payments_today = list(db.payments.find({
             'payment_date': {
-                '$gte': today_start,
-                '$lt': today_start + timedelta(days=1)
+                '$gte': utc_today_start,
+                '$lt': utc_today_start + timedelta(days=1)
             }
         }))
         today_collections = sum(payment.get('amount', 0) for payment in payments_today)
@@ -3128,6 +3550,219 @@ def get_dashboard_stats():
         })
     except Exception as e:
         logging.error(f"Error getting dashboard stats: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/financial-grid', methods=['GET'])
+def get_financial_grid():
+    """Get daily financial grid (collections vs payouts)"""
+    try:
+        # Default to last 10 days
+        end_date_str = request.args.get('end_date')
+        start_date_str = request.args.get('start_date')
+        
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        else:
+            end_date = datetime.now()
+            
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        else:
+            start_date = end_date - timedelta(days=9) # Last 10 days including today
+            
+        # Ensure start/end cover full days
+        start_dt = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Adjust for IST storage (IST is UTC+5:30)
+        # We want to query based on IST days. 
+        # IST Day Start (00:00 IST) is Prev Day 18:30 UTC.
+        ist_offset = timedelta(hours=5, minutes=30)
+        
+        query_start = start_dt - ist_offset
+        query_end = end_dt - ist_offset
+        
+        # 1. Collections (Payments)
+        # Filter by payment_date
+        payment_query = {
+            'payment_date': {
+                '$gte': query_start,
+                '$lte': query_end
+            }
+        }
+        payments = list(db.payments.find(payment_query))
+        
+        # Group by Date (YYYY-MM-DD)
+        daily_collections = {}
+        for p in payments:
+            p_date = p.get('payment_date')
+            if p_date:
+                # Convert UTC to IST for display grouping
+                local_date = p_date + ist_offset
+                d_str = local_date.strftime('%Y-%m-%d')
+                daily_collections[d_str] = daily_collections.get(d_str, 0) + (p.get('amount') or 0)
+                
+        # 2. Payouts
+        # Filter by status 'paid' or 'partial_paid'
+        payout_query = {
+            'payment_status': {'$in': ['paid', 'partial_paid']},
+            '$or': [
+                {'payment_date': {'$gte': query_start, '$lte': query_end}},
+                {'payment_date': None, 'date_time': {'$gte': query_start, '$lte': query_end}}
+            ]
+        }
+        payouts = list(db.payouts.find(payout_query))
+        
+        daily_payouts = {}
+        for p in payouts:
+            # Determine effective data date
+            eff_date = p.get('payment_date') or p.get('date_time')
+            if not eff_date:
+                continue
+                
+            # Filter again in python using query window
+            if not (query_start <= eff_date <= query_end):
+                continue
+                
+            # Convert to IST for display grouping
+            local_date = eff_date + ist_offset
+            d_str = local_date.strftime('%Y-%m-%d')
+            
+            amount = 0
+            status = p.get('payment_status')
+            
+            if status == 'paid':
+                try:
+                     amount = float(p.get('doctor_charge_amount') or 0)
+                except:
+                     amount = 0
+            elif status == 'partial_paid':
+                try:
+                    amount = float(p.get('partial_payment_amount') or 0)
+                except:
+                    amount = 0
+            
+            daily_payouts[d_str] = daily_payouts.get(d_str, 0) + amount
+            
+        # 3. Merge
+        # Generate all dates in range
+        grid_data = []
+        curr = start_date
+        while curr <= end_date:
+            d_str = curr.strftime('%Y-%m-%d')
+            coll = daily_collections.get(d_str, 0)
+            pay = daily_payouts.get(d_str, 0)
+            
+            grid_data.append({
+                'date': d_str,
+                'collections': coll,
+                'payouts': pay,
+                'net': coll - pay
+            })
+            curr += timedelta(days=1)
+            
+        # Sort desc
+        grid_data.sort(key=lambda x: x['date'], reverse=True)
+        
+        return jsonify(grid_data)
+
+    except Exception as e:
+        logging.error(f"Error getting financial grid: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/financial-details', methods=['GET'])
+def get_financial_details():
+    """Get detailed financial transactions for a specific date"""
+    try:
+        date_str = request.args.get('date')
+        if not date_str:
+            return jsonify({'error': 'Date is required'}), 400
+            
+        target_date = datetime.strptime(date_str, '%Y-%m-%d')
+        start_dt = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # Adjust for IST (UTC+5:30)
+        ist_offset = timedelta(hours=5, minutes=30)
+        query_start = start_dt - ist_offset
+        query_end = end_dt - ist_offset
+        
+        # 1. Collections (Payments)
+        payment_query = {
+            'payment_date': {
+                '$gte': query_start,
+                '$lte': query_end
+            }
+        }
+        payments = list(db.payments.find(payment_query))
+        
+        collections_data = []
+        for p in payments:
+            patient_name = 'Unknown'
+            if 'patient_id' in p:
+                patient = db.patients.find_one({'_id': p['patient_id']})
+                if patient:
+                    patient_name = patient.get('name', 'Unknown')
+                    
+            case_number = 'N/A'
+            if 'case_id' in p:
+                case = db.cases.find_one({'_id': p['case_id']})
+                if case:
+                    case_number = case.get('case_number', 'N/A')
+            
+            collections_data.append({
+                'patient_name': patient_name,
+                'case_number': case_number,
+                'amount': p.get('amount', 0),
+                'mode': p.get('payment_mode', 'N/A')
+            })
+            
+        # 2. Payouts
+        payout_query = {
+            'payment_status': {'$in': ['paid', 'partial_paid']},
+            '$or': [
+                {'payment_date': {'$gte': query_start, '$lte': query_end}},
+                {'payment_date': None, 'date_time': {'$gte': query_start, '$lte': query_end}}
+            ]
+        }
+        payouts = list(db.payouts.find(payout_query))
+        
+        payouts_data = []
+        for p in payouts:
+            # Re-verify effective date
+            eff_date = p.get('payment_date') or p.get('date_time')
+            if not eff_date or not (query_start <= eff_date <= query_end):
+                continue
+                
+            doctor_name = 'Unknown'
+            if 'doctor_id' in p:
+                doctor = db.doctors.find_one({'_id': p['doctor_id']})
+                if doctor:
+                    doctor_name = doctor.get('name', 'Unknown')
+            
+            amount = 0
+            status = p.get('payment_status')
+            if status == 'paid':
+                try: amount = float(p.get('doctor_charge_amount') or 0)
+                except: amount = 0
+            elif status == 'partial_paid':
+                try: amount = float(p.get('partial_payment_amount') or 0)
+                except: amount = 0
+                
+            payouts_data.append({
+                'doctor_name': doctor_name,
+                'type': status.replace('_', ' ').title(),
+                'amount': amount
+            })
+            
+        return jsonify({
+            'date': date_str,
+            'collections': collections_data,
+            'payouts': payouts_data
+        })
+
+    except Exception as e:
+        logging.error(f"Error getting financial details: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/dashboard/activity', methods=['GET'])
@@ -3236,6 +3871,9 @@ def create_case_study():
         data = request.get_json()
         case_id = data.get('case_id')
         doctor_id = data.get('doctor_id')
+        
+        if is_case_closed(case_id):
+             return jsonify({'error': 'Cannot add case studies to a closed case'}), 400
         title = data.get('study_title')
         details = data.get('details')
         
@@ -3264,6 +3902,10 @@ def update_case_study(id):
         title = data.get('study_title')
         details = data.get('details')
         
+        existing = db.case_studies.find_one({'_id': parse_object_id(id)})
+        if existing and is_case_closed(existing.get('case_id')):
+            return jsonify({'error': 'Cannot update case study for a closed case'}), 400
+        
         update_fields = {'updated_at': datetime.now()}
         if title:
             update_fields['study_title'] = title
@@ -3286,7 +3928,13 @@ def update_case_study(id):
 @app.route('/api/case-studies/<id>', methods=['DELETE'])
 def delete_case_study(id):
     try:
-        result = db.case_studies.delete_one({'_id': parse_object_id(id)})
+
+        study_id = parse_object_id(id)
+        existing = db.case_studies.find_one({'_id': study_id})
+        if existing and is_case_closed(existing.get('case_id')):
+             return jsonify({'error': 'Cannot delete case study for a closed case'}), 400
+
+        result = db.case_studies.delete_one({'_id': study_id})
         if result.deleted_count == 0:
             return jsonify({'error': 'Case study not found'}), 404
         return jsonify({'message': 'Case study deleted successfully'})

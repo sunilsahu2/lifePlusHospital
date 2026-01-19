@@ -23,9 +23,8 @@ function loadPatientDetail(patientId) {
     Promise.all([
         fetch(`${API_BASE}/patients/${patientId}`).then(r => r.json()),
         fetch(`${API_BASE}/cases?patient_id=${patientId}&limit=100`).then(r => r.json()),
-        fetch(`${API_BASE}/appointments?patient_id=${patientId}&limit=100`).then(r => r.json()),
-        fetch(`${API_BASE}/prescriptions?patient_id=${patientId}&limit=100`).then(r => r.json())
-    ]).then(([patient, casesData, appointmentsData, prescriptionsData]) => {
+        fetch(`${API_BASE}/appointments?patient_id=${patientId}&limit=100`).then(r => r.json())
+    ]).then(([patient, casesData, appointmentsData]) => {
         if (patient.error) {
             contentArea.innerHTML = `
                 <div class="module-content">
@@ -40,14 +39,14 @@ function loadPatientDetail(patientId) {
 
         const cases = casesData.cases || [];
         const appointments = appointmentsData.appointments || [];
-        const prescriptions = prescriptionsData.prescriptions || [];
 
         // Calculate billing summary from cases
         const totalAmount = cases.reduce((sum, c) => sum + (c.charges_total || 0), 0);
         const paidAmount = cases.reduce((sum, c) => sum + (c.paid_amount || 0), 0);
+        const totalDue = cases.reduce((sum, c) => sum + (c.due_amount || 0), 0);
 
         // Render patient detail view
-        renderPatientDetailView(patient, cases, appointments, prescriptions, totalAmount, paidAmount);
+        renderPatientDetailView(patient, cases, appointments, totalAmount, paidAmount, totalDue);
     }).catch(err => {
         console.error('Error loading patient details:', err);
         contentArea.innerHTML = `
@@ -62,7 +61,7 @@ function loadPatientDetail(patientId) {
 }
 
 // Render patient detail view
-function renderPatientDetailView(patient, cases, appointments, prescriptions, totalAmount, paidAmount) {
+function renderPatientDetailView(patient, cases, appointments, totalAmount, paidAmount, totalDue) {
     const contentArea = document.getElementById('content-area');
 
     const initials = getInitials(patient.name || 'Unknown');
@@ -73,7 +72,7 @@ function renderPatientDetailView(patient, cases, appointments, prescriptions, to
         return aptDate >= new Date();
     }).slice(0, 3);
 
-    const dueAmount = totalAmount - paidAmount;
+    const dueAmount = (typeof totalDue !== 'undefined') ? totalDue : (totalAmount - paidAmount);
     const paymentProgress = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
 
     contentArea.innerHTML = `
@@ -116,7 +115,7 @@ function renderPatientDetailView(patient, cases, appointments, prescriptions, to
                         <li class="patient-info-item">
                             <span class="patient-info-icon">💰</span>
                             <span class="patient-info-text" style="font-weight: bold;">
-                                Total Due: <span style="color: ${(totalAmount - paidAmount) > 0 ? '#ef4444' : '#10b981'}">₹${(totalAmount - paidAmount).toLocaleString('en-IN')}</span>
+                                Total Due: <span style="color: ${dueAmount > 0 ? '#ef4444' : '#10b981'}">₹${dueAmount.toLocaleString('en-IN')}</span>
                             </span>
                         </li>
                     </ul>
@@ -137,7 +136,6 @@ function renderPatientDetailView(patient, cases, appointments, prescriptions, to
                         <button class="tab-button active" onclick="switchTab(event, 'overview')">Overview</button>
                         <button class="tab-button" onclick="switchTab(event, 'cases')">Cases (${cases.length})</button>
                         <button class="tab-button" onclick="switchTab(event, 'appointments')">Appointments (${appointments.length})</button>
-                        <button class="tab-button" onclick="switchTab(event, 'prescriptions')">Prescriptions (${prescriptions.length})</button>
                         <button class="tab-button" onclick="switchTab(event, 'billing')">Billing</button>
                     </div>
                     
@@ -149,9 +147,6 @@ function renderPatientDetailView(patient, cases, appointments, prescriptions, to
                             
                             <h3 style="margin-top: 32px;">Upcoming Appointments</h3>
                             ${renderUpcomingAppointments(upcomingAppointments)}
-                            
-                            <h3 style="margin-top: 32px;">Recent Prescriptions</h3>
-                            ${renderRecentPrescriptions(prescriptions.slice(0, 3))}
                         </div>
                         
                         <!-- Cases Tab -->
@@ -164,12 +159,6 @@ function renderPatientDetailView(patient, cases, appointments, prescriptions, to
                         <div id="appointments" class="tab-pane">
                             <h3>All Appointments</h3>
                             ${renderAllAppointments(appointments)}
-                        </div>
-                        
-                        <!-- Prescriptions Tab -->
-                        <div id="prescriptions" class="tab-pane">
-                            <h3>All Prescriptions</h3>
-                            ${renderAllPrescriptions(prescriptions)}
                         </div>
                         
                         <!-- Billing Tab -->
@@ -294,39 +283,6 @@ function renderAllAppointments(appointments) {
     }
 
     return renderUpcomingAppointments(appointments);
-}
-
-// Render recent prescriptions
-function renderRecentPrescriptions(prescriptions) {
-    if (prescriptions.length === 0) {
-        return '<div class="empty-state"><p>No prescriptions found</p></div>';
-    }
-
-    let html = '<div class="prescriptions-list">';
-    prescriptions.forEach(pres => {
-        const date = pres.prescription_date ? new Date(pres.prescription_date).toLocaleDateString() : 'Not set';
-        const doctor = pres.doctor_name || 'Unknown';
-
-        html += `
-            <div class="prescription-item">
-                <div class="prescription-icon">💊</div>
-                <div class="prescription-info">
-                    <div class="prescription-date">${date}</div>
-                    <div class="prescription-doctor">Dr. ${doctor}</div>
-                </div>
-                <div class="prescription-actions">
-                    ${pres.file_path ? `<button class="btn btn-info btn-sm" onclick="window.open('${pres.file_path}', '_blank')">View</button>` : ''}
-                </div>
-            </div>
-        `;
-    });
-    html += '</div>';
-    return html;
-}
-
-// Render all prescriptions
-function renderAllPrescriptions(prescriptions) {
-    return renderRecentPrescriptions(prescriptions);
 }
 
 // Render billing summary

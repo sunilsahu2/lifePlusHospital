@@ -1,0 +1,15 @@
+Checking cases for patient: TEST PATIENT 3 (ID: 696d1a7818cea4ea760eb566)
+
+Case: CASE-2026-0070 (Status: closed)
+  Charges Total: 0.0
+  Discount:      0.0
+  Paid Amount:   200.0
+  Calc. Due:     -200.0 (Charges - Discount - Paid)
+
+Case: CASE-2026-0071 (Status: closed)
+  Charges Total: 14400.0
+  Discount:      0.0
+  Paid Amount:   15250.0
+  Calc. Due:     -850.0 (Charges - Discount - Paid)
+
+Total Due Sum across all cases: -1050.0

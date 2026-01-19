@@ -146,11 +146,13 @@ function renderCaseDetailView(caseData) {
                                 </div>
                             </div>
 
+                            ${(caseData.case_type || 'OPD').toUpperCase() !== 'OPD' ? `
                             <h4 style="display: flex; justify-content: space-between; align-items: center;">
                                 Hospital Charges
                                 ${caseData.status !== 'closed' ? `<button class="btn btn-primary btn-sm" onclick="showCaseChargeForm('${caseData.id}')">+ Add Charge</button>` : ''}
                             </h4>
                             ${renderChargesTable(charges)}
+                            ` : ''}
                             
                             <h4 style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
                                 Doctor Charges
@@ -199,7 +201,7 @@ function renderCaseDetailView(caseData) {
                                 ` : '<div style="color: #64748b; font-style: italic;">No new case studies can be added for a finalized case.</div>'}
                             </div>
                             <div class="case-studies-container">
-                                ${renderCaseStudies(caseStudies)}
+                                ${renderCaseStudies(caseStudies, caseData)}
                             </div>
                         </div>
                     </div>
@@ -605,7 +607,8 @@ window.saveCaseAppointment = saveCaseAppointment;
 window.showCaseAppointmentForm = showCaseAppointmentForm;
 
 // Render Case Studies List
-function renderCaseStudies(studies) {
+// Render Case Studies List
+function renderCaseStudies(studies, caseData) {
     if (!studies || studies.length === 0) {
         return '<div class="empty-state"><p>No case studies recorded for this case.</p></div>';
     }

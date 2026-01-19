@@ -1,0 +1,15 @@
+Server datetime.now(): 2026-01-19 10:43:09.254641
+Today Start: 2026-01-19 00:00:00
+Tomorrow Start: 2026-01-20 00:00:00
+
+--- Last 5 Payments ---
+ID: 696dbd4200e88f3f1e47400c, Amount: 1300.0, Date: 2026-01-18 18:30:00 (Type: <class 'datetime.datetime'>)
+ID: 696da9f700e88f3f1e47400a, Amount: 200.0, Date: 2026-01-18 18:30:00 (Type: <class 'datetime.datetime'>)
+ID: 696d1ed918cea4ea760eb57c, Amount: 15250.0, Date: 2026-01-17 18:30:00 (Type: <class 'datetime.datetime'>)
+ID: 696d1ba718cea4ea760eb56a, Amount: 200.0, Date: 2026-01-17 18:30:00 (Type: <class 'datetime.datetime'>)
+ID: 696c76dbea210cb7343f1ac7, Amount: 18751.0, Date: 2026-01-17 18:30:00 (Type: <class 'datetime.datetime'>)
+
+--- Query Execution ---
+Query: {'payment_date': {'$gte': datetime.datetime(2026, 1, 19, 0, 0), '$lt': datetime.datetime(2026, 1, 20, 0, 0)}}
+Found 0 payments today.
+Total Collections: 0
