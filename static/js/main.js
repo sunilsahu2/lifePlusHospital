@@ -73,7 +73,8 @@ function handleLogin(event) {
     fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
+        credentials: 'include'
     })
         .then(res => res.json())
         .then(data => {
@@ -1655,7 +1656,7 @@ function viewCaseDetails(caseId) {
 
 function showCaseChargeForm(caseId, chargeId = null) {
     // Check if case is closed
-    fetch(`${API_BASE}/cases/${caseId}`)
+    fetch(`${API_BASE}/cases/${caseId}`, { credentials: 'include' })
         .then(res => res.json())
         .then(caseData => {
             if (caseData.status === 'closed') {
@@ -1664,19 +1665,27 @@ function showCaseChargeForm(caseId, chargeId = null) {
             }
 
             return Promise.all([
-                fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
+                fetch(`${API_BASE}/charge-master?limit=1000`, { credentials: 'include' }).then(r => r.json()),
+                fetch(`${API_BASE}/doctors`, { credentials: 'include' }).then(r => r.json()),
+                caseData
             ]);
         })
-        .then(([chargeMasterResponse]) => {
+        .then(([chargeMasterResponse, allDoctors, caseData]) => {
             // Handle response format - API returns {charges: [...], total: ...} or array
             let chargeMaster = Array.isArray(chargeMasterResponse)
                 ? chargeMasterResponse
                 : (chargeMasterResponse.charges || []);
 
-            // Filter for MEDICAL category and Sort by Name Ascending
+            // Filter charges based on Case Type
+            // If case_type is OPD, show user DAYCARE charges
+            // Else (IPD), show MEDICAL charges (default)
+
+            const isOPD = (caseData.case_type || 'OPD').toUpperCase() === 'OPD';
+            const targetCategory = isOPD ? 'DAYCARE' : 'MEDICAL';
+
             chargeMaster = chargeMaster.filter(c =>
-                (c.category && c.category.toUpperCase() === 'MEDICAL') ||
-                (c.charge_category && c.charge_category.toUpperCase() === 'MEDICAL')
+                (c.category && c.category.toUpperCase() === targetCategory) ||
+                (c.charge_category && c.charge_category.toUpperCase() === targetCategory)
             ).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             const title = chargeId ? 'Edit Patient Charge' : 'Add Patient Charge';
@@ -1877,10 +1886,19 @@ function saveCaseCharge(event, caseId, chargeId) {
 
     fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': localStorage.getItem('userId') || ''
+        },
+        body: JSON.stringify(data),
+        credentials: 'include'
     })
         .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                alert('Session expired. Please log in again.');
+                window.location.href = '/'; // Assuming root is login or redirects to login
+                throw new Error('Authentication required');
+            }
             if (!res.ok) {
                 return res.json().then(err => { throw new Error(err.error || 'Failed to save charge'); });
             }
@@ -1902,16 +1920,30 @@ function editCaseCharge(id, caseId) {
 
 function deleteCaseCharge(id, caseId) {
     if (confirm('Are you sure you want to delete this charge?')) {
-        fetch(`${API_BASE}/case-charges/${id}`, { method: 'DELETE' })
+        fetch(`${API_BASE}/case-charges/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired. Please log in again.');
+                    window.location.href = '/';
+                    throw new Error('Authentication required');
+                }
+                if (!res.ok) {
+                    return res.json().then(err => { throw new Error(err.error || 'Failed to delete charge'); });
+                }
+                return res.json();
+            })
             .then(() => viewCaseDetails(caseId))
-            .catch(err => alert('Error deleting charge: ' + err));
+            .catch(err => alert('Error deleting charge: ' + err.message));
     }
 }
 
 function showCaseDoctorChargeForm(caseId, chargeId = null) {
     Promise.all([
-        fetch(`${API_BASE}/doctors?limit=1000`).then(r => r.json()),
-        fetch(`${API_BASE}/charge-master?limit=1000`).then(r => r.json())
+        fetch(`${API_BASE}/doctors?limit=1000`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`${API_BASE}/charge-master?limit=1000`, { credentials: 'include' }).then(r => r.json())
     ]).then(([doctorsData, chargeMasterData]) => {
         const doctors = doctorsData.doctors || doctorsData;
         let chargeMaster = chargeMasterData.charges || chargeMasterData;
@@ -2020,11 +2052,26 @@ function saveCaseDoctorCharge(event, caseId, chargeId) {
 
     fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': localStorage.getItem('userId') || ''
+        },
+        body: JSON.stringify(data),
+        credentials: 'include'
     })
+        .then(res => {
+            if (res.status === 401 || res.status === 403) {
+                alert('Session expired. Please log in again.');
+                window.location.href = '/';
+                throw new Error('Authentication required');
+            }
+            if (!res.ok) {
+                return res.json().then(err => { throw new Error(err.error || 'Failed to save doctor charge'); });
+            }
+            return res.json();
+        })
         .then(() => viewCaseDetails(caseId))
-        .catch(err => alert('Error saving doctor charge: ' + err));
+        .catch(err => alert('Error saving doctor charge: ' + err.message));
 }
 
 function editCaseDoctorCharge(id, caseId) {
@@ -2033,9 +2080,23 @@ function editCaseDoctorCharge(id, caseId) {
 
 function deleteCaseDoctorCharge(id, caseId) {
     if (confirm('Are you sure you want to delete this doctor charge?')) {
-        fetch(`${API_BASE}/case-doctor-charges/${id}`, { method: 'DELETE' })
+        fetch(`${API_BASE}/case-doctor-charges/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        })
+            .then(res => {
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired. Please log in again.');
+                    window.location.href = '/';
+                    throw new Error('Authentication required');
+                }
+                if (!res.ok) {
+                    return res.json().then(err => { throw new Error(err.error || 'Failed to delete doctor charge'); });
+                }
+                return res.json();
+            })
             .then(() => viewCaseDetails(caseId))
-            .catch(err => alert('Error deleting doctor charge: ' + err));
+            .catch(err => alert('Error deleting doctor charge: ' + err.message));
     }
 }
 

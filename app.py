@@ -34,6 +34,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False # Set to True in production with HTTPS
 CORS(app, supports_credentials=True)
 
 # MongoDB Connection Configuration
@@ -103,7 +105,23 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return jsonify({'error': 'Authentication required'}), 401
+            # Fallback to header for robustness
+            user_id_header = request.headers.get('X-User-Id')
+            if user_id_header:
+                try:
+                    user = db.users.find_one({'_id': parse_object_id(user_id_header)})
+                    if user:
+                        # Populate session for this request context
+                        session['user_id'] = str(user['_id'])
+                        session['role'] = user.get('role', 'staff')
+                        session['username'] = user.get('username')
+                        logging.debug(f"Header Auth Success. Set session role: {session.get('role')}")
+                    else:
+                        return jsonify({'error': 'Invalid User ID header'}), 401
+                except:
+                     return jsonify({'error': 'Invalid User ID format'}), 401
+            else:
+                return jsonify({'error': 'Authentication required'}), 401
         return f(*args, **kwargs)
     return decorated_function
 
@@ -113,7 +131,19 @@ def login_required(f):
 def index():
     return render_template('index.html')
 
+@app.before_request
+def log_request_info():
+    logging.debug('Headers: %s', request.headers)
+    logging.debug('Cookies: %s', request.cookies)
+    logging.debug('Session: %s', session)
+    if 'user_id' in session:
+        logging.debug(f"User ID in session: {session['user_id']}")
+    else:
+        logging.debug("No User ID in session")
+
+
 @app.route('/static/uploads/prescriptions/<filename>')
+# Trigger reload
 def uploaded_file(filename):
     return send_from_directory(os.path.join(app.root_path, 'static', 'uploads', 'prescriptions'), filename)
 
@@ -790,7 +820,10 @@ def update_case(id):
     try:
         case_id_obj = parse_object_id(id)
         if is_case_closed(case_id_obj):
-            return jsonify({'error': 'Cannot update a closed case'}), 400
+             # Allow admin to update closed cases
+             logging.debug(f"Update Case Closed Check. Current Role: {session.get('role')}")
+             if session.get('role') != 'admin':
+                return jsonify({'error': 'Cannot update a closed case'}), 400
             
         data = request.get_json()
         
@@ -1456,6 +1489,7 @@ def sync_payout_for_case(case_id, doctor_id):
         logging.error(f"Error syncing payout for case {case_id}: {e}")
 
 @app.route('/api/case-charges/<id>', methods=['PUT'])
+@login_required
 def update_case_charge(id):
     try:
         data = request.get_json()
@@ -1518,12 +1552,13 @@ def get_case_charge(id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/case-charges/<id>', methods=['DELETE'])
+@login_required
 def delete_case_charge(id):
     try:
-        # Role check
-        user_id = request.headers.get('X-User-Id')
-        if not user_id:
-             return jsonify({'error': 'Unauthorized'}), 401
+        # Role check handled by login_required (session based)
+        # Verify user has permission if needed (admin or owns case?)
+        # For now, just ensuring they are logged in.
+
 
         charge_id = parse_object_id(id)
         charge = db.case_charges.find_one({'_id': charge_id})
@@ -3230,6 +3265,10 @@ def login():
         # Create session
         user_data = serialize_doc(user)
         user_data.pop('password', None)  # Remove password from response
+        
+        session['user_id'] = str(user.get('_id'))
+        session['username'] = username
+        session['role'] = user.get('role', 'user')
         
         # Log successful login
         log_activity(str(user.get('_id')), username, 'login', 'auth')

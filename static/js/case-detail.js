@@ -84,7 +84,7 @@ function renderCaseDetailView(caseData) {
                         ${caseData.status || 'Open'}
                     </span>
                     <button class="btn btn-secondary" onclick="loadCases()">← Back</button>
-                    <button class="btn btn-primary" onclick="editCase('${caseData.id}')" ${caseData.status === 'closed' ? 'disabled title="Case is finalized and locked"' : ''}>Edit Case</button>
+                    <button class="btn btn-primary" onclick="editCase('${caseData.id}')" ${caseData.status === 'closed' && (!currentUser || currentUser.role !== 'admin') ? 'disabled title="Case is finalized and locked"' : ''}>Edit Case</button>
                     ${typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin' ? `<button class="btn btn-danger" onclick="deleteCase('${caseData.id}')">Delete Case</button>` : ''}
                 </div>
             </div>
@@ -146,13 +146,12 @@ function renderCaseDetailView(caseData) {
                                 </div>
                             </div>
 
-                            ${(caseData.case_type || 'OPD').toUpperCase() !== 'OPD' ? `
                             <h4 style="display: flex; justify-content: space-between; align-items: center;">
                                 Hospital Charges
                                 ${caseData.status !== 'closed' ? `<button class="btn btn-primary btn-sm" onclick="showCaseChargeForm('${caseData.id}')">+ Add Charge</button>` : ''}
                             </h4>
                             ${renderChargesTable(charges)}
-                            ` : ''}
+
                             
                             <h4 style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
                                 Doctor Charges
