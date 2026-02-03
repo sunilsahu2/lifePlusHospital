@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>January 2026 Dashboard - Life Plus Hospital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-bg: #0f0f23;
+            --card-bg: #1a1a2e;
+            --card-hover: #252540;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0c0;
+            --border-color: #2d2d44;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        /* Month Selector */
+        .month-selector {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .month-selector select {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .month-selector select:hover {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .month-selector button {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .month-selector button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            background: var(--card-hover);
+        }
+
+        .summary-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+        }
+
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border-color);
+            animation: fadeIn 1s ease;
+        }
+
+        .chart-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .chart-container {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .chart-bars {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .chart-bar-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .chart-bar-label span:first-child {
+            font-weight: 600;
+        }
+
+        .chart-bar-label span:last-child {
+            color: var(--text-secondary);
+        }
+
+        .chart-bar-track {
+            height: 12px;
+            background: var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Table */
+        .table-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            animation: fadeInUp 1s ease;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            background: var(--dark-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--dark-bg);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        th.text-right {
+            text-align: right;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--card-hover);
+            transform: scale(1.01);
+        }
+
+        td {
+            padding: 1rem;
+            font-size: 0.95rem;
+        }
+
+        td.text-right {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .patient-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-cases {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+
+        .amount {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .amount-positive {
+            color: #4facfe;
+        }
+
+        .amount-zero {
+            color: var(--text-secondary);
+        }
+
+        .admission-date {
+            font-size: 0.85rem;
+        }
+
+        .date-old {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .date-current {
+            color: var(--text-primary);
+        }
+
+        .row-pending {
+            background: rgba(239, 68, 68, 0.1) !important;
+        }
+
+        .row-pending:hover {
+            background: rgba(239, 68, 68, 0.15) !important;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Export Button */
+        .export-btn {
+            background: var(--success-gradient);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th,
+            td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Monthly Dashboard</h1>
+            <p>Patient-wise breakdown of cases, payments, and charges</p>
+        </div>
+
+        <div class="month-selector">
+            <select id="monthSelect">
+                <option value="1" selected>January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+            <select id="yearSelect">
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+            </select>
+            <button onclick="loadDashboard()">Load Dashboard</button>
+            <button onclick="exportToPDF()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📄
+                Export PDF</button>
+        </div>
+
+        <div id="dashboardContent">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading dashboard data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        // Load dashboard on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
+            const month = document.getElementById('monthSelect').value;
+            const year = document.getElementById('yearSelect').value;
+
+            const content = document.getElementById('dashboardContent');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading dashboard data...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`/api/dashboard/monthly-report?month=${month}&year=${year}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentData = data;
+                renderDashboard(data);
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="loading">
+                        <p style="color: #f5576c;">Error loading dashboard: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDashboard(data) {
+            const { summary, patients, month_name } = data;
+
+            const content = document.getElementById('dashboardContent');
+            content.innerHTML = `
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h3>Total Patients</h3>
+                        <div class="value">${summary.total_patients}</div>
+                        <div class="label">Unique patients</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Total Cases</h3>
+                        <div class="value">${summary.total_cases}</div>
+                        <div class="label">Cases registered</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Total Charges</h3>
+                        <div class="value">₹${formatNumber(summary.total_charges)}</div>
+                        <div class="label">All charges billed</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Total Payments</h3>
+                        <div class="value">₹${formatNumber(summary.total_payments)}</div>
+                        <div class="label">Collected in ${month_name}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Balance Due</h3>
+                        <div class="value">₹${formatNumber(summary.balance_due)}</div>
+                        <div class="label">Outstanding amount</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Total Discounts</h3>
+                        <div class="value">₹${formatNumber(summary.total_discounts)}</div>
+                        <div class="label">Discounts given</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>After Discount</h3>
+                        <div class="value">₹${formatNumber(summary.total_after_discount)}</div>
+                        <div class="label">Net amount due</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Collection Rate</h3>
+                        <div class="value">${summary.collection_percentage.toFixed(1)}%</div>
+                        <div class="label">Payment collection</div>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <h2>Charge Breakdown by Category</h2>
+                    <div class="chart-container">
+                        <div class="chart-bars">
+                            ${renderChartBar('Consultation', summary.total_consultation_charges, summary.total_charges, '#667eea')}
+                            ${renderChartBar('Medical', summary.total_medical_charges, summary.total_charges, '#4facfe')}
+                            ${renderChartBar('Pathology', summary.total_pathology_charges, summary.total_charges, '#f5576c')}
+                            ${renderChartBar('Pharmacy', summary.total_pharmacy_charges, summary.total_charges, '#00f2fe')}
+                            ${renderChartBar('Injection', summary.total_injection_charges, summary.total_charges, '#fa709a')}
+                            ${renderChartBar('Daycare', summary.total_daycare_charges, summary.total_charges, '#fee140')}
+                            ${renderChartBar('Doctor Charges', summary.total_doctor_charges, summary.total_charges, '#764ba2')}
+                            ${renderChartBar('General', summary.total_general_charges, summary.total_charges, '#f093fb')}
+                            ${renderChartBar('Nursing', summary.total_nursing_charges, summary.total_charges, '#a0a0c0')}
+                            ${renderChartBar('Other', summary.total_other_charges, summary.total_charges, '#667eea')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="table-header">
+                        <h2>Patient Details (${patients.length})</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="search-box">
+                                <input type="text" id="searchInput" placeholder="Search patients..." onkeyup="filterTable()">
+                            </div>
+                            <button class="export-btn" onclick="exportToCSV()">Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="patientTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Admission Dates</th>
+                                    <th class="text-right">Cases</th>
+                                    <th class="text-right">Total Charges</th>
+                                    <th class="text-right">Discounts</th>
+                                    <th class="text-right">After Discount</th>
+                                    <th class="text-right">Payments</th>
+                                    <th class="text-right">Balance</th>
+                                    <th class="text-right">Consultation</th>
+                                    <th class="text-right">Medical</th>
+                                    <th class="text-right">Pathology</th>
+                                    <th class="text-right">Pharmacy</th>
+                                    <th class="text-right">Injection</th>
+                                    <th class="text-right">Daycare</th>
+                                    <th class="text-right">Doctor</th>
+                                    <th class="text-right">General</th>
+                                    <th class="text-right">Nursing</th>
+                                    <th class="text-right">Other</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${patients.map(patient => {
+                const afterDiscount = patient.total_charges - patient.total_discounts;
+                const balance = afterDiscount - patient.total_payments;
+                const hasPending = balance > 0;
+
+                // Format admission dates
+                const admissionDatesHtml = patient.admission_dates && patient.admission_dates.length > 0
+                    ? patient.admission_dates.map(ad =>
+                        `<span class="${ad.is_old ? 'date-old' : 'date-current'}">${ad.date}</span>`
+                    ).join(', ')
+                    : 'N/A';
+
+                return `
+                                    <tr class="${hasPending ? 'row-pending' : ''}">
+                                        <td class="patient-name">${patient.patient_name}</td>
+                                        <td class="admission-date">${admissionDatesHtml}</td>
+                                        <td class="text-right">
+                                            <span class="badge badge-cases">${patient.num_cases}</span>
+                                        </td>
+                                        <td class="text-right amount ${patient.total_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.total_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.total_discounts > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.total_discounts)}
+                                        </td>
+                                        <td class="text-right amount ${afterDiscount > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(afterDiscount)}
+                                        </td>
+                                        <td class="text-right amount ${patient.total_payments > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.total_payments)}
+                                        </td>
+                                        <td class="text-right amount ${balance > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(balance)}
+                                        </td>
+                                        <td class="text-right amount ${patient.consultation_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.consultation_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.medical_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.medical_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.pathology_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.pathology_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.pharmacy_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.pharmacy_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.injection_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.injection_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.daycare_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.daycare_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.doctor_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.doctor_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.general_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.general_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.nursing_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.nursing_charges)}
+                                        </td>
+                                        <td class="text-right amount ${patient.other_charges > 0 ? 'amount-positive' : 'amount-zero'}">
+                                            ₹${formatNumber(patient.other_charges)}
+                                        </td>
+                                    </tr>
+                                `}).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChartBar(label, value, total, color) {
+            const percentage = total > 0 ? (value / total * 100) : 0;
+            return `
+                <div class="chart-bar-item">
+                    <div class="chart-bar-label">
+                        <span>${label}</span>
+                        <span>₹${formatNumber(value)} (${percentage.toFixed(1)}%)</span>
+                    </div>
+                    <div class="chart-bar-track">
+                        <div class="chart-bar-fill" style="width: ${percentage}%; background: ${color};"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('patientTable');
+            const rows = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < rows.length; i++) {
+                const nameCell = rows[i].getElementsByTagName('td')[0];
+                if (nameCell) {
+                    const textValue = nameCell.textContent || nameCell.innerText;
+                    if (textValue.toLowerCase().indexOf(filter) > -1) {
+                        rows[i].style.display = '';
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        function exportToCSV() {
+            if (!currentData) return;
+
+            const { patients, month_name } = currentData;
+
+            let csv = 'Patient Name,Admission Dates,Cases,Total Charges,Discounts,After Discount,Payments,Balance,Consultation,Medical,Pathology,Pharmacy,Injection,Daycare,Doctor,General,Nursing,Other\n';
+
+            patients.forEach(patient => {
+                const afterDiscount = patient.total_charges - patient.total_discounts;
+                const balance = afterDiscount - patient.total_payments;
+                const admissionDates = patient.admission_dates && patient.admission_dates.length > 0
+                    ? patient.admission_dates.map(ad => ad.date).join('; ')
+                    : 'N/A';
+                csv += `"${patient.patient_name}","${admissionDates}",${patient.num_cases},${patient.total_charges},${patient.total_discounts},${afterDiscount},${patient.total_payments},${balance},${patient.consultation_charges},${patient.medical_charges},${patient.pathology_charges},${patient.pharmacy_charges},${patient.injection_charges},${patient.daycare_charges},${patient.doctor_charges},${patient.general_charges},${patient.nursing_charges},${patient.other_charges}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dashboard_${month_name.replace(' ', '_')}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function exportToPDF() {
+            if (!currentData) {
+                alert('Please load dashboard data first');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+
+            const { patients, summary, month_name } = currentData;
+
+            // Colors
+            const primaryColor = [79, 172, 254]; // #4facfe
+            const secondaryColor = [0, 194, 203]; // #00c2cb
+            const darkBg = [26, 32, 44]; // #1a202c
+            const textColor = [45, 55, 72];
+
+            // Add hospital logo and header
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // Header background
+            doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.rect(0, 0, pageWidth, 35, 'F');
+
+            // Hospital name
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Life Plus Multispeciality Hospital', pageWidth / 2, 15, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Monthly Financial Dashboard Report', pageWidth / 2, 23, { align: 'center' });
+            doc.text(month_name, pageWidth / 2, 30, { align: 'center' });
+
+            // Summary section
+            let yPos = 45;
+            doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Summary', 14, yPos);
+
+            yPos += 8;
+            doc.setFontSize(9);  // Reduced from 10
+            doc.setFont('helvetica', 'normal');
+
+            const summaryData = [
+                ['Total Patients', summary.total_patients],
+                ['Total Cases', summary.total_cases],
+                ['Total Charges', `₹${formatNumber(summary.total_charges)}`],
+                ['Total Discounts', `₹${formatNumber(summary.total_discounts)}`],
+                ['After Discount', `₹${formatNumber(summary.total_after_discount)}`],
+                ['Total Payments', `₹${formatNumber(summary.total_payments)}`],
+                ['Balance Due', `₹${formatNumber(summary.balance_due)}`],
+                ['Collection Rate', `${summary.collection_percentage.toFixed(1)}%`]
+            ];
+
+            // Draw summary in 4 columns with better spacing
+            const colWidth = (pageWidth - 28) / 4;
+            summaryData.forEach((item, index) => {
+                const col = index % 4;
+                const row = Math.floor(index / 4);
+                const x = 14 + (col * colWidth);
+                const y = yPos + (row * 7);  // Reduced from 8 for tighter spacing
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);  // Smaller for labels
+                doc.text(item[0] + ':', x, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);  // Slightly larger for values
+                // Left-align values with fixed offset from label
+                const valueX = x + 38;  // Fixed offset from label
+                doc.text(String(item[1]), valueX, y);
+            });
+
+            yPos += 25;
+
+            // Patient details table
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Patient Details', 14, yPos);
+            yPos += 5;
+
+            // Prepare table data
+            const tableData = patients.map(patient => {
+                const afterDiscount = patient.total_charges - patient.total_discounts;
+                const balance = afterDiscount - patient.total_payments;
+                const admissionDates = patient.admission_dates && patient.admission_dates.length > 0
+                    ? patient.admission_dates.map(ad => ad.date).join(', ')
+                    : 'N/A';
+
+                return [
+                    patient.patient_name,
+                    admissionDates,
+                    patient.num_cases,
+                    formatNumber(patient.total_charges),
+                    formatNumber(patient.total_discounts),
+                    formatNumber(afterDiscount),
+                    formatNumber(patient.total_payments),
+                    formatNumber(balance)
+                ];
+            });
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Patient Name', 'Admission Dates', 'Cases', 'Charges', 'Discounts', 'After Disc.', 'Payments', 'Balance']],
+                body: tableData,
+                theme: 'striped',
+                showFoot: 'never',  // Disable footer
+                showHead: 'firstPage',  // Show header only on first page
+                pageBreak: 'auto',
+                headStyles: {
+                    fillColor: primaryColor,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 8  // Reduced from 9
+                },
+                bodyStyles: {
+                    fontSize: 7,  // Reduced from 8
+                    textColor: textColor
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 247, 250]
+                },
+                columnStyles: {
+                    0: { cellWidth: 55 },  // Patient Name - increased
+                    1: { cellWidth: 35 },  // Admission Dates - reduced
+                    2: { cellWidth: 12, halign: 'center' },  // Cases
+                    3: { cellWidth: 28, halign: 'right' },  // Charges - increased
+                    4: { cellWidth: 28, halign: 'right' },  // Discounts - increased
+                    5: { cellWidth: 28, halign: 'right' },  // After Disc. - increased
+                    6: { cellWidth: 28, halign: 'right' },  // Payments - increased
+                    7: { cellWidth: 28, halign: 'right' }   // Balance - increased
+                },
+                styles: {
+                    cellPadding: 2,
+                    fontSize: 7,  // Reduced from 8
+                    overflow: 'linebreak',
+                    cellWidth: 'wrap'
+                },
+                margin: { left: 14, right: 14 },
+                willDrawCell: function (data) {
+                    // Apply red background to rows with pending balance
+                    if (data.section === 'body') {
+                        const balanceCell = data.row.cells[7];
+                        if (balanceCell && balanceCell.text && balanceCell.text[0]) {
+                            const balance = parseFloat(balanceCell.text[0].replace(/,/g, ''));
+                            if (balance > 0) {
+                                data.cell.styles.fillColor = [254, 226, 226]; // Light red
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Footer
+            const finalY = doc.lastAutoTable.finalY || yPos + 20;
+            if (finalY < pageHeight - 20) {
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, pageHeight - 10);
+                // Removed page number to avoid confusion
+            }
+
+            // Save PDF
+            doc.save(`Monthly_Dashboard_${month_name.replace(' ', '_')}.pdf`);
+        }
+    </script>
+    <!-- Add jsPDF and autoTable libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</body>
+
+</html>

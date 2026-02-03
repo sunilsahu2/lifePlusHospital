@@ -155,6 +155,10 @@ def manifest():
 def service_worker():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'service-worker.js', mimetype='application/javascript')
 
+@app.route('/monthly-dashboard')
+def monthly_dashboard():
+    return render_template('monthly_dashboard.html')
+
 # ==================== DOCTORS API ====================
 
 @app.route('/api/doctors', methods=['GET'])
@@ -2154,6 +2158,37 @@ def delete_payment(id):
         logging.error(f"Error deleting payment: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/payments/<id>/update-date', methods=['PUT'])
+def admin_update_payment_date(id):
+    """Admin endpoint to force update payment date (bypasses closed case check)"""
+    try:
+        payment_id = parse_object_id(id)
+        data = request.json
+        
+        new_payment_date = data.get('payment_date')
+        if not new_payment_date:
+            return jsonify({'error': 'payment_date is required'}), 400
+        
+        # Parse the date
+        if isinstance(new_payment_date, str):
+            new_payment_date = datetime.fromisoformat(new_payment_date.replace('Z', '+00:00'))
+        
+        # Update the payment
+        result = db.payments.update_one(
+            {'_id': payment_id},
+            {'$set': {
+                'payment_date': new_payment_date,
+                'updated_at': datetime.now()
+            }}
+        )
+        
+        if result.modified_count:
+            return jsonify({'message': 'Payment date updated successfully', 'payment_id': str(payment_id)})
+        return jsonify({'error': 'Payment not found'}), 404
+    except Exception as e:
+        logging.error(f"Error updating payment date: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # ==================== DOCTOR PAYOUTS API ====================
 
 @app.route('/api/doctor-payouts', methods=['GET'])
@@ -3902,6 +3937,270 @@ def get_upcoming_appointments():
         })
     except Exception as e:
         logging.error(f"Error getting upcoming appointments: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dashboard/monthly-report', methods=['GET'])
+def get_monthly_report():
+    """Get monthly dashboard report with patient-wise breakdown"""
+    try:
+        # Get month and year from query params (default to January 2026)
+        month = int(request.args.get('month', 1))
+        year = int(request.args.get('year', 2026))
+        
+        # Calculate date range
+        month_start = datetime(year, month, 1)
+        if month == 12:
+            month_end = datetime(year + 1, 1, 1)
+        else:
+            month_end = datetime(year, month + 1, 1)
+        
+        # Get all cases with admission_date in the specified month
+        cases_admitted_this_month = list(db.cases.find({
+            'admission_date': {
+                '$gte': month_start,
+                '$lt': month_end
+            }
+        }))
+        
+        # Get all payments made in the specified month
+        payments_this_month = list(db.payments.find({
+            'payment_date': {
+                '$gte': month_start,
+                '$lt': month_end
+            }
+        }))
+        
+        # Get case IDs from payments (cases that received payments this month)
+        case_ids_with_payments = list(set([p['case_id'] for p in payments_this_month if p.get('case_id')]))
+        
+        # Get cases that received payments this month (may include cases from previous months)
+        cases_with_payments = list(db.cases.find({
+            '_id': {'$in': case_ids_with_payments}
+        }))
+        
+        # Combine both sets of cases (admitted this month OR received payments this month)
+        all_case_ids = set([c['_id'] for c in cases_admitted_this_month] + [c['_id'] for c in cases_with_payments])
+        all_cases = list(db.cases.find({'_id': {'$in': list(all_case_ids)}}))
+        
+        # Aggregate data by patient
+        patient_data = {}
+        
+        for case in all_cases:
+            patient_id = case.get('patient_id')
+            case_id = case['_id']
+            
+            # Get patient details
+            patient = db.patients.find_one({'_id': patient_id})
+            if not patient:
+                continue
+            
+            patient_name = patient.get('name', 'Unknown')
+            
+            if patient_name not in patient_data:
+                patient_data[patient_name] = {
+                    'patient_id': str(patient_id),
+                    'patient_name': patient_name,
+                    'num_cases': 0,
+                    'total_payments': 0,
+                    'total_charges': 0,
+                    'total_discounts': 0,
+                    # Detailed charge categories
+                    'consultation_charges': 0,
+                    'medical_charges': 0,
+                    'pathology_charges': 0,
+                    'pharmacy_charges': 0,
+                    'injection_charges': 0,
+                    'daycare_charges': 0,
+                    'doctor_charges': 0,
+                    'general_charges': 0,
+                    'nursing_charges': 0,
+                    'other_charges': 0,
+                    'case_ids': [],
+                    'admission_dates': []
+                }
+            
+            patient_data[patient_name]['num_cases'] += 1
+            patient_data[patient_name]['case_ids'].append(str(case_id))
+            
+            # Track admission date
+            admission_date = case.get('admission_date')
+            if admission_date:
+                # Handle both datetime objects and strings
+                if isinstance(admission_date, str):
+                    date_str = admission_date
+                    is_old = False  # Can't compare string dates easily
+                else:
+                    date_str = admission_date.strftime('%d-%b-%Y')
+                    is_old = admission_date < month_start
+                
+                patient_data[patient_name]['admission_dates'].append({
+                    'date': date_str,
+                    'is_old': is_old
+                })
+            
+            # Add discount from this case
+            case_discount = float(case.get('discount', 0) or 0)
+            patient_data[patient_name]['total_discounts'] += case_discount
+        
+        # Process charges and payments for all cases
+        for case in all_cases:
+            patient_id = case.get('patient_id')
+            case_id = case['_id']
+            
+            # Get patient details
+            patient = db.patients.find_one({'_id': patient_id})
+            if not patient:
+                continue
+            
+            patient_name = patient.get('name', 'Unknown')
+            
+            # Skip if patient not in our data (shouldn't happen, but safety check)
+            if patient_name not in patient_data:
+                continue
+            
+            # Get payments for this case ONLY from the selected month (by payment_date)
+            payments = list(db.payments.find({
+                'case_id': case_id,
+                'payment_date': {
+                    '$gte': month_start,
+                    '$lt': month_end
+                }
+            }))
+            for payment in payments:
+                patient_data[patient_name]['total_payments'] += float(payment.get('amount', 0) or 0)
+            
+            # Get case charges ONLY from the selected month
+            case_charges = list(db.case_charges.find({
+                'case_id': case_id,
+                'created_at': {
+                    '$gte': month_start,
+                    '$lt': month_end
+                }
+            }))
+            
+            for charge in case_charges:
+                charge_amount = float(charge.get('total_amount', 0) or 0)
+                charge_type = charge.get('charge_type', 'hospital').lower()
+                
+                # Add to total charges
+                patient_data[patient_name]['total_charges'] += charge_amount
+                
+                # Get charge master details to determine category
+                charge_master_id = charge.get('charge_master_id')
+                categorized = False
+                
+                if charge_master_id:
+                    charge_master = db.charge_master.find_one({'_id': charge_master_id})
+                    if charge_master:
+                        charge_name = charge_master.get('name', '').lower()
+                        category = charge_master.get('category', '').lower()
+                        charge_category = charge_master.get('charge_category', '').lower()
+                        
+                        # Categorize charges based on category, charge_category, charge_type, and name
+                        if 'consultation' in category or 'consultation' in charge_category or charge_type == 'consultation':
+                            patient_data[patient_name]['consultation_charges'] += charge_amount
+                            categorized = True
+                        elif 'pathology' in category or 'pathology' in charge_category or charge_type == 'pathology':
+                            patient_data[patient_name]['pathology_charges'] += charge_amount
+                            categorized = True
+                        elif 'pharmacy' in category or 'pharmacy' in charge_category or charge_type == 'pharmacy':
+                            patient_data[patient_name]['pharmacy_charges'] += charge_amount
+                            categorized = True
+                        elif 'injection' in category or 'injection' in charge_category:
+                            patient_data[patient_name]['injection_charges'] += charge_amount
+                            categorized = True
+                        elif 'daycare' in category or 'daycare' in charge_category or 'day care' in category:
+                            patient_data[patient_name]['daycare_charges'] += charge_amount
+                            categorized = True
+                        elif 'nursing' in charge_name or 'nursing' in category:
+                            patient_data[patient_name]['nursing_charges'] += charge_amount
+                            categorized = True
+                        elif charge.get('is_doctor_charge') or 'doctor' in category or 'doctor' in charge_category or charge_type == 'doctor' or 'opd_inhouse_doc' in charge_type:
+                            patient_data[patient_name]['doctor_charges'] += charge_amount
+                            categorized = True
+                        elif 'medical' in category or 'medical' in charge_category:
+                            patient_data[patient_name]['medical_charges'] += charge_amount
+                            categorized = True
+                        elif 'general' in category or 'general' in charge_category:
+                            patient_data[patient_name]['general_charges'] += charge_amount
+                            categorized = True
+                
+                # If not categorized by charge master, try charge_type
+                if not categorized:
+                    if charge.get('is_doctor_charge') or charge_type == 'doctor' or 'opd_inhouse_doc' in charge_type:
+                        patient_data[patient_name]['doctor_charges'] += charge_amount
+                    elif charge_type == 'pharmacy':
+                        patient_data[patient_name]['pharmacy_charges'] += charge_amount
+                    elif charge_type == 'pathology':
+                        patient_data[patient_name]['pathology_charges'] += charge_amount
+                    elif charge_type == 'consultation':
+                        patient_data[patient_name]['consultation_charges'] += charge_amount
+                    else:
+                        patient_data[patient_name]['other_charges'] += charge_amount
+            
+            # Get legacy doctor charges ONLY from the selected month
+            doctor_charges = list(db.case_doctor_charges.find({
+                'case_id': case_id,
+                'created_at': {
+                    '$gte': month_start,
+                    '$lt': month_end
+                }
+            }))
+            for charge in doctor_charges:
+                amount = float(charge.get('amount', 0) or 0)
+                patient_data[patient_name]['doctor_charges'] += amount
+                patient_data[patient_name]['total_charges'] += amount
+        
+        # Calculate summary
+        total_cases = sum(p['num_cases'] for p in patient_data.values())
+        total_payments = sum(p['total_payments'] for p in patient_data.values())
+        total_charges = sum(p['total_charges'] for p in patient_data.values())
+        total_discounts = sum(p['total_discounts'] for p in patient_data.values())
+        
+        # Calculate category totals
+        total_consultation = sum(p['consultation_charges'] for p in patient_data.values())
+        total_medical = sum(p['medical_charges'] for p in patient_data.values())
+        total_pathology = sum(p['pathology_charges'] for p in patient_data.values())
+        total_pharmacy = sum(p['pharmacy_charges'] for p in patient_data.values())
+        total_injection = sum(p['injection_charges'] for p in patient_data.values())
+        total_daycare = sum(p['daycare_charges'] for p in patient_data.values())
+        total_doctors = sum(p['doctor_charges'] for p in patient_data.values())
+        total_general = sum(p['general_charges'] for p in patient_data.values())
+        total_nursing = sum(p['nursing_charges'] for p in patient_data.values())
+        total_other = sum(p['other_charges'] for p in patient_data.values())
+        
+        # Calculate total after discount
+        total_after_discount = total_charges - total_discounts
+        
+        return jsonify({
+            'month': month,
+            'year': year,
+            'month_name': month_start.strftime('%B %Y'),
+            'summary': {
+                'total_patients': len(patient_data),
+                'total_cases': total_cases,
+                'total_payments': total_payments,
+                'total_charges': total_charges,
+                'total_discounts': total_discounts,
+                'total_after_discount': total_after_discount,
+                'balance_due': total_after_discount - total_payments,
+                'collection_percentage': (total_payments / total_after_discount * 100) if total_after_discount > 0 else 0,
+                # Category breakdowns
+                'total_consultation_charges': total_consultation,
+                'total_medical_charges': total_medical,
+                'total_pathology_charges': total_pathology,
+                'total_pharmacy_charges': total_pharmacy,
+                'total_injection_charges': total_injection,
+                'total_daycare_charges': total_daycare,
+                'total_doctor_charges': total_doctors,
+                'total_general_charges': total_general,
+                'total_nursing_charges': total_nursing,
+                'total_other_charges': total_other
+            },
+            'patients': sorted(list(patient_data.values()), key=lambda x: x['total_charges'], reverse=True)
+        })
+    except Exception as e:
+        logging.error(f"Error getting monthly report: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/case-studies', methods=['POST'])

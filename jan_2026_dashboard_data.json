@@ -1,0 +1,5579 @@
+{
+  "month": "January 2026",
+  "summary": {
+    "total_patients": 411,
+    "total_cases": 634,
+    "total_payments": 209267.0,
+    "total_pharmacy_charges": 0,
+    "total_nursing_charges": 9000.0,
+    "total_doctor_charges": 43400.0
+  },
+  "patients": [
+    {
+      "patient_id": "69623da1e694b2d15c7cceca",
+      "patient_name": "Mr Aditya Gawade",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "696354329284b2c2ff6b67f4"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccecb",
+      "patient_name": "Mrs Simi Jijo",
+      "num_cases": 2,
+      "total_payments": 5100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5300.0,
+      "case_ids": [
+        "696354329284b2c2ff6b67f6",
+        "696354329284b2c2ff6b6807"
+      ]
+    },
+    {
+      "patient_id": "69623dc0e694b2d15c7cd241",
+      "patient_name": "Mrs Shalini Pawar",
+      "num_cases": 1,
+      "total_payments": 5000.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5000.0,
+      "case_ids": [
+        "696354329284b2c2ff6b67f9"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccecd",
+      "patient_name": "Mrs Sheena",
+      "num_cases": 1,
+      "total_payments": 300.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "696354329284b2c2ff6b67fb"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccece",
+      "patient_name": "Mrs Vimal Dhake",
+      "num_cases": 1,
+      "total_payments": 1450.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1450.0,
+      "case_ids": [
+        "696354329284b2c2ff6b67fe"
+      ]
+    },
+    {
+      "patient_id": "696353f3d3caccfc03db0fc2",
+      "patient_name": "Mr Mahesh Dhake",
+      "num_cases": 1,
+      "total_payments": 1450.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1450.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6800"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccecf",
+      "patient_name": "Mr Shanidas Bhoir",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 355.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6802"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced0",
+      "patient_name": "Mrs Purnima Sidhanty",
+      "num_cases": 4,
+      "total_payments": 1200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2970.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6805",
+        "696354339284b2c2ff6b683b",
+        "696354349284b2c2ff6b684b",
+        "69636fb98626156685728597"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced1",
+      "patient_name": "Mr Gurpreet Singh",
+      "num_cases": 1,
+      "total_payments": 10.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6809"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced2",
+      "patient_name": "Mr Anthony",
+      "num_cases": 1,
+      "total_payments": 50.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "696354329284b2c2ff6b680b"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced3",
+      "patient_name": "Miss Vani Vishwanathan",
+      "num_cases": 2,
+      "total_payments": 1000.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1000.0,
+      "case_ids": [
+        "696354329284b2c2ff6b680d",
+        "696354339284b2c2ff6b6835"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced4",
+      "patient_name": "Mr Rajendra Kharat",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "696354329284b2c2ff6b680f"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced5",
+      "patient_name": "Mr Bhavesh",
+      "num_cases": 1,
+      "total_payments": 597.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 597.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6811"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced6",
+      "patient_name": "Mr Arvind Gupta",
+      "num_cases": 1,
+      "total_payments": 20.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6814"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced7",
+      "patient_name": "Mr Allhad Pujari",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6816"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced8",
+      "patient_name": "Mr Gyanendra Sachan",
+      "num_cases": 1,
+      "total_payments": 65.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 65.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6818"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cced9",
+      "patient_name": "Miss Mahika M",
+      "num_cases": 1,
+      "total_payments": 654.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 654.0,
+      "case_ids": [
+        "696354329284b2c2ff6b681a"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7cceda",
+      "patient_name": "Mr Anirudh",
+      "num_cases": 1,
+      "total_payments": 500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "696354329284b2c2ff6b681c"
+      ]
+    },
+    {
+      "patient_id": "696353f3d3caccfc03db0fc4",
+      "patient_name": "Mrs Kanak",
+      "num_cases": 1,
+      "total_payments": 500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "696354329284b2c2ff6b681e"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccedb",
+      "patient_name": "Mr Aryan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6820"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccedc",
+      "patient_name": "Mr Ramakant Gupta",
+      "num_cases": 2,
+      "total_payments": 370.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3789.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6822",
+        "696354339284b2c2ff6b682d"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccedd",
+      "patient_name": "Mrs Archana Surve",
+      "num_cases": 3,
+      "total_payments": 1700.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 500.0,
+      "other_charges": 1200.0,
+      "case_ids": [
+        "696354329284b2c2ff6b6826",
+        "696354349284b2c2ff6b6854",
+        "697478282f3c143449faaad3"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccede",
+      "patient_name": "Mast Mitensh Ubale",
+      "num_cases": 3,
+      "total_payments": 5000.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10300.0,
+      "case_ids": [
+        "696354339284b2c2ff6b6829",
+        "69636f778626156685728127",
+        "69636fa9862615668572848f"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccedf",
+      "patient_name": "Mr Shailendra Chauhan",
+      "num_cases": 1,
+      "total_payments": 90.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 90.0,
+      "case_ids": [
+        "696354339284b2c2ff6b682b"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee0",
+      "patient_name": "Mr Anoop R",
+      "num_cases": 3,
+      "total_payments": 750.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 750.0,
+      "case_ids": [
+        "696354339284b2c2ff6b6830",
+        "696354339284b2c2ff6b6841",
+        "696354339284b2c2ff6b6843"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee1",
+      "patient_name": "Mrs Ranjana Jadhav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2766.0,
+      "case_ids": [
+        "696354339284b2c2ff6b6832"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee2",
+      "patient_name": "Mr Ratnakar Chilwe",
+      "num_cases": 1,
+      "total_payments": 400.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "696354339284b2c2ff6b6837"
+      ]
+    },
+    {
+      "patient_id": "696238a13fb50021bd3923ba",
+      "patient_name": "Mr Guruprasad Mahadik",
+      "num_cases": 5,
+      "total_payments": 150.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 250.0,
+      "case_ids": [
+        "696354339284b2c2ff6b6839",
+        "696354339284b2c2ff6b6845",
+        "69636f6f862615668572809a",
+        "69636fae86261566857284ef",
+        "6971a0c81cfa4e7e676a2d16"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee3",
+      "patient_name": "Mr Irfan Chowdhary",
+      "num_cases": 1,
+      "total_payments": 50.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "696354339284b2c2ff6b683d"
+      ]
+    },
+    {
+      "patient_id": "696353f3d3caccfc03db0fc6",
+      "patient_name": "Mrs Saleha Chowdhary",
+      "num_cases": 1,
+      "total_payments": 50.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "696354339284b2c2ff6b683f"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee4",
+      "patient_name": "Mr Khalil Ahmed",
+      "num_cases": 1,
+      "total_payments": 284.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 284.0,
+      "case_ids": [
+        "696354349284b2c2ff6b6847"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee5",
+      "patient_name": "Mr Rakesh Yadav",
+      "num_cases": 1,
+      "total_payments": 26.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 26.0,
+      "case_ids": [
+        "696354349284b2c2ff6b6849"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee6",
+      "patient_name": "Mrs Renu Devi",
+      "num_cases": 2,
+      "total_payments": 1700.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 600.0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "696354349284b2c2ff6b684d",
+        "6974764f2f3c143449faaad2"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee7",
+      "patient_name": "Mr Bharat Singh",
+      "num_cases": 1,
+      "total_payments": 44.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 44.0,
+      "case_ids": [
+        "696354349284b2c2ff6b6850"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee8",
+      "patient_name": "Mr Manoj Panchal",
+      "num_cases": 1,
+      "total_payments": 1200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1200.0,
+      "case_ids": [
+        "696354349284b2c2ff6b6852"
+      ]
+    },
+    {
+      "patient_id": "696353f3d3caccfc03db0fc7",
+      "patient_name": "Mr Anup Ramachandran",
+      "num_cases": 6,
+      "total_payments": 1500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1500.0,
+      "case_ids": [
+        "696354349284b2c2ff6b6856",
+        "696f8c162f3c143449faaa90",
+        "69719fc31cfa4e7e676a2d12",
+        "69744de22f3c143449faaac7",
+        "697473852f3c143449faaacf",
+        "69747be02f3c143449faaadb"
+      ]
+    },
+    {
+      "patient_id": "69623da1e694b2d15c7ccee9",
+      "patient_name": "Mr Om Prajapati",
+      "num_cases": 1,
+      "total_payments": 5000.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5000.0,
+      "case_ids": [
+        "696354349284b2c2ff6b6858"
+      ]
+    },
+    {
+      "patient_id": "69623da6e694b2d15c7ccf5c",
+      "patient_name": "Mrs Meena Ahirrao",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 250.0,
+      "case_ids": [
+        "6963543b9284b2c2ff6b6936"
+      ]
+    },
+    {
+      "patient_id": "69623da5e694b2d15c7ccf38",
+      "patient_name": "Mrs Pooja",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 360.0,
+      "case_ids": [
+        "6963543c9284b2c2ff6b6939"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd474",
+      "patient_name": "Mr Chandrashekar Shewale",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636f5c8626156685727f4e"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd475",
+      "patient_name": "Mr Vipin Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 529.0,
+      "case_ids": [
+        "69636f5c8626156685727f51"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd4a4",
+      "patient_name": "Mrs Sarita Jha",
+      "num_cases": 22,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 7700.0,
+      "case_ids": [
+        "69636f5d8626156685727f56",
+        "69636f5e8626156685727f72",
+        "69636f608626156685727f93",
+        "69636f628626156685727fa9",
+        "69636f638626156685727fbe",
+        "69636f658626156685727fe9",
+        "69636f67862615668572800a",
+        "69636f688626156685728013",
+        "69636f69862615668572802b",
+        "69636f6b862615668572804c",
+        "69636f6c862615668572805e",
+        "69636f6e8626156685728082",
+        "69636f6f8626156685728097",
+        "69636f7086261566857280a3",
+        "69636f7086261566857280a9",
+        "69636f7286261566857280d0",
+        "69636f7386261566857280e2",
+        "69636f7586261566857280fa",
+        "69636f76862615668572810c",
+        "69636f778626156685728121",
+        "69636f798626156685728146",
+        "69636f798626156685728149"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd477",
+      "patient_name": "Mrs Pooja SArdar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 595.0,
+      "case_ids": [
+        "69636f5d8626156685727f59"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd478",
+      "patient_name": "Mrs Ashwini Chavan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69636f5d8626156685727f5c"
+      ]
+    },
+    {
+      "patient_id": "69623dcee694b2d15c7cd3d9",
+      "patient_name": "Mr Deepak",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f5d8626156685727f5f"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd47a",
+      "patient_name": "Mrs Sangita",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f5d8626156685727f62"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd470",
+      "patient_name": "Mrs Samiksha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f5e8626156685727f66"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd47c",
+      "patient_name": "Mrs Manubai Patil",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f5e8626156685727f69"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd47d",
+      "patient_name": "Mr Avinash Kavishwar",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 360.0,
+      "case_ids": [
+        "69636f5e8626156685727f6c",
+        "69636f688626156685728022",
+        "69636f6f862615668572809d"
+      ]
+    },
+    {
+      "patient_id": "696336f35d6a2d4ec5b1beeb",
+      "patient_name": "Mr Rakesh Rajan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636f5e8626156685727f6f"
+      ]
+    },
+    {
+      "patient_id": "696336f35d6a2d4ec5b1bef0",
+      "patient_name": "Mrs Shreya Shetty",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 609.0,
+      "case_ids": [
+        "69636f5f8626156685727f75"
+      ]
+    },
+    {
+      "patient_id": "69623dc3e694b2d15c7cd29f",
+      "patient_name": "C/o Pharmacy",
+      "num_cases": 12,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1414.0,
+      "case_ids": [
+        "69636f5f8626156685727f78",
+        "69636f608626156685727f90",
+        "69636f618626156685727fa2",
+        "69636f648626156685727fdc",
+        "69636f658626156685727fdf",
+        "69636f698626156685728025",
+        "69636f6c862615668572805b",
+        "69636f7186261566857280b8",
+        "69636f7f86261566857281ad",
+        "69636f878626156685728246",
+        "69636f8c862615668572828f",
+        "69636fa58626156685728450"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd480",
+      "patient_name": "Mr Vishnu Varahan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f5f8626156685727f7b"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd481",
+      "patient_name": "Mr Mrutunjay Nandankar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f5f8626156685727f7e"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd482",
+      "patient_name": "Mr Hargovind Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 65.0,
+      "case_ids": [
+        "69636f5f8626156685727f81"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd53f",
+      "patient_name": "Mrs Sneha Bhanushali",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3017.0,
+      "case_ids": [
+        "69636f5f8626156685727f84",
+        "69636f888626156685728256",
+        "69636f9286261566857282fa"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd484",
+      "patient_name": "Mrs Kamlabai Patil",
+      "num_cases": 5,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 6807.0,
+      "case_ids": [
+        "69636f608626156685727f87",
+        "69636f6b8626156685728046",
+        "69636faa86261566857284a1",
+        "69636fb38626156685728534",
+        "69636fb7862615668572857f"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd485",
+      "patient_name": "Mrs Trupti Tawade",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f608626156685727f8a"
+      ]
+    },
+    {
+      "patient_id": "69623dd4e694b2d15c7cd486",
+      "patient_name": "Mr Vinay Gowda",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 36.0,
+      "case_ids": [
+        "69636f608626156685727f8d"
+      ]
+    },
+    {
+      "patient_id": "69623da5e694b2d15c7ccf39",
+      "patient_name": "Mr Shivaji Agivale",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 36000.0,
+      "case_ids": [
+        "69636f608626156685727f96"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd48a",
+      "patient_name": "Mrs Sulochana Dasmane",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f618626156685727f99"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd48b",
+      "patient_name": "Mr Arbaz Siddiqui",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636f618626156685727f9c"
+      ]
+    },
+    {
+      "patient_id": "696336f45d6a2d4ec5b1bf11",
+      "patient_name": "Mr Shlok",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636f618626156685727f9f"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd48d",
+      "patient_name": "Mr Aditya Chauhan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69636f618626156685727fa5"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd490",
+      "patient_name": "Mr Shubham Naik",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636f628626156685727fac"
+      ]
+    },
+    {
+      "patient_id": "69623dd3e694b2d15c7cd46d",
+      "patient_name": "Mr Amarkesh Gupta",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f628626156685727faf",
+        "69636f8b862615668572828c",
+        "69636fa9862615668572849b"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd492",
+      "patient_name": "Mrs Sangita Godage",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 42.0,
+      "case_ids": [
+        "69636f628626156685727fb2"
+      ]
+    },
+    {
+      "patient_id": "69623dd3e694b2d15c7cd468",
+      "patient_name": "Mrs Jacklin Dias",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5629.0,
+      "case_ids": [
+        "69636f628626156685727fb5"
+      ]
+    },
+    {
+      "patient_id": "69623db9e694b2d15c7cd17b",
+      "patient_name": "Mrs Jayashree",
+      "num_cases": 4,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69636f628626156685727fb8",
+        "69636f648626156685727fcd",
+        "69636f668626156685727ff8",
+        "69636f668626156685727ffb"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd493",
+      "patient_name": "Mast Ojas Baghul",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 352.0,
+      "case_ids": [
+        "69636f638626156685727fbb"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd495",
+      "patient_name": "Mrs Anita Sawant",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f638626156685727fc1",
+        "69636f648626156685727fd0"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd496",
+      "patient_name": "B/o Krishnapriya",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 800.0,
+      "case_ids": [
+        "69636f638626156685727fc4"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd497",
+      "patient_name": "Mr Rakshit Bhatt",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f638626156685727fc7"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd498",
+      "patient_name": "Mr Babloo",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 15.0,
+      "case_ids": [
+        "69636f638626156685727fca"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd49c",
+      "patient_name": "Mr Shailesh Gupta",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 21.0,
+      "case_ids": [
+        "69636f648626156685727fd3"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd49d",
+      "patient_name": "Mrs Ananda Patnaik",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 60.0,
+      "case_ids": [
+        "69636f648626156685727fd6"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd49e",
+      "patient_name": "Mr Surya Saraf",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 66.0,
+      "case_ids": [
+        "69636f648626156685727fd9"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd4a1",
+      "patient_name": "Mr Rahul Zaroo",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f658626156685727fe2"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd4a2",
+      "patient_name": "c/o patient",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1050.0,
+      "case_ids": [
+        "69636f658626156685727fe5",
+        "69636f668626156685727ffe",
+        "69636f678626156685728010"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd4a5",
+      "patient_name": "Mrs Shiva Shrivastava",
+      "num_cases": 63,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 7130.0,
+      "case_ids": [
+        "69636f658626156685727fec",
+        "69636f678626156685728007",
+        "69636f688626156685728019",
+        "69636f698626156685728028",
+        "69636f6a8626156685728040",
+        "69636f6b8626156685728052",
+        "69636f6c8626156685728064",
+        "69636f6e862615668572808b",
+        "69636f6f8626156685728094",
+        "69636f7086261566857280a0",
+        "69636f7186261566857280b5",
+        "69636f7186261566857280c1",
+        "69636f7386261566857280d6",
+        "69636f7486261566857280e8",
+        "69636f7586261566857280fd",
+        "69636f768626156685728112",
+        "69636f77862615668572812a",
+        "69636f798626156685728143",
+        "69636f7a8626156685728152",
+        "69636f7c8626156685728173",
+        "69636f7d862615668572818c",
+        "69636f7e862615668572819b",
+        "69636f7f86261566857281aa",
+        "69636f7f86261566857281b3",
+        "69636f8186261566857281ce",
+        "69636f8186261566857281d1",
+        "69636f8186261566857281da",
+        "69636f8386261566857281f2",
+        "69636f848626156685728201",
+        "69636f858626156685728213",
+        "69636f868626156685728231",
+        "69636f878626156685728240",
+        "69636f888626156685728252",
+        "69636f89862615668572825f",
+        "69636f8b862615668572827d",
+        "69636f8c8626156685728299",
+        "69636f8d86261566857282a6",
+        "69636f8e86261566857282b2",
+        "69636f8f86261566857282c1",
+        "69636f9086261566857282df",
+        "69636f9186261566857282e5",
+        "69636f9186261566857282f1",
+        "69636f928626156685728303",
+        "69636f948626156685728327",
+        "69636f96862615668572833c",
+        "69636f96862615668572834b",
+        "69636f998626156685728375",
+        "69636f998626156685728381",
+        "69636f9b86261566857283a5",
+        "69636f9c86261566857283b7",
+        "69636f9e86261566857283cc",
+        "69636fa086261566857283fa",
+        "69636fa28626156685728410",
+        "69636fa48626156685728437",
+        "69636fa6862615668572845c",
+        "69636fa88626156685728489",
+        "69636faa86261566857284ab",
+        "69636fab86261566857284bc",
+        "69636fad86261566857284d2",
+        "69636fb08626156685728504",
+        "69636fb1862615668572851e",
+        "69636fb38626156685728540",
+        "69636fba86261566857285a6"
+      ]
+    },
+    {
+      "patient_id": "69623dd5e694b2d15c7cd4a6",
+      "patient_name": "Mr Jitendra Bhanushali",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 497.0,
+      "case_ids": [
+        "69636f668626156685727fef"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4a7",
+      "patient_name": "Mr Pushkaraj",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f668626156685727ff2"
+      ]
+    },
+    {
+      "patient_id": "69623da9e694b2d15c7ccfb2",
+      "patient_name": "Mr Rajan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 445.0,
+      "case_ids": [
+        "69636f668626156685727ff5"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4ac",
+      "patient_name": "Miss Anisha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1200.0,
+      "case_ids": [
+        "69636f678626156685728001"
+      ]
+    },
+    {
+      "patient_id": "69623dd1e694b2d15c7cd430",
+      "patient_name": "Mr Shreehari",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f678626156685728004"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4af",
+      "patient_name": "Balance Paid Harish Bibave",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f67862615668572800d"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4b3",
+      "patient_name": "Mrs Shreelakshmi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 900.0,
+      "case_ids": [
+        "69636f688626156685728016"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4b4",
+      "patient_name": "Mr Sasirekha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 578.0,
+      "case_ids": [
+        "69636f68862615668572801c"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4b5",
+      "patient_name": "Mr Jitendra Shinde",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 21.0,
+      "case_ids": [
+        "69636f68862615668572801f"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4b9",
+      "patient_name": "Mrs Prem Shukla",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 800.0,
+      "case_ids": [
+        "69636f69862615668572802e"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4ba",
+      "patient_name": "Mr Amit Chaurasia",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 22.0,
+      "case_ids": [
+        "69636f698626156685728031"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4bb",
+      "patient_name": "Mrs Divya Gupta",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3217.0,
+      "case_ids": [
+        "69636f6a8626156685728034",
+        "69636f7086261566857280ac",
+        "69636f7286261566857280ca"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4bc",
+      "patient_name": "Mr Narayan Pawar",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2200.0,
+      "case_ids": [
+        "69636f6a8626156685728037",
+        "69636fb78626156685728578"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4be",
+      "patient_name": "Mr Prashant Kedare",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 320.0,
+      "case_ids": [
+        "69636f6a862615668572803a"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4bf",
+      "patient_name": "Mr Yuvidhar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f6a862615668572803d"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4bd",
+      "patient_name": "Mrs Chandrabai Vaychal",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1300.0,
+      "case_ids": [
+        "69636f6a8626156685728043"
+      ]
+    },
+    {
+      "patient_id": "69623dd6e694b2d15c7cd4c1",
+      "patient_name": "Mr Kamlesh Gawas",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f6b8626156685728049"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4c2",
+      "patient_name": "Mr Adiitya Jayan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f6b862615668572804f"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4c4",
+      "patient_name": "Mr Virendra Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636f6b8626156685728055"
+      ]
+    },
+    {
+      "patient_id": "696336f95d6a2d4ec5b1bfa7",
+      "patient_name": "Mr Sandip Kumbhar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f6c8626156685728058"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4c6",
+      "patient_name": "Mrs Pratiksha Waghchaure",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f6c8626156685728061"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4c8",
+      "patient_name": "Mrs Alpana Srivastava",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 44.0,
+      "case_ids": [
+        "69636f6c8626156685728067"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4c9",
+      "patient_name": "Mr Vijay Mahajan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 232.0,
+      "case_ids": [
+        "69636f6d862615668572806a"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4ca",
+      "patient_name": "Mrs Komal Pawar",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 240.0,
+      "case_ids": [
+        "69636f6d862615668572806d",
+        "69636f6e8626156685728088"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4cb",
+      "patient_name": "Mr Yash Sapra",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 15.0,
+      "case_ids": [
+        "69636f6d8626156685728070"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4cc",
+      "patient_name": "Mr Seshagiri Vudatha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 66.0,
+      "case_ids": [
+        "69636f6d8626156685728073"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4cd",
+      "patient_name": "Mr Santosh Dixit",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 105.0,
+      "case_ids": [
+        "69636f6d8626156685728076"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4ce",
+      "patient_name": "Mrs Grusha Bhanushali",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 9.0,
+      "case_ids": [
+        "69636f6d8626156685728079"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4cf",
+      "patient_name": "Mr Jitendra Patel",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 21.0,
+      "case_ids": [
+        "69636f6e862615668572807c"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4d0",
+      "patient_name": "Mrs Maya Pal",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f6e862615668572807f"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4d1",
+      "patient_name": "Miss Tejashree Gorde",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f6e8626156685728085"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4d2",
+      "patient_name": "Mrs Ashwini Ahuja",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636f6f862615668572808e",
+        "69636f76862615668572810f",
+        "69636f7e8626156685728198"
+      ]
+    },
+    {
+      "patient_id": "696336fb5d6a2d4ec5b1bfd0",
+      "patient_name": "Mr Aditya Jayan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f6f8626156685728091"
+      ]
+    },
+    {
+      "patient_id": "69623db4e694b2d15c7cd0ea",
+      "patient_name": "Mrs Sneha Kedare",
+      "num_cases": 3,
+      "total_payments": 408.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 893.0,
+      "case_ids": [
+        "69636f7086261566857280a6",
+        "69636fa9862615668572848c",
+        "697b69372f3c143449faab0d"
+      ]
+    },
+    {
+      "patient_id": "696336fb5d6a2d4ec5b1bfe7",
+      "patient_name": "Mr Subhash Mahadik",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f7086261566857280af"
+      ]
+    },
+    {
+      "patient_id": "69623dd1e694b2d15c7cd426",
+      "patient_name": "Mrs Shivani Sharma",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f7186261566857280b2",
+        "69636f798626156685728140"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4d7",
+      "patient_name": "Mr Ganesh Suthar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 34.0,
+      "case_ids": [
+        "69636f7186261566857280bb"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4d8",
+      "patient_name": "Miss Aaradhya Ojha",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1770.0,
+      "case_ids": [
+        "69636f7186261566857280be",
+        "69636f7386261566857280df"
+      ]
+    },
+    {
+      "patient_id": "69623dc1e694b2d15c7cd25f",
+      "patient_name": "Mrs Parthy Jolly",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 645.0,
+      "case_ids": [
+        "69636f7286261566857280c4",
+        "69636f7c862615668572817a",
+        "69636f7f86261566857281b0"
+      ]
+    },
+    {
+      "patient_id": "69623dd7e694b2d15c7cd4da",
+      "patient_name": "Mr Amrutesh",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f7286261566857280c7",
+        "69636f7486261566857280f1",
+        "69636f778626156685728124"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4db",
+      "patient_name": "Mr Adhithya Jayram",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7286261566857280cd"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4dc",
+      "patient_name": "Mr Manoj Chaudhary",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 15.0,
+      "case_ids": [
+        "69636f7286261566857280d3",
+        "69636f788626156685728131"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4de",
+      "patient_name": "Mr Rahul Sarate",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 113.0,
+      "case_ids": [
+        "69636f7386261566857280d9"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4df",
+      "patient_name": "Mr Chandrashekharan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69636f7386261566857280dc"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e1",
+      "patient_name": "Mr Suraj Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 120.0,
+      "case_ids": [
+        "69636f7386261566857280e5"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e3",
+      "patient_name": "Mrs Purva Chavan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 133.0,
+      "case_ids": [
+        "69636f7486261566857280eb"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e4",
+      "patient_name": "Mast Ivhan Panda",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7486261566857280ee"
+      ]
+    },
+    {
+      "patient_id": "69623dd3e694b2d15c7cd466",
+      "patient_name": "Mr Pravin Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f7486261566857280f4"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e5",
+      "patient_name": "Mr Ram Singh B",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f7586261566857280f7"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e7",
+      "patient_name": "Mr Arnav Lokhande",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5000.0,
+      "case_ids": [
+        "69636f758626156685728100"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e8",
+      "patient_name": "Mrs Rupanka Bharali",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 85.0,
+      "case_ids": [
+        "69636f758626156685728103"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4e9",
+      "patient_name": "Mr Louis Bhandare",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5.0,
+      "case_ids": [
+        "69636f758626156685728106"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4ea",
+      "patient_name": "Mrs Malti Shinde",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636f768626156685728109"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4ed",
+      "patient_name": "Mr Abhijit Jadhav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 108.0,
+      "case_ids": [
+        "69636f768626156685728115"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4ee",
+      "patient_name": "Mr shaji James",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 9500.0,
+      "case_ids": [
+        "69636f768626156685728118"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4ef",
+      "patient_name": "Mrs Anupama Sahoo",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f77862615668572811b"
+      ]
+    },
+    {
+      "patient_id": "696336fe5d6a2d4ec5b1c036",
+      "patient_name": "Mrs Kamla P",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f77862615668572811e"
+      ]
+    },
+    {
+      "patient_id": "696336ff5d6a2d4ec5b1c045",
+      "patient_name": "Mr Guruprasad",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636f78862615668572812e",
+        "69636f7d8626156685728195",
+        "69636f9086261566857282dc"
+      ]
+    },
+    {
+      "patient_id": "69623dd0e694b2d15c7cd404",
+      "patient_name": "Mrs Rosalin Behera",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2350.0,
+      "case_ids": [
+        "69636f788626156685728134"
+      ]
+    },
+    {
+      "patient_id": "69623dd8e694b2d15c7cd4f6",
+      "patient_name": "Mr Ranjit Nair",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1595.0,
+      "case_ids": [
+        "69636f788626156685728137"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd4f7",
+      "patient_name": "Mr Ramiz Khan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1700.0,
+      "case_ids": [
+        "69636f78862615668572813a"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd4f8",
+      "patient_name": "Mrs Rashmi Shrivastava",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f79862615668572813d"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd4fb",
+      "patient_name": "Miss Nandhini Rengan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 715.0,
+      "case_ids": [
+        "69636f79862615668572814c"
+      ]
+    },
+    {
+      "patient_id": "696337005d6a2d4ec5b1c061",
+      "patient_name": "Miss Sameeksha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7a862615668572814f"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd4fd",
+      "patient_name": "Mr Mohd Sameer",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636f7a8626156685728155"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd4fe",
+      "patient_name": "Mr Amrutesh Thopian",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f7a8626156685728158",
+        "69636f7d862615668572818f"
+      ]
+    },
+    {
+      "patient_id": "69623dcee694b2d15c7cd3dc",
+      "patient_name": "Mrs Rupali Shedekar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20000.0,
+      "case_ids": [
+        "69636f7a862615668572815b"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd500",
+      "patient_name": "Mast Sathak Shingare",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3000.0,
+      "case_ids": [
+        "69636f7a862615668572815e"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd501",
+      "patient_name": "Mr Mahesh Bhanushali",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f7b8626156685728161"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd502",
+      "patient_name": "Mr Ganesh Morekar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f7b8626156685728164"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd503",
+      "patient_name": "Mrs Sailee Salunkhe",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f7b8626156685728167"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd504",
+      "patient_name": "Mr Sahil Patil",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7b862615668572816a"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd505",
+      "patient_name": "Mrs Tejaswi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7b862615668572816d"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd506",
+      "patient_name": "Mr Sudhansu Das",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3900.0,
+      "case_ids": [
+        "69636f7b8626156685728170"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd507",
+      "patient_name": "Mr Murara Mishra",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7c8626156685728177"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd508",
+      "patient_name": "Mrs Deepa Khatri",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f7c862615668572817d"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd509",
+      "patient_name": "Mr Subrat SAhu",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2.0,
+      "case_ids": [
+        "69636f7c8626156685728180"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd50a",
+      "patient_name": "Mr Shambhu Prabhudesai",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f7c8626156685728183"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd50b",
+      "patient_name": "Mr Prasad Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f7d8626156685728186"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd50c",
+      "patient_name": "Mr Tarun Gopinath",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 685.0,
+      "case_ids": [
+        "69636f7d8626156685728189"
+      ]
+    },
+    {
+      "patient_id": "69623dd9e694b2d15c7cd50e",
+      "patient_name": "Mr Jatin Bhoir",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 320.0,
+      "case_ids": [
+        "69636f7d8626156685728192"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd511",
+      "patient_name": "Mr Abhishek Nag",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f7e862615668572819e"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd513",
+      "patient_name": "Mr Sachin Dharamshi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 60.0,
+      "case_ids": [
+        "69636f7e86261566857281a1"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd514",
+      "patient_name": "Mr Dilip Gayakwad",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636f7e86261566857281a4"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd515",
+      "patient_name": "Mrs Shivani Babbar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 153.0,
+      "case_ids": [
+        "69636f7f86261566857281a7"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd539",
+      "patient_name": "Mrs Shivani",
+      "num_cases": 4,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 380.0,
+      "case_ids": [
+        "69636f7f86261566857281b6",
+        "69636f868626156685728234",
+        "69636f8e86261566857282b5",
+        "69636f96862615668572833f"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd518",
+      "patient_name": "Mrs Santa Unnikrishnan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2300.0,
+      "case_ids": [
+        "69636f8086261566857281b9"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd519",
+      "patient_name": "Mr Rahul Hundre",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 35.0,
+      "case_ids": [
+        "69636f8086261566857281bc"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd51a",
+      "patient_name": "Mr Murari Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 66.0,
+      "case_ids": [
+        "69636f8086261566857281bf"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd51b",
+      "patient_name": "Mr Lijo Anthony",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 376.0,
+      "case_ids": [
+        "69636f8086261566857281c2"
+      ]
+    },
+    {
+      "patient_id": "696337035d6a2d4ec5b1c0ba",
+      "patient_name": "Miss Aradhya Ojha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f8086261566857281c5"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd51c",
+      "patient_name": "Mrs Suman Jayachandran",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f8086261566857281c8"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd51d",
+      "patient_name": "Miss Mamta Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f8186261566857281cb"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd51e",
+      "patient_name": "Mr Siddharth Deshpande",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f8186261566857281d4"
+      ]
+    },
+    {
+      "patient_id": "696337035d6a2d4ec5b1c0c9",
+      "patient_name": "Mrs Ruchita",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f8186261566857281d7"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd51f",
+      "patient_name": "Miss Samiksha Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f8286261566857281dd"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd520",
+      "patient_name": "Mr Anil Gaikwad",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 220.0,
+      "case_ids": [
+        "69636f8286261566857281e0",
+        "69636f9e86261566857283d9"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd521",
+      "patient_name": "Mr Dheerendra K",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 40.0,
+      "case_ids": [
+        "69636f8286261566857281e3"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd522",
+      "patient_name": "Mrs Vishnu Ravindran",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1322.0,
+      "case_ids": [
+        "69636f8286261566857281e6"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd523",
+      "patient_name": "Mr Ramdas Mote",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f8286261566857281e9"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd524",
+      "patient_name": "Mr Vishnu Ravindran",
+      "num_cases": 5,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3038.0,
+      "case_ids": [
+        "69636f8286261566857281ec",
+        "69636f848626156685728210",
+        "69636f898626156685728262",
+        "69636f9186261566857282e8",
+        "69636fa38626156685728428"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd525",
+      "patient_name": "Mr Divyanshu Yadav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 6.0,
+      "case_ids": [
+        "69636f8386261566857281ef"
+      ]
+    },
+    {
+      "patient_id": "69623de8e694b2d15c7cd667",
+      "patient_name": "Mrs Anupama Das",
+      "num_cases": 4,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1200.0,
+      "case_ids": [
+        "69636f8386261566857281f5",
+        "69636f8386261566857281fe",
+        "69636f928626156685728300",
+        "69636faa86261566857284a7"
+      ]
+    },
+    {
+      "patient_id": "696337045d6a2d4ec5b1c0e1",
+      "patient_name": "MrJeet Yadav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636f8386261566857281f8"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd527",
+      "patient_name": "Mr Irfan Chaudhary",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f8386261566857281fb"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd528",
+      "patient_name": "Mr Arun Rathod",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f848626156685728204"
+      ]
+    },
+    {
+      "patient_id": "69623ddae694b2d15c7cd529",
+      "patient_name": "Mrs Sangeeta T",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f848626156685728207"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd52a",
+      "patient_name": "Mr Swapnil Das",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 90.0,
+      "case_ids": [
+        "69636f84862615668572820a"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd52e",
+      "patient_name": "Mrs Mehak Sharma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 83.0,
+      "case_ids": [
+        "69636f84862615668572820d"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd531",
+      "patient_name": "Mr Antony",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f858626156685728216"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd532",
+      "patient_name": "Mr Dhruv Chaudhary",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 22.0,
+      "case_ids": [
+        "69636f858626156685728219"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd533",
+      "patient_name": "Mr Akhtar Ail",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 40.0,
+      "case_ids": [
+        "69636f85862615668572821c"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd534",
+      "patient_name": "Mr Anant Wadkar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f85862615668572821f"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd535",
+      "patient_name": "Mrs Dhanwantari Devi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 264.0,
+      "case_ids": [
+        "69636f858626156685728222"
+      ]
+    },
+    {
+      "patient_id": "696337055d6a2d4ec5b1c104",
+      "patient_name": "Mr Afzar Khan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 816.0,
+      "case_ids": [
+        "69636f868626156685728225"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd536",
+      "patient_name": "Mr Nabakishore Patnaik",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f868626156685728228"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd537",
+      "patient_name": "Mrs Asha Wankhade",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f86862615668572822b"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd52c",
+      "patient_name": "Mr Jeet Yadav",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 750.0,
+      "case_ids": [
+        "69636f86862615668572822e",
+        "69636f88862615668572824c",
+        "69636f8a8626156685728274"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd53a",
+      "patient_name": "Mrs Ritopa Dey",
+      "num_cases": 14,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1200.0,
+      "case_ids": [
+        "69636f878626156685728237",
+        "69636f87862615668572823a",
+        "69636fa98626156685728495",
+        "69636fab86261566857284b4",
+        "69636fac86261566857284c2",
+        "69636fad86261566857284dc",
+        "69636faf86261566857284f4",
+        "69636fb0862615668572850b",
+        "69636fb28626156685728524",
+        "69636fb58626156685728557",
+        "69636fb68626156685728564",
+        "69636fb7862615668572857b",
+        "69636fb88626156685728588",
+        "69636fb9862615668572859d"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd53b",
+      "patient_name": "Mrs Ruby Khan",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 4723.0,
+      "case_ids": [
+        "69636f87862615668572823d",
+        "69636f888626156685728249"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd53c",
+      "patient_name": "Mrs Aditi Vichare",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 12.0,
+      "case_ids": [
+        "69636f878626156685728243"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd53e",
+      "patient_name": "Mrs Fatima Khan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 250.0,
+      "case_ids": [
+        "69636f88862615668572824f"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd540",
+      "patient_name": "Mrs Savita Gadekar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f898626156685728259"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd541",
+      "patient_name": "Mr Mohd Hussain",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2121.0,
+      "case_ids": [
+        "69636f89862615668572825c"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd543",
+      "patient_name": "Mr Afzal Khan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 25331.0,
+      "case_ids": [
+        "69636f898626156685728265"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd544",
+      "patient_name": "Mrs Khadeeja Choughle",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1921.0,
+      "case_ids": [
+        "69636f898626156685728268"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd545",
+      "patient_name": "Mr Kashinath",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69636f8a862615668572826b"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd546",
+      "patient_name": "Mrs Mansura Patel",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636f8a862615668572826e"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd547",
+      "patient_name": "Mr Prashant Jadhav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f8a8626156685728271"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd548",
+      "patient_name": "Mr Bibhu Prasad Sharma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 167.0,
+      "case_ids": [
+        "69636f8a8626156685728277"
+      ]
+    },
+    {
+      "patient_id": "69623dcee694b2d15c7cd3c7",
+      "patient_name": "Mrs Laxmi Sahu",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10000.0,
+      "case_ids": [
+        "69636f8a862615668572827a"
+      ]
+    },
+    {
+      "patient_id": "696337075d6a2d4ec5b1c14b",
+      "patient_name": "Mrs Purnima",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1250.0,
+      "case_ids": [
+        "69636f8b8626156685728280"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd54c",
+      "patient_name": "Mrs Rekha Shinde",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69636f8b8626156685728283"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd54d",
+      "patient_name": "Mr Santosh Sharma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 360.0,
+      "case_ids": [
+        "69636f8b8626156685728286"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd54e",
+      "patient_name": "Mr Gaurav Kamble",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 900.0,
+      "case_ids": [
+        "69636f8b8626156685728289",
+        "69636f8d86261566857282ac"
+      ]
+    },
+    {
+      "patient_id": "696337085d6a2d4ec5b1c15b",
+      "patient_name": "Mrs Jyotirmayee Tripathy",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f8c8626156685728292"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd551",
+      "patient_name": "Mr Dhananjay Kawale",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f8c8626156685728295"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd556",
+      "patient_name": "Mr Naresh Chauhan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f8d862615668572829d"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd557",
+      "patient_name": "c/o Vaccination",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f8d86261566857282a0"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd558",
+      "patient_name": "Mr Divyesh Patil",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 79.0,
+      "case_ids": [
+        "69636f8d86261566857282a3"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd55a",
+      "patient_name": "Mr Rajendra Dongre",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 56.0,
+      "case_ids": [
+        "69636f8d86261566857282a9"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd55b",
+      "patient_name": "Miss Harshali Gholap",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1150.0,
+      "case_ids": [
+        "69636f8e86261566857282af",
+        "69636f8e86261566857282be"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd55c",
+      "patient_name": "Mr Mukunda Tikekar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f8e86261566857282b8"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd55d",
+      "patient_name": "Mrs Shanti Devi Barmecha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636f8e86261566857282bb"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd55e",
+      "patient_name": "Mrs Drashti J",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f8f86261566857282c4"
+      ]
+    },
+    {
+      "patient_id": "69623ddce694b2d15c7cd55f",
+      "patient_name": "Mrs Sheetal Simon",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 4360.0,
+      "case_ids": [
+        "69636f8f86261566857282c7"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd560",
+      "patient_name": "Mr Dhairya Verma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f8f86261566857282ca"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd561",
+      "patient_name": "Mrs Aditya",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3811.0,
+      "case_ids": [
+        "69636f8f86261566857282cd"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd562",
+      "patient_name": "Mr Rahul Verma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 40.0,
+      "case_ids": [
+        "69636f8f86261566857282d0"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd563",
+      "patient_name": "Mast Lakshay Sen",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636f9086261566857282d3"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd564",
+      "patient_name": "Mast Christin Shiju",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f9086261566857282d6"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd565",
+      "patient_name": "Mast Irfan Shaikh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f9086261566857282d9"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd568",
+      "patient_name": "Mrs Neha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f9086261566857282e2"
+      ]
+    },
+    {
+      "patient_id": "6963370b5d6a2d4ec5b1c1a3",
+      "patient_name": "Mr Rohit Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 668.0,
+      "case_ids": [
+        "69636f9186261566857282eb"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd569",
+      "patient_name": "Mrs Gayatri Chakraborty",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 650.0,
+      "case_ids": [
+        "69636f9186261566857282ee"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd56a",
+      "patient_name": "Mr Neeraj Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 36.0,
+      "case_ids": [
+        "69636f9186261566857282f4"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd56b",
+      "patient_name": "Mr Vinit Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 658.0,
+      "case_ids": [
+        "69636f9286261566857282f7"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd56c",
+      "patient_name": "Mr Sumit Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 60.0,
+      "case_ids": [
+        "69636f9286261566857282fd"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd56d",
+      "patient_name": "Mr Naveen Kumar Mishra",
+      "num_cases": 13,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 44030.0,
+      "case_ids": [
+        "69636f928626156685728306",
+        "69636f93862615668572830c",
+        "69636f958626156685728330",
+        "69636f968626156685728345",
+        "69636f978626156685728357",
+        "69636f988626156685728369",
+        "69636f9b862615668572839c",
+        "69636f9d86261566857283bd",
+        "69636fa18626156685728404",
+        "69636fa48626156685728443",
+        "69636fa68626156685728462",
+        "69636fa98626156685728498",
+        "69636fb18626156685728515"
+      ]
+    },
+    {
+      "patient_id": "69623dade694b2d15c7cd01a",
+      "patient_name": "Mrs Sandhya Mishra",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3941.0,
+      "case_ids": [
+        "69636f938626156685728309"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd56e",
+      "patient_name": "Mrs Sudha Suman",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5.0,
+      "case_ids": [
+        "69636f93862615668572830f"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd56f",
+      "patient_name": "Mrs Shobha Vijayan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 572.0,
+      "case_ids": [
+        "69636f938626156685728312"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd570",
+      "patient_name": "Mrs Jyoti Chaudhari",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f938626156685728315"
+      ]
+    },
+    {
+      "patient_id": "6963370c5d6a2d4ec5b1c1c8",
+      "patient_name": "Mrs Ratnamani Nadar",
+      "num_cases": 2,
+      "total_payments": 35800.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 1200.0,
+      "doctor_charges": 10500.0,
+      "other_charges": 25874.0,
+      "case_ids": [
+        "69636f938626156685728318",
+        "697484731cfa4e7e676a2d4c"
+      ]
+    },
+    {
+      "patient_id": "69623dcce694b2d15c7cd396",
+      "patient_name": "Miss Deepti Thakkar",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 7380.0,
+      "case_ids": [
+        "69636f94862615668572831b",
+        "69636faf86261566857284f7",
+        "69636fb48626156685728548"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd571",
+      "patient_name": "Mr Sandeep Gore",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 248.0,
+      "case_ids": [
+        "69636f94862615668572831e",
+        "69636f97862615668572834e",
+        "69636f9c86261566857283b4"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd572",
+      "patient_name": "Mr Dhruv Jolly",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 550.0,
+      "case_ids": [
+        "69636f948626156685728321",
+        "69636f958626156685728333"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd573",
+      "patient_name": "Mr Harshit Agarwal",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636f948626156685728324"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd574",
+      "patient_name": "Mr Prashant Yadav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 130.0,
+      "case_ids": [
+        "69636f95862615668572832a"
+      ]
+    },
+    {
+      "patient_id": "69623ddde694b2d15c7cd575",
+      "patient_name": "Mrs Chhaya",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 640.0,
+      "case_ids": [
+        "69636f95862615668572832d"
+      ]
+    },
+    {
+      "patient_id": "6963370c5d6a2d4ec5b1c1dd",
+      "patient_name": "Master Tubhyam",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3700.0,
+      "case_ids": [
+        "69636f958626156685728336"
+      ]
+    },
+    {
+      "patient_id": "69623ddbe694b2d15c7cd52b",
+      "patient_name": "Mrs Riya Patel",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636f958626156685728339"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd576",
+      "patient_name": "Miss Soliya",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3000.0,
+      "case_ids": [
+        "69636f968626156685728342"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd577",
+      "patient_name": "Miss Sreeja Pillai",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 198.0,
+      "case_ids": [
+        "69636f968626156685728348"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd578",
+      "patient_name": "Miss Shristi Gupta",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69636f978626156685728351"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd579",
+      "patient_name": "Mr Akshay Patankar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1999.0,
+      "case_ids": [
+        "69636f978626156685728354"
+      ]
+    },
+    {
+      "patient_id": "6963370d5d6a2d4ec5b1c1f9",
+      "patient_name": "Mr Irfan Shaikh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69636f97862615668572835a"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd57a",
+      "patient_name": "Mrs Shubhangi Mane",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 120.0,
+      "case_ids": [
+        "69636f97862615668572835d"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd57b",
+      "patient_name": "Mr Pratik Gawande",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1450.0,
+      "case_ids": [
+        "69636f988626156685728360"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd57c",
+      "patient_name": "Mr Narendra",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 665.0,
+      "case_ids": [
+        "69636f988626156685728363"
+      ]
+    },
+    {
+      "patient_id": "6963370e5d6a2d4ec5b1c205",
+      "patient_name": "Mrs Jagri Bibi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636f988626156685728366"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd57d",
+      "patient_name": "Mr Jadid Sayyed",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f98862615668572836c"
+      ]
+    },
+    {
+      "patient_id": "69623da5e694b2d15c7ccf4a",
+      "patient_name": "Mr Akhil Sahu",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636f98862615668572836f"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd57f",
+      "patient_name": "Mr Rishab Mishra",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f998626156685728372"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd580",
+      "patient_name": "Mr Arun",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69636f998626156685728378"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd581",
+      "patient_name": "Mr Lalit Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 680.0,
+      "case_ids": [
+        "69636f99862615668572837b"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd582",
+      "patient_name": "Mrs Shalu Gour",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 796.0,
+      "case_ids": [
+        "69636f99862615668572837e"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd583",
+      "patient_name": "Mr J K Patil",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5433.0,
+      "case_ids": [
+        "69636f9a8626156685728384",
+        "69636f9b8626156685728399"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd584",
+      "patient_name": "Mrs Lakshmi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f9a8626156685728387"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd585",
+      "patient_name": "Mrs Nerella Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f9a862615668572838a"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd586",
+      "patient_name": "Mr Binraj Babu",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 198.0,
+      "case_ids": [
+        "69636f9a862615668572838d"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd587",
+      "patient_name": "Mr Ajay Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636f9a8626156685728390"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd588",
+      "patient_name": "Mrs Sreedevi D",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f9a8626156685728393"
+      ]
+    },
+    {
+      "patient_id": "6963370f5d6a2d4ec5b1c228",
+      "patient_name": "Mr Kanakraj",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1300.0,
+      "case_ids": [
+        "69636f9b8626156685728396"
+      ]
+    },
+    {
+      "patient_id": "6963370f5d6a2d4ec5b1c231",
+      "patient_name": "Miss Shalu Gore",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 420.0,
+      "case_ids": [
+        "69636f9b862615668572839f"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd58a",
+      "patient_name": "Mrs Reshma",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1848.0,
+      "case_ids": [
+        "69636f9b86261566857283a2",
+        "69636f9f86261566857283dc"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd58b",
+      "patient_name": "Mrs Jayalakshmi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636f9c86261566857283a8"
+      ]
+    },
+    {
+      "patient_id": "69623ddee694b2d15c7cd58d",
+      "patient_name": "Mr Shriram Pandey",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 25.0,
+      "case_ids": [
+        "69636f9c86261566857283ab"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd58e",
+      "patient_name": "Mr Vishwas Furade",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 40.0,
+      "case_ids": [
+        "69636f9c86261566857283ae"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd58f",
+      "patient_name": "Mr Sampath",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 27.0,
+      "case_ids": [
+        "69636f9c86261566857283b1"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd592",
+      "patient_name": "Mrs Jyotirmaya Tripathy",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2468.0,
+      "case_ids": [
+        "69636f9d86261566857283ba",
+        "69636fa086261566857283f7"
+      ]
+    },
+    {
+      "patient_id": "696337105d6a2d4ec5b1c24b",
+      "patient_name": "Mrs Shiwani Sharma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f9d86261566857283c0"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd59a",
+      "patient_name": "Mrs Ruchi Lad",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636f9d86261566857283c3",
+        "69636fa086261566857283f1"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd590",
+      "patient_name": "Mr Satej Gawade",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636f9d86261566857283c6"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd591",
+      "patient_name": "Mr Prasad Swamy",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 65.0,
+      "case_ids": [
+        "69636f9d86261566857283c9"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd593",
+      "patient_name": "Mrs Kalyani Swamy",
+      "num_cases": 5,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 126495.0,
+      "case_ids": [
+        "69636f9e86261566857283d0",
+        "69636fa086261566857283ee",
+        "69636fa4862615668572843d",
+        "69636fab86261566857284b1",
+        "69636fad86261566857284d6"
+      ]
+    },
+    {
+      "patient_id": "69623dcae694b2d15c7cd35c",
+      "patient_name": "Miss Angel",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 5292.0,
+      "case_ids": [
+        "69636f9e86261566857283d3",
+        "69636f9f86261566857283e2"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd595",
+      "patient_name": "Mrs Jareena Dawt",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1700.0,
+      "case_ids": [
+        "69636f9e86261566857283d6",
+        "69636f9f86261566857283df"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd597",
+      "patient_name": "Mr Amrik Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636f9f86261566857283e5"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd598",
+      "patient_name": "Dr Amar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636f9f86261566857283e8"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd599",
+      "patient_name": "Mrs Lakita Gupta",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3516.0,
+      "case_ids": [
+        "69636f9f86261566857283eb"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd59b",
+      "patient_name": "Mrs Riya Joshi",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636fa086261566857283f4",
+        "69636fa38626156685728431",
+        "69636fa78626156685728474"
+      ]
+    },
+    {
+      "patient_id": "696337125d6a2d4ec5b1c27c",
+      "patient_name": "Mrs Latika Gupta",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 800.0,
+      "case_ids": [
+        "69636fa186261566857283fe"
+      ]
+    },
+    {
+      "patient_id": "696337125d6a2d4ec5b1c280",
+      "patient_name": "Mrs Jareena Dwat",
+      "num_cases": 3,
+      "total_payments": 63000.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 3600.0,
+      "doctor_charges": 12400.0,
+      "other_charges": 55418.0,
+      "case_ids": [
+        "69636fa18626156685728401",
+        "696f91261cfa4e7e676a2d08",
+        "697449552f3c143449faaac0"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd59c",
+      "patient_name": "Dr Amar Pagare",
+      "num_cases": 5,
+      "total_payments": 100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 250.0,
+      "case_ids": [
+        "69636fa18626156685728407",
+        "69636fb88626156685728590",
+        "69636fb986261566857285a3",
+        "697443032f3c143449faaab3",
+        "69744d4d2f3c143449faaac4"
+      ]
+    },
+    {
+      "patient_id": "69623dcfe694b2d15c7cd3fa",
+      "patient_name": "Mrs Ruchita Lad",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fa1862615668572840a"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd59d",
+      "patient_name": "Mrs Manorama Parulekar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636fa1862615668572840d"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd59e",
+      "patient_name": "Mrs Tejasvi Bhole",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fa28626156685728413"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd59f",
+      "patient_name": "Mr Satyam Shukla",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636fa28626156685728416"
+      ]
+    },
+    {
+      "patient_id": "69623dbde694b2d15c7cd1f1",
+      "patient_name": "Mr Aditya Jadhav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fa28626156685728419"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd5a1",
+      "patient_name": "Mrs Chhaya Dond",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 6437.0,
+      "case_ids": [
+        "69636fa2862615668572841c",
+        "69636fa58626156685728446",
+        "69636fa8862615668572847a"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd5a2",
+      "patient_name": "Mrs Gautami Dodke",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 900.0,
+      "case_ids": [
+        "69636fa2862615668572841f"
+      ]
+    },
+    {
+      "patient_id": "69623ddfe694b2d15c7cd5a3",
+      "patient_name": "Mast Aadvik Sharma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3544.0,
+      "case_ids": [
+        "69636fa38626156685728422"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5a4",
+      "patient_name": "Mrs Sheela Kharche",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636fa38626156685728425"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5a5",
+      "patient_name": "Mr Mohammad Shaikh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 89.0,
+      "case_ids": [
+        "69636fa3862615668572842b"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5a6",
+      "patient_name": "Mr Prabhakar Potdar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1500.0,
+      "case_ids": [
+        "69636fa3862615668572842e"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5a7",
+      "patient_name": "Mr Satish Magare",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636fa48626156685728434"
+      ]
+    },
+    {
+      "patient_id": "696337135d6a2d4ec5b1c2ac",
+      "patient_name": "Mrs Chhaya Dound",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2215.0,
+      "case_ids": [
+        "69636fa4862615668572843a"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5a8",
+      "patient_name": "Mr Kiran Chavan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636fa48626156685728440"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5a9",
+      "patient_name": "Mrs Chanda Baranwal",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3328.0,
+      "case_ids": [
+        "69636fa58626156685728449"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5aa",
+      "patient_name": "Mrs Anjana Morekar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 764.0,
+      "case_ids": [
+        "69636fa5862615668572844d"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5ac",
+      "patient_name": "Mr Guddi Prajapati",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636fa58626156685728453"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5ad",
+      "patient_name": "Mrs Nidhi Sharma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636fa68626156685728456"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5ae",
+      "patient_name": "Mr Dinesh Prajapathi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 450.0,
+      "case_ids": [
+        "69636fa68626156685728459"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5af",
+      "patient_name": "Mr Ritish Navik",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 15.0,
+      "case_ids": [
+        "69636fa6862615668572845f"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b0",
+      "patient_name": "Mr Shekhar Chatterjee",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636fa68626156685728465"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b1",
+      "patient_name": "Mrs Manju Mhatre",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 2666.0,
+      "case_ids": [
+        "69636fa78626156685728468"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b2",
+      "patient_name": "Mr Abhinav Prasad",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1135.0,
+      "case_ids": [
+        "69636fa7862615668572846b"
+      ]
+    },
+    {
+      "patient_id": "696337155d6a2d4ec5b1c2d8",
+      "patient_name": "Mast Pratik Gawand",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636fa7862615668572846e"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b3",
+      "patient_name": "Mr Digamber Gaikwad",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1000.0,
+      "case_ids": [
+        "69636fa78626156685728471"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b4",
+      "patient_name": "Mr Pralhad Dhalval",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69636fa78626156685728477"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b5",
+      "patient_name": "Mr Sharansh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 490.0,
+      "case_ids": [
+        "69636fa8862615668572847d"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b6",
+      "patient_name": "Mrs Maya Gaikwad",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 20.0,
+      "case_ids": [
+        "69636fa88626156685728480"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b7",
+      "patient_name": "Mrs Vimal Thakur",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 480.0,
+      "case_ids": [
+        "69636fa88626156685728483"
+      ]
+    },
+    {
+      "patient_id": "69623de0e694b2d15c7cd5b8",
+      "patient_name": "Miss Samaira",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69636fa88626156685728486",
+        "69636fac86261566857284cc"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5bb",
+      "patient_name": "Mr Girish Nair",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636fa98626156685728492"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5be",
+      "patient_name": "Mrs Naurangi Devi",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 600.0,
+      "case_ids": [
+        "69636faa862615668572849e"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5bf",
+      "patient_name": "Mrs Shantilal Sahu",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636faa86261566857284a4"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5c2",
+      "patient_name": "Mr Tushar Khandelwal",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 175.0,
+      "case_ids": [
+        "69636fab86261566857284ae"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5c4",
+      "patient_name": "Mr Abhimanan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fab86261566857284b7"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5c5",
+      "patient_name": "Mr Parikshit Shahane",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 30.0,
+      "case_ids": [
+        "69636fac86261566857284bf"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5c6",
+      "patient_name": "Mr Bikram Debbarma",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636fac86261566857284c6"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5c7",
+      "patient_name": "Mr Vinayak Kurup",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 56.0,
+      "case_ids": [
+        "69636fac86261566857284c9"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5c8",
+      "patient_name": "Mr Nishant Rai",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 115.0,
+      "case_ids": [
+        "69636fad86261566857284cf"
+      ]
+    },
+    {
+      "patient_id": "696337175d6a2d4ec5b1c32b",
+      "patient_name": "Mr Aruna Sonawane",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 320.0,
+      "case_ids": [
+        "69636fad86261566857284d9"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5ca",
+      "patient_name": "Mr G R Praneeth Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636fae86261566857284df"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5cb",
+      "patient_name": "Mr Amol Patil",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69636fae86261566857284e2"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5cc",
+      "patient_name": "Mrs Varsha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636fae86261566857284e5"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5cd",
+      "patient_name": "Mr Rahul Irole",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 30.0,
+      "case_ids": [
+        "69636fae86261566857284e9"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5ce",
+      "patient_name": "Mr Uttam Shinde",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 300.0,
+      "case_ids": [
+        "69636fae86261566857284ec"
+      ]
+    },
+    {
+      "patient_id": "69623de1e694b2d15c7cd5cf",
+      "patient_name": "Mrs Archana Dudhane",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 350.0,
+      "case_ids": [
+        "69636faf86261566857284fa"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d0",
+      "patient_name": "Mrs Meera Malusare",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636faf86261566857284fd"
+      ]
+    },
+    {
+      "patient_id": "696337195d6a2d4ec5b1c350",
+      "patient_name": "Mr Saransh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636fb08626156685728501"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d1",
+      "patient_name": "Mr Liladhar Jha",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636fb08626156685728508"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d2",
+      "patient_name": "Miss Advika More",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 315.0,
+      "case_ids": [
+        "69636fb0862615668572850e"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d3",
+      "patient_name": "Mr Anudeep",
+      "num_cases": 3,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 4843.0,
+      "case_ids": [
+        "69636fb18626156685728512",
+        "69636fb28626156685728527",
+        "69636fb6862615668572856c"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d5",
+      "patient_name": "Mr Amir",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636fb18626156685728518"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d6",
+      "patient_name": "Mrs Bhakti",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636fb1862615668572851b"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d8",
+      "patient_name": "Mr Mahendra Pradhan",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 19000.0,
+      "case_ids": [
+        "69636fb28626156685728521",
+        "69636fb48626156685728544"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5d9",
+      "patient_name": "Dr Sumant Jagtap",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 850.0,
+      "case_ids": [
+        "69636fb2862615668572852a"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5da",
+      "patient_name": "Mrs Pratima Tamhankar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1100.0,
+      "case_ids": [
+        "69636fb2862615668572852d"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5db",
+      "patient_name": "Mrs Nirmala Naik",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1964.0,
+      "case_ids": [
+        "69636fb38626156685728531"
+      ]
+    },
+    {
+      "patient_id": "6963371a5d6a2d4ec5b1c381",
+      "patient_name": "Mrs Saleha Chaudhari",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 596.0,
+      "case_ids": [
+        "69636fb38626156685728537"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5dc",
+      "patient_name": "Mr Ramashankar Jaiswar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69636fb3862615668572853a"
+      ]
+    },
+    {
+      "patient_id": "6963371b5d6a2d4ec5b1c387",
+      "patient_name": "Mr Ranjitf Nair",
+      "num_cases": 2,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3150.0,
+      "case_ids": [
+        "69636fb3862615668572853d",
+        "69636fb68626156685728568"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5e1",
+      "patient_name": "Ms Deepti Thakkar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 8714.0,
+      "case_ids": [
+        "69636fb4862615668572854b"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5e2",
+      "patient_name": "Mrs Rajeev Kumar",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 120.0,
+      "case_ids": [
+        "69636fb4862615668572854e"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5e3",
+      "patient_name": "Miss Aditi Sarang",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 444.0,
+      "case_ids": [
+        "69636fb48626156685728551"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5e4",
+      "patient_name": "Mrs Tejaswani Kulkarni",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "69636fb58626156685728554"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5e5",
+      "patient_name": "Mrs Jaya Jain",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fb5862615668572855b"
+      ]
+    },
+    {
+      "patient_id": "69623de2e694b2d15c7cd5e6",
+      "patient_name": "Miss Deepti Keshav",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1139.0,
+      "case_ids": [
+        "69636fb5862615668572855e"
+      ]
+    },
+    {
+      "patient_id": "6963371c5d6a2d4ec5b1c3aa",
+      "patient_name": "Mrs Tarun Gopinathan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "69636fb58626156685728561"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5e8",
+      "patient_name": "Mrs Rtopa Dey",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 80.0,
+      "case_ids": [
+        "69636fb6862615668572856f"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5e9",
+      "patient_name": "Mrs Tejaswini",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636fb68626156685728572"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5ea",
+      "patient_name": "Mr Aditya",
+      "num_cases": 1,
+      "total_payments": 100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fb78626156685728575"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5eb",
+      "patient_name": "Mr Rajkapur",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "69636fb78626156685728582"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5ec",
+      "patient_name": "Mr Sanjib Mondal",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 34.0,
+      "case_ids": [
+        "69636fb88626156685728585"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5ef",
+      "patient_name": "Miss Advi Sahu",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1396.0,
+      "case_ids": [
+        "69636fb8862615668572858c"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5f3",
+      "patient_name": "Mrs Nikita Singh",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 1200.0,
+      "case_ids": [
+        "69636fb98626156685728594"
+      ]
+    },
+    {
+      "patient_id": "6963371d5d6a2d4ec5b1c3dd",
+      "patient_name": "Mrs Sumaira Jena",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 100.0,
+      "case_ids": [
+        "69636fb9862615668572859a"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5f4",
+      "patient_name": "Mr Dhrumil Gadhiya",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 638.0,
+      "case_ids": [
+        "69636fb986261566857285a0"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5f7",
+      "patient_name": "Baby Shlok Thapa",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 700.0,
+      "case_ids": [
+        "69636fba86261566857285a9"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5f8",
+      "patient_name": "Mrs Kamal Kamble",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 46.0,
+      "case_ids": [
+        "69636fba86261566857285ac"
+      ]
+    },
+    {
+      "patient_id": "69623de3e694b2d15c7cd5f9",
+      "patient_name": "Mrs Ambika Pradhan",
+      "num_cases": 1,
+      "total_payments": 0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 3065.0,
+      "case_ids": [
+        "69636fba86261566857285af"
+      ]
+    },
+    {
+      "patient_id": "696a097cbe3e2ef848c18c71",
+      "patient_name": "Mr Subodh Kumar",
+      "num_cases": 1,
+      "total_payments": 65.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 65.0,
+      "case_ids": [
+        "696a09e6be3e2ef848c18c72"
+      ]
+    },
+    {
+      "patient_id": "696a0c80be3e2ef848c18c73",
+      "patient_name": "Mr Malek Arslan",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 200.0,
+      "case_ids": [
+        "696a0cdcbe3e2ef848c18c74"
+      ]
+    },
+    {
+      "patient_id": "696b7aa727f8f222a3af7586",
+      "patient_name": "Baby Nakshatra Saisha",
+      "num_cases": 1,
+      "total_payments": 39318.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 2400.0,
+      "doctor_charges": 7500.0,
+      "other_charges": 33218.0,
+      "case_ids": [
+        "696b7aedd4e9a26708db5f89"
+      ]
+    },
+    {
+      "patient_id": "696a08cfbe3e2ef848c18c70",
+      "patient_name": "Mr Swapnil Yadav",
+      "num_cases": 1,
+      "total_payments": 395.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "696e45bf91168ea9305f8317"
+      ]
+    },
+    {
+      "patient_id": "696f6f9d43f7ce807d5357ca",
+      "patient_name": "Miss Heena Fatima",
+      "num_cases": 1,
+      "total_payments": 400.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "696f6fb143f7ce807d5357cb"
+      ]
+    },
+    {
+      "patient_id": "696f76831cfa4e7e676a2cf3",
+      "patient_name": "Mr Pradeep Kumar",
+      "num_cases": 1,
+      "total_payments": 50.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "696f76aa2f3c143449faaa88"
+      ]
+    },
+    {
+      "patient_id": "69623dd2e694b2d15c7cd443",
+      "patient_name": "Mr Satyam Yadav",
+      "num_cases": 1,
+      "total_payments": 600.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "696f8a261cfa4e7e676a2cfb"
+      ]
+    },
+    {
+      "patient_id": "6963548f9284b2c2ff6b72e4",
+      "patient_name": "Mr Suresh Raju",
+      "num_cases": 1,
+      "total_payments": 1200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 1200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "696f8d231cfa4e7e676a2d02"
+      ]
+    },
+    {
+      "patient_id": "696f8ea01cfa4e7e676a2d05",
+      "patient_name": "Mr Ravi Kumar",
+      "num_cases": 1,
+      "total_payments": 500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "696f8ecf2f3c143449faaa92"
+      ]
+    },
+    {
+      "patient_id": "69719e421cfa4e7e676a2d10",
+      "patient_name": "Mr Tukaram Wagh",
+      "num_cases": 1,
+      "total_payments": 1100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 1200.0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69719e871cfa4e7e676a2d11"
+      ]
+    },
+    {
+      "patient_id": "6971a0321cfa4e7e676a2d13",
+      "patient_name": "Mr Prem Chavan",
+      "num_cases": 1,
+      "total_payments": 400.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "6971a0511cfa4e7e676a2d14"
+      ]
+    },
+    {
+      "patient_id": "69743ba11cfa4e7e676a2d1d",
+      "patient_name": "Mr Sagar Jagtap",
+      "num_cases": 1,
+      "total_payments": 19500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 1800.0,
+      "doctor_charges": 3800.0,
+      "other_charges": 17479.0,
+      "case_ids": [
+        "69743c051cfa4e7e676a2d1e"
+      ]
+    },
+    {
+      "patient_id": "697440421cfa4e7e676a2d2b",
+      "patient_name": "Mrs Kaushmi Patankar",
+      "num_cases": 1,
+      "total_payments": 1250.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 700.0,
+      "other_charges": 550.0,
+      "case_ids": [
+        "697440731cfa4e7e676a2d2c"
+      ]
+    },
+    {
+      "patient_id": "6974439a1cfa4e7e676a2d2e",
+      "patient_name": "Mr Kartik Vyas",
+      "num_cases": 1,
+      "total_payments": 12.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 12.0,
+      "case_ids": [
+        "697443b72f3c143449faaab7"
+      ]
+    },
+    {
+      "patient_id": "69744ca82f3c143449faaac2",
+      "patient_name": "Mrs Archana ",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "69744cc42f3c143449faaac3"
+      ]
+    },
+    {
+      "patient_id": "69744fad2f3c143449faaac9",
+      "patient_name": "Mrs Soni Kumari",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "69744fc41cfa4e7e676a2d35"
+      ]
+    },
+    {
+      "patient_id": "697472d92f3c143449faaacd",
+      "patient_name": "Mrs Akshada Bakshi",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "697473052f3c143449faaace"
+      ]
+    },
+    {
+      "patient_id": "6974742b2f3c143449faaad0",
+      "patient_name": "Mr Prabhat Nigam",
+      "num_cases": 1,
+      "total_payments": 150.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 250.0,
+      "case_ids": [
+        "697474471cfa4e7e676a2d3a"
+      ]
+    },
+    {
+      "patient_id": "697478e11cfa4e7e676a2d40",
+      "patient_name": "Mr Vinod Tiwari",
+      "num_cases": 1,
+      "total_payments": 600.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 600.0,
+      "other_charges": 0,
+      "case_ids": [
+        "697479112f3c143449faaad4"
+      ]
+    },
+    {
+      "patient_id": "69747a8c2f3c143449faaad6",
+      "patient_name": "Mrs Michelle",
+      "num_cases": 1,
+      "total_payments": 500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 400.0,
+      "case_ids": [
+        "69747abb1cfa4e7e676a2d42"
+      ]
+    },
+    {
+      "patient_id": "69747cfa2f3c143449faaadd",
+      "patient_name": "Mr Ashwin Pattanaik",
+      "num_cases": 1,
+      "total_payments": 500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69747d252f3c143449faaade"
+      ]
+    },
+    {
+      "patient_id": "69747e0d2f3c143449faaae0",
+      "patient_name": "Mrs Pramila Prakash Nema",
+      "num_cases": 1,
+      "total_payments": 1100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 600.0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69747e492f3c143449faaae1"
+      ]
+    },
+    {
+      "patient_id": "69747f2c1cfa4e7e676a2d49",
+      "patient_name": "Mrs Jijabai Daillat",
+      "num_cases": 1,
+      "total_payments": 1100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 600.0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "69747f701cfa4e7e676a2d4a"
+      ]
+    },
+    {
+      "patient_id": "697703321cfa4e7e676a2d5d",
+      "patient_name": "Baby Diyas",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "697703471cfa4e7e676a2d5e"
+      ]
+    },
+    {
+      "patient_id": "69623dd2e694b2d15c7cd43f",
+      "patient_name": "Mr Ashraf Khan",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 250.0,
+      "case_ids": [
+        "6977056f1cfa4e7e676a2d61"
+      ]
+    },
+    {
+      "patient_id": "69776bf22f3c143449faaaed",
+      "patient_name": "Dhanraj Patil",
+      "num_cases": 1,
+      "total_payments": 10.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 10.0,
+      "case_ids": [
+        "69776c0e2f3c143449faaaee"
+      ]
+    },
+    {
+      "patient_id": "69776da71cfa4e7e676a2d66",
+      "patient_name": " Shahbaz Shaikh",
+      "num_cases": 1,
+      "total_payments": 36.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 36.0,
+      "case_ids": [
+        "69776dd41cfa4e7e676a2d67"
+      ]
+    },
+    {
+      "patient_id": "6978cf1d2f3c143449faaaf3",
+      "patient_name": "Mrs Mintis Das",
+      "num_cases": 1,
+      "total_payments": 100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 150.0,
+      "case_ids": [
+        "6978cf342f3c143449faaaf4"
+      ]
+    },
+    {
+      "patient_id": "6978cf931cfa4e7e676a2d69",
+      "patient_name": "Mrs Leela Wagela",
+      "num_cases": 1,
+      "total_payments": 500.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "6978cfb22f3c143449faaaf7"
+      ]
+    },
+    {
+      "patient_id": "6978d02d1cfa4e7e676a2d6b",
+      "patient_name": "Mrs Minal Mane",
+      "num_cases": 1,
+      "total_payments": 1100.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 600.0,
+      "other_charges": 500.0,
+      "case_ids": [
+        "6978d05c1cfa4e7e676a2d6c"
+      ]
+    },
+    {
+      "patient_id": "6978d1ca2f3c143449faaafc",
+      "patient_name": "Ms Riya More",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "6978d1eb1cfa4e7e676a2d6d"
+      ]
+    },
+    {
+      "patient_id": "6978d2231cfa4e7e676a2d6e",
+      "patient_name": "Arjish ",
+      "num_cases": 2,
+      "total_payments": 250.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "6978d23f2f3c143449faaafe",
+        "697a15172f3c143449faab08"
+      ]
+    },
+    {
+      "patient_id": "6978d2772f3c143449faaaff",
+      "patient_name": "Tushar Pawar",
+      "num_cases": 1,
+      "total_payments": 39.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 39.0,
+      "case_ids": [
+        "6978d28f2f3c143449faab00"
+      ]
+    },
+    {
+      "patient_id": "6963548a9284b2c2ff6b725a",
+      "patient_name": "Mr Guru Prasad",
+      "num_cases": 1,
+      "total_payments": 50.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 0,
+      "other_charges": 50.0,
+      "case_ids": [
+        "697a12181cfa4e7e676a2d76"
+      ]
+    },
+    {
+      "patient_id": "697a13702f3c143449faab03",
+      "patient_name": "Sushant Singh",
+      "num_cases": 1,
+      "total_payments": 514.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 314.0,
+      "case_ids": [
+        "697a13862f3c143449faab04"
+      ]
+    },
+    {
+      "patient_id": "697a15ed2f3c143449faab09",
+      "patient_name": "Suma Kulkarni",
+      "num_cases": 1,
+      "total_payments": 310.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 110.0,
+      "case_ids": [
+        "697a16152f3c143449faab0a"
+      ]
+    },
+    {
+      "patient_id": "69623dd3e694b2d15c7cd469",
+      "patient_name": "Mrs Sonali Patel",
+      "num_cases": 1,
+      "total_payments": 200.0,
+      "pharmacy_charges": 0,
+      "nursing_charges": 0,
+      "doctor_charges": 200.0,
+      "other_charges": 0,
+      "case_ids": [
+        "697c28081cfa4e7e676a2d80"
+      ]
+    }
+  ]
+}
